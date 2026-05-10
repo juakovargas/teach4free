@@ -1,0 +1,238 @@
+Teach4Free - Project Documentation
+==================================
+
+Project idea
+------------
+
+Teach4Free is a free educational platform where anyone can offer online classes, mentoring, help sessions or knowledge-sharing activities without any financial exchange.
+
+The platform is based on a simple principle:
+
+People teach what they know for free.
+People learn what they need for free.
+The only reward is reputation, trust and community prestige.
+
+There will be no payments, credits, subscriptions, commissions, paid promotions or internal currency.
+
+Core concept
+------------
+
+A user can be:
+
+- A student.
+- A teacher.
+- Both student and teacher.
+- An administrator.
+
+Teachers will be able to publish free teaching offers, configure their availability, define the number of available seats, select the languages in which they can teach, and manage student requests.
+
+Students will be able to search for free classes, filter by topic, language, level and availability, apply for a place, join waiting lists and rate completed classes.
+
+The platform must be multilingual from the beginning.
+
+Main goals
+----------
+
+1. Create a clean and pleasant platform for free online learning.
+2. Allow people to offer classes without earning money or credits.
+3. Allow students to find teachers by topic, language and availability.
+4. Build reputation through stars, reviews, badges and completed teaching hours.
+5. Protect the free nature of the platform with clear rules and moderation.
+6. Support several languages from the beginning.
+7. Keep the project technically clean, scalable and easy to maintain.
+
+Technology stack
+----------------
+
+Initial recommended stack:
+
+- Backend: Laravel
+- Frontend: Inertia + React + TypeScript
+- Styling: Tailwind CSS
+- Database: MySQL or MariaDB
+- Authentication: Laravel authentication system
+- Authorization: roles and permissions
+- Main language for code: English
+- User interface: multilingual
+
+Main roles
+----------
+
+Admin
+-----
+
+The admin user can manage the whole platform:
+
+- Users
+- Teacher profiles
+- Student activity
+- Teaching offers
+- Categories
+- Subjects
+- Languages
+- Reviews
+- Reports
+- Badges
+- Platform settings
+- Translations
+- Legal and content pages
+
+User
+----
+
+A regular user can act as student, teacher or both.
+
+Student capabilities
+--------------------
+
+- Complete personal profile.
+- Select understood languages.
+- Select learning interests.
+- Search teaching offers.
+- Apply to free classes.
+- Join waiting lists.
+- Manage upcoming sessions.
+- Review completed classes.
+- Save favorite teachers.
+- Report inappropriate content or behavior.
+
+Teacher capabilities
+--------------------
+
+- Activate teacher profile.
+- Select teaching languages.
+- Create free teaching offers.
+- Configure weekly availability.
+- Define maximum students per class.
+- Accept or reject student requests.
+- Manage waiting lists.
+- Share free learning materials.
+- View teaching statistics.
+- Receive ratings and badges.
+- Pause teaching availability when full.
+
+Important rule
+--------------
+
+The platform must stay completely free.
+
+Forbidden:
+
+- Charging students.
+- Asking for payments.
+- Selling private courses.
+- Using the platform mainly to capture paying clients.
+- Publishing commercial promotions.
+- Hiding paid services behind free classes.
+- Requesting donations as a condition for teaching.
+
+Allowed:
+
+- Sharing free resources.
+- Linking to free documentation.
+- Linking to free GitHub repositories.
+- Linking to free educational videos.
+- Mentioning professional experience without commercial pressure.
+
+Initial MVP
+-----------
+
+The first working version should include:
+
+- User registration and login.
+- Admin user.
+- User profile.
+- Teacher profile activation.
+- Student profile information.
+- Languages.
+- Categories.
+- Subjects.
+- Teaching offers.
+- Basic teacher availability.
+- Search and filters.
+- Student applications.
+- Waiting list.
+- Basic dashboards.
+- Admin dashboard.
+- Rating system.
+- Basic reports.
+- Multilingual interface.
+
+Future features
+---------------
+
+Possible future improvements:
+
+- Visual calendar.
+- Email notifications.
+- Class reminders.
+- Advanced badges.
+- Teacher statistics.
+- Favorite teachers.
+- Public teacher pages.
+- Public class pages.
+- Downloadable materials.
+- Internal chat.
+- Automatic translation.
+- Group classes.
+- Mentoring sessions.
+- Code review sessions.
+- Open educational resource library.
+- Teacher verification.
+- Calendar integrations.
+- Community forum.
+- API.
+- Mobile app.
+
+Multilanguage rules
+-------------------
+
+The application must be multilingual from the beginning.
+
+Code must be written in English.
+
+Visible interface texts must be prepared for translation.
+
+Initial supported languages:
+
+- English
+- Spanish
+- French
+
+Every user must be able to define:
+
+- Interface language.
+- Languages they understand.
+- Languages they can speak.
+- Languages they can teach in, if they are a teacher.
+
+Every teaching offer must define the languages in which the class can be given.
+
+The search system must allow filtering by language.
+
+Development rules
+-----------------
+
+1. Do not remove existing functionality unless explicitly requested.
+2. Keep code, database fields, classes and internal names in English.
+3. Keep visible texts translatable.
+4. Every important feature must be documented in this file.
+5. Every future development branch must update this file.
+6. Every page created or modified must include or update its contextual help.
+7. Every page created or modified must include its visible translations.
+8. Tests should be added when possible.
+9. The application must remain clean, professional and easy to maintain.
+10. The interface must be pleasant, modern and simple to use.
+
+First commit objective
+----------------------
+
+This first commit only creates the initial repository documentation.
+
+No Laravel project has been installed yet.
+No application code has been created yet.
+
+Next step
+---------
+
+Create the Laravel project base with authentication, multilingual structure, roles, layouts and the first dashboards.
