@@ -241,7 +241,7 @@ return [
         'languages_title' => 'Préférences linguistiques',
         'languages_intro' => 'Sélectionnez les langues que vous comprenez, parlez et pouvez enseigner.',
         'avatar_title' => 'Photo de profil',
-        'avatar_intro' => 'Ajoutez une photo locale pour votre compte. La photo locale passe avant la photo Google; les initiales s affichent si aucune photo n existe.',
+        'avatar_intro' => 'Ajoutez une photo JPG, PNG ou WebP jusqu a 2 Mo. La photo locale passe avant la photo Google; les initiales s affichent si aucune photo n existe.',
         'avatar_file' => 'Fichier image',
         'upload_avatar' => 'Importer la photo',
         'remove_avatar' => 'Supprimer la photo locale',

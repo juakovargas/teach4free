@@ -747,3 +747,27 @@ Result:
 - 92 tests executed.
 - 92 passed.
 - 440 assertions.
+
+Profile photo display fix - 2026-05-11
+--------------------------------------
+
+Tests were intentionally not run in this task because this task is focused on fixing profile photo display manually.
+
+Manual verification required:
+
+1. Upload photo in preferences.
+2. Confirm it appears in preferences.
+3. Confirm it appears in navbar.
+4. Refresh page.
+5. Confirm it still appears.
+6. Replace photo.
+7. Confirm replacement appears.
+8. Remove photo if available.
+
+Storage setup performed:
+
+- php artisan storage:link
+
+Result:
+
+- public/storage is connected to storage/app/public.

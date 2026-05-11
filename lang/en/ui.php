@@ -241,7 +241,7 @@ return [
         'languages_title' => 'Language preferences',
         'languages_intro' => 'Select the languages you understand, speak and can teach in.',
         'avatar_title' => 'Profile photo',
-        'avatar_intro' => 'Upload a local photo for your account. Local photos are shown before Google photos; initials appear when no photo is available.',
+        'avatar_intro' => 'Upload a JPG, PNG or WebP photo up to 2 MB. Local photos are shown before Google photos; initials appear when no photo is available.',
         'avatar_file' => 'Image file',
         'upload_avatar' => 'Upload photo',
         'remove_avatar' => 'Remove local photo',

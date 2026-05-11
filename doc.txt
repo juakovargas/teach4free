@@ -1483,3 +1483,46 @@ The following work remains intentionally pending:
 - Advanced notification preferences.
 - Calendar invitations.
 - Full admin CRUD screens beyond the current completed areas.
+
+Profile photo display fix - 2026-05-11
+--------------------------------------
+
+This task focused only on local profile photo display.
+
+The implementation uses the existing user avatar fields:
+
+- users.avatar_path stores the local uploaded profile photo path.
+- users.avatar_url stores the external Google avatar URL when available.
+
+No duplicate avatar or profile photo fields were added.
+
+Uploaded local profile photos are stored on Laravel's public disk under:
+
+- avatars/users
+
+The database stores only the relative public-disk path, for example:
+
+- avatars/users/example-file.webp
+
+The browser URL is generated through Laravel storage URL handling and should resolve as:
+
+- /storage/avatars/users/example-file.webp
+
+Display priority remains:
+
+1. Local uploaded avatar_path.
+2. Google avatar_url.
+3. Initials fallback.
+
+The local display bug was caused by the public storage link being missing. The backend could save the file and generate a /storage URL, but the browser could not read files from storage/app/public until the link existed.
+
+Local setup requires:
+
+- php artisan storage:link
+
+For this workspace, the public storage link was connected from public/storage to storage/app/public so uploaded profile photos can be served locally.
+
+The preferences page now states the accepted formats and maximum size clearly:
+
+- JPG, PNG or WebP.
+- Maximum 2 MB.

@@ -241,7 +241,7 @@ return [
         'languages_title' => 'Preferencias de idiomas',
         'languages_intro' => 'Selecciona los idiomas que entiendes, hablas y puedes enseñar.',
         'avatar_title' => 'Foto de perfil',
-        'avatar_intro' => 'Sube una foto local para tu cuenta. La foto local se muestra antes que la de Google; las iniciales aparecen si no hay foto.',
+        'avatar_intro' => 'Sube una foto JPG, PNG o WebP de hasta 2 MB. La foto local se muestra antes que la de Google; las iniciales aparecen si no hay foto.',
         'avatar_file' => 'Archivo de imagen',
         'upload_avatar' => 'Subir foto',
         'remove_avatar' => 'Eliminar foto local',
