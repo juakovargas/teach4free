@@ -123,7 +123,7 @@ class ProfilePreferencesController extends Controller
     {
         $validated = $request->validate(
             [
-                'avatar' => ['required', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:2048'],
+                'avatar' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             ],
             [
                 'avatar.required' => __('ui.profile_preferences.avatar_required'),

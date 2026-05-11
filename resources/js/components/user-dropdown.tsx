@@ -22,6 +22,7 @@ export function UserDropdown({ user, showName = true, className }: Props) {
     const getInitials = useInitials();
     const { t } = useTranslation();
     const displayName = user.name || user.email;
+    const initials = user.initials ?? getInitials(displayName);
 
     return (
         <DropdownMenu>
@@ -38,7 +39,7 @@ export function UserDropdown({ user, showName = true, className }: Props) {
                             alt={displayName}
                         />
                         <AvatarFallback className="rounded-lg bg-emerald-100 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-50">
-                            {getInitials(displayName)}
+                            {initials}
                         </AvatarFallback>
                     </Avatar>
                     {showName && (

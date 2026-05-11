@@ -42,7 +42,7 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * @var list<string>
      */
-    protected $appends = ['avatar'];
+    protected $appends = ['avatar', 'initials'];
 
     public function isAdmin(): bool
     {
@@ -56,6 +56,22 @@ class User extends Authenticatable implements MustVerifyEmail
         }
 
         return $this->avatar_url;
+    }
+
+    public function getInitialsAttribute(): string
+    {
+        $displayName = trim($this->name !== '' ? $this->name : $this->email);
+        $names = preg_split('/\s+/', $displayName) ?: [];
+
+        if ($names === []) {
+            return '';
+        }
+
+        if (count($names) === 1) {
+            return strtoupper(substr($names[0], 0, 1));
+        }
+
+        return strtoupper(substr($names[0], 0, 1).substr($names[count($names) - 1], 0, 1));
     }
 
     /**

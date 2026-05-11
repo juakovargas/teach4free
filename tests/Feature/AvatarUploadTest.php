@@ -22,6 +22,7 @@ class AvatarUploadTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('auth.user.avatar', null)
+                ->where('auth.user.initials', $user->initials)
                 ->where('auth.user.name', $user->name)
             );
     }
@@ -40,6 +41,10 @@ class AvatarUploadTest extends TestCase
         $user->refresh();
         $this->assertNotNull($user->avatar_path);
         $this->assertStringStartsWith('avatars/users/', $user->avatar_path);
+        $this->assertStringStartsNotWith('C:\\', $user->avatar);
+        $this->assertStringStartsNotWith('storage/app/', $user->avatar);
+        $this->assertStringStartsNotWith('public/', $user->avatar);
+        $this->assertStringStartsWith('/storage/avatars/users/', $user->avatar);
         $this->assertSame(Storage::disk('public')->url($user->avatar_path), $user->avatar);
         Storage::disk('public')->assertExists($user->avatar_path);
         $uploadedPath = $user->avatar_path;
@@ -105,5 +110,25 @@ class AvatarUploadTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->where('auth.user.avatar', 'https://example.com/google-avatar.png')
             );
+    }
+
+    public function test_removing_uploaded_avatar_does_not_delete_google_avatar_url(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('avatars/users/local-avatar.jpg', 'avatar');
+        $user = User::factory()->create([
+            'avatar_path' => 'avatars/users/local-avatar.jpg',
+            'avatar_url' => 'https://example.com/google-avatar.png',
+        ]);
+
+        $this->actingAs($user)
+            ->delete(route('profile.preferences.avatar.destroy'))
+            ->assertRedirect();
+
+        $user->refresh();
+
+        $this->assertNull($user->avatar_path);
+        $this->assertSame('https://example.com/google-avatar.png', $user->avatar_url);
+        $this->assertSame('https://example.com/google-avatar.png', $user->avatar);
     }
 }

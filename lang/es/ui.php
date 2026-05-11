@@ -257,7 +257,7 @@ return [
         'avatar_removed' => 'Foto local eliminada.',
         'avatar_required' => 'Elige un archivo de imagen para subir.',
         'avatar_image' => 'La foto de perfil debe ser una imagen.',
-        'avatar_mimes' => 'Usa una imagen JPG, PNG, WebP o GIF.',
+        'avatar_mimes' => 'Usa una imagen JPG, PNG o WebP.',
         'avatar_max' => 'La foto de perfil no puede superar los 2 MB.',
     ],
     'language_levels' => [

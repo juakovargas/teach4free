@@ -198,7 +198,7 @@ export default function Preferences({
                             <Input
                                 id="avatar"
                                 type="file"
-                                accept="image/*"
+                                accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
                                 onChange={(event) =>
                                     avatarForm.setData(
                                         'avatar',

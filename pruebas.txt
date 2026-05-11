@@ -654,6 +654,68 @@ Result:
 - 92 passed.
 - 440 assertions.
 
+Global navigation/avatar follow-up audit - 2026-05-11
+-----------------------------------------------------
+
+Command:
+
+- php artisan test tests\Feature\AvatarUploadTest.php tests\Feature\NavigationExperienceTest.php
+
+Result:
+
+- Passed.
+- 10 tests executed.
+- 10 passed.
+- 83 assertions.
+
+Command:
+
+- npm run types:check
+
+Result:
+
+- Passed.
+- TypeScript reported no errors.
+
+Command:
+
+- composer run lint:check
+
+Result:
+
+- Passed.
+- Pint reported no required changes.
+
+Command:
+
+- npm run lint:check
+
+Result:
+
+- Passed.
+- ESLint reported no errors.
+
+Command:
+
+- php artisan test
+
+Result:
+
+- Passed.
+- 93 tests executed.
+- 93 passed.
+- 452 assertions.
+
+Command:
+
+- npm run build
+
+Result:
+
+- Passed.
+- Vite production build completed.
+- Note: Vite printed plugin timing warnings, but the build succeeded.
+
 Command:
 
 - npm run build

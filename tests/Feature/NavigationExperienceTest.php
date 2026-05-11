@@ -27,9 +27,11 @@ class NavigationExperienceTest extends TestCase
     public function test_authenticated_and_public_headers_render_global_navbar_actions(): void
     {
         $authenticatedHeader = $this->source('resources/js/components/app-sidebar-header.tsx');
+        $legacyAuthenticatedHeader = $this->source('resources/js/components/app-header.tsx');
         $publicLayout = $this->source('resources/js/layouts/public-layout.tsx');
 
         $this->assertStringContainsString('NavbarActions', $authenticatedHeader);
+        $this->assertStringContainsString('NavbarActions', $legacyAuthenticatedHeader);
         $this->assertStringContainsString('NavbarActions', $publicLayout);
         $this->assertStringContainsString("t('actions.start_teaching')", $publicLayout);
     }
@@ -56,6 +58,7 @@ class NavigationExperienceTest extends TestCase
         $this->assertStringContainsString('href="/teacher/offers"', $source);
         $this->assertStringContainsString('href="/teacher/applications"', $source);
         $this->assertStringContainsString('href="/admin"', $source);
+        $this->assertStringContainsString("user.role === 'admin'", $source);
         $this->assertStringContainsString("t('navigation.my_teaching_offers')", $source);
         $this->assertStringContainsString('data-test="logout-button"', $source);
     }

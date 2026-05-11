@@ -11,6 +11,7 @@ export function UserInfo({
 }) {
     const getInitials = useInitials();
     const displayName = user.name || user.email;
+    const initials = user.initials ?? getInitials(displayName);
 
     return (
         <>
@@ -20,7 +21,7 @@ export function UserInfo({
                     alt={displayName}
                 />
                 <AvatarFallback className="rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
-                    {getInitials(displayName)}
+                    {initials}
                 </AvatarFallback>
             </Avatar>
             <div className="grid flex-1 text-left text-sm leading-tight">

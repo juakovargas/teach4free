@@ -257,7 +257,7 @@ return [
         'avatar_removed' => 'Photo locale supprimee.',
         'avatar_required' => 'Choisissez une image a envoyer.',
         'avatar_image' => 'La photo de profil doit etre une image.',
-        'avatar_mimes' => 'Utilisez une image JPG, PNG, WebP ou GIF.',
+        'avatar_mimes' => 'Utilisez une image JPG, PNG ou WebP.',
         'avatar_max' => 'La photo de profil ne doit pas depasser 2 Mo.',
     ],
     'language_levels' => [

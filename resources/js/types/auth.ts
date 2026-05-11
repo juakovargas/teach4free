@@ -3,6 +3,7 @@ export type User = {
     name: string;
     email: string;
     avatar?: string;
+    initials?: string;
     avatar_url?: string | null;
     avatar_path?: string | null;
     email_verified_at: string | null;

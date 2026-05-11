@@ -1417,7 +1417,7 @@ Validation:
 
 - The uploaded file is required.
 - It must be an image.
-- Accepted types: JPG, JPEG, PNG, WebP and GIF.
+- Accepted types: JPG, JPEG, PNG and WebP.
 - Maximum size: 2 MB.
 - Validation messages are translated in English, Spanish and French.
 
@@ -1426,6 +1426,8 @@ Display priority:
 1. Uploaded local avatar_path.
 2. Google avatar_url.
 3. Initials fallback.
+
+The shared authenticated user payload also exposes initials so headers and dropdowns can render a stable fallback immediately when there is no photo.
 
 Removing a local photo deletes the public-disk file, clears users.avatar_path and then falls back to Google avatar_url or initials.
 
