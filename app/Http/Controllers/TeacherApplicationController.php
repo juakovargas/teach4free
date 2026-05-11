@@ -92,7 +92,8 @@ class TeacherApplicationController extends Controller
             ->with([
                 'student:id,name,email,avatar_path,avatar_url',
                 'preferredLanguage:id,code,name,native_name',
-                'offer:id,user_id,teaching_category_id,teaching_subject_id,title,slug,session_type,max_students,duration_minutes',
+                'offer:id,user_id,teacher_profile_id,teaching_category_id,teaching_subject_id,title,slug,session_type,max_students,duration_minutes,meeting_tool,meeting_url,timezone',
+                'offer.teacherProfile:id,default_session_duration_minutes,max_students_per_session,meeting_tool,meeting_url',
                 'offer.category:id,name,slug,color',
                 'offer.subject:id,name,slug',
                 'offer.languages:id,code,name,native_name',

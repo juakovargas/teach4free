@@ -7,6 +7,7 @@ import InputError from '@/components/input-error';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -52,6 +53,9 @@ type CurrentApplication = {
 type ApplicationForm = {
     message: string;
     preferred_language_id: string;
+    preferred_starts_at: string;
+    preferred_timezone: string;
+    class_session_id: string;
     availability_note: string;
     application?: string;
 };
@@ -62,15 +66,23 @@ type Props = {
     currentApplication: CurrentApplication | null;
     isOwnOffer: boolean;
     visibleMeetingUrl: string | null;
+    teacherAvailability: {
+        timezone: string;
+        weekly: { day_of_week: number; starts_at: string; ends_at: string; timezone: string }[];
+    };
+    upcomingSessions: { id: number; title: string; starts_at: string | null; ends_at: string | null; timezone: string; capacity: number; enrolled_attendees_count: number; status: string }[];
 };
 
-export default function PublicOfferShow({ offer, seatSummary, currentApplication, isOwnOffer, visibleMeetingUrl }: Props) {
+export default function PublicOfferShow({ offer, seatSummary, currentApplication, isOwnOffer, visibleMeetingUrl, teacherAvailability, upcomingSessions }: Props) {
     const { t } = useTranslation();
     const getInitials = useInitials();
     const { auth } = usePage().props;
     const { data, setData, post, processing, errors } = useForm<ApplicationForm>({
         message: '',
         preferred_language_id: offer.languages.length === 1 ? String(offer.languages[0].id) : '',
+        preferred_starts_at: '',
+        preferred_timezone: offer.timezone ?? 'Europe/Madrid',
+        class_session_id: offer.session_type === 'open_public' && upcomingSessions.length > 0 ? String(upcomingSessions[0].id) : '',
         availability_note: '',
     });
 
@@ -227,6 +239,38 @@ export default function PublicOfferShow({ offer, seatSummary, currentApplication
                                         <Textarea id="message" value={data.message} onChange={(event) => setData('message', event.target.value)} />
                                         <InputError message={errors.message} />
                                     </div>
+                                    {offer.session_type !== 'open_public' && (
+                                        <div className="grid gap-3">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="preferred_starts_at">{t('applications.preferred_starts_at')}</Label>
+                                                <Input id="preferred_starts_at" type="datetime-local" value={data.preferred_starts_at} onChange={(event) => setData('preferred_starts_at', event.target.value)} />
+                                                <InputError message={errors.preferred_starts_at} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="preferred_timezone">{t('applications.preferred_timezone')}</Label>
+                                                <Input id="preferred_timezone" value={data.preferred_timezone} onChange={(event) => setData('preferred_timezone', event.target.value)} />
+                                                <InputError message={errors.preferred_timezone} />
+                                            </div>
+                                        </div>
+                                    )}
+                                    {offer.session_type === 'open_public' && upcomingSessions.length > 0 && (
+                                        <div className="space-y-2">
+                                            <Label htmlFor="class_session_id">{t('applications.choose_session')}</Label>
+                                            <Select value={data.class_session_id} onValueChange={(value) => setData('class_session_id', value)}>
+                                                <SelectTrigger id="class_session_id">
+                                                    <SelectValue placeholder={t('applications.select_session')} />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {upcomingSessions.map((session) => (
+                                                        <SelectItem key={session.id} value={String(session.id)}>
+                                                            {session.starts_at ? new Date(session.starts_at).toLocaleString() : session.title} / {session.timezone}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <InputError message={errors.class_session_id} />
+                                        </div>
+                                    )}
                                     <div className="space-y-2">
                                         <Label htmlFor="availability_note">{t('applications.availability_note')}</Label>
                                         <Textarea id="availability_note" value={data.availability_note} onChange={(event) => setData('availability_note', event.target.value)} />
@@ -255,6 +299,35 @@ export default function PublicOfferShow({ offer, seatSummary, currentApplication
                                     <p className="mt-1 text-muted-foreground">{offer.availability_summary}</p>
                                 </>
                             )}
+                        </div>
+                        <div className="rounded-lg border border-slate-200 bg-white p-5 text-sm shadow-xs dark:border-slate-800 dark:bg-slate-900">
+                            <p className="font-semibold">{t('offers.teacher_availability')}</p>
+                            <p className="mt-1 text-muted-foreground">{t('offers.teacher_availability_timezone', { timezone: teacherAvailability.timezone })}</p>
+                            <div className="mt-3 grid gap-2">
+                                {teacherAvailability.weekly.length === 0 && <p className="text-muted-foreground">{t('offers.no_teacher_availability')}</p>}
+                                {teacherAvailability.weekly.map((block, index) => (
+                                    <div key={`${block.day_of_week}-${block.starts_at}-${index}`} className="flex justify-between gap-3 rounded-md bg-slate-50 px-3 py-2 dark:bg-slate-950">
+                                        <span>{t(`weekdays.${block.day_of_week}`)}</span>
+                                        <span>{block.starts_at} - {block.ends_at}</span>
+                                    </div>
+                                ))}
+                            </div>
+                            <p className="mt-3 text-muted-foreground">{t('offers.request_suitable_time')}</p>
+                        </div>
+                        <div className="rounded-lg border border-slate-200 bg-white p-5 text-sm shadow-xs dark:border-slate-800 dark:bg-slate-900">
+                            <p className="font-semibold">{t('offers.upcoming_sessions')}</p>
+                            <div className="mt-3 grid gap-2">
+                                {upcomingSessions.length === 0 && <p className="text-muted-foreground">{t('offers.no_upcoming_sessions')}</p>}
+                                {upcomingSessions.map((session) => (
+                                    <div key={session.id} className="rounded-md bg-slate-50 px-3 py-2 dark:bg-slate-950">
+                                        <p className="font-medium">{session.title}</p>
+                                        <p className="mt-1 text-muted-foreground">{session.starts_at ? new Date(session.starts_at).toLocaleString() : '-'} / {session.timezone}</p>
+                                        <p className="mt-1 text-muted-foreground">
+                                            {session.enrolled_attendees_count}/{session.capacity}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                         <Button variant="outline" className="w-full" asChild>
                             <Link href={`/support/report?type=teaching_offer&teaching_offer_id=${offer.id}`}>

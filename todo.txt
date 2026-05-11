@@ -49,14 +49,15 @@ Future platform work
 - Admin email log.
 - Advanced translation database editor if file-based translations become limiting.
 - Full map visualization with a lightweight map library.
-- Advanced teacher availability calendar.
-- Class sessions and real class/session scheduling.
+- Real calendar UI with month/week views for teacher availability and sessions.
+- Advanced timezone conversion UI.
+- Session rescheduling.
+- Calendar export/integration.
 - Calendar invitations.
-- Reminder system.
+- Reminder emails 24h and 1h before sessions.
 - Review system after completed classes.
 - Badges and reputation.
 - Reputation rules.
-- Advanced notification preferences.
 - Queued mail setup.
 - Rich internal messaging/chat.
 - Advanced open session handling.

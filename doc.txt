@@ -1907,3 +1907,368 @@ The following work remains intentionally pending:
 - Badges.
 - Reputation rules.
 - Advanced notification preferences.
+
+Teacher availability and class sessions - 2026-05-11
+----------------------------------------------------
+
+The first scheduling foundation is now implemented.
+
+Teacher weekly availability
+---------------------------
+
+Teachers with an active teaching profile can manage normal weekly availability at:
+
+- GET /teacher/availability
+- POST /teacher/availability
+- PATCH /teacher/availability/{availability}
+- DELETE /teacher/availability/{availability}
+
+Availability is stored in:
+
+- teacher_availabilities
+
+Fields include:
+
+- user_id
+- teacher_profile_id
+- day_of_week, where 1 is Monday and 7 is Sunday
+- starts_at
+- ends_at
+- timezone
+- default_duration_minutes
+- default_capacity
+- is_active
+- notes
+
+Overlapping active blocks for the same teacher and day are blocked with a translated validation message.
+
+Important rule:
+
+- Availability is not a class session.
+- Availability only describes when a teacher usually teaches.
+- Sessions are concrete scheduled classes.
+
+Availability exceptions
+-----------------------
+
+Teachers can add blocked or extra dates from the same availability page.
+
+Routes:
+
+- POST /teacher/availability/exceptions
+- PATCH /teacher/availability/exceptions/{exception}
+- DELETE /teacher/availability/exceptions/{exception}
+
+Exceptions are stored in:
+
+- teacher_availability_exceptions
+
+Supported types:
+
+- unavailable
+- extra_available
+
+Full-day exceptions can omit start and end times. Partial-day exceptions require both times.
+
+Public offer availability display
+---------------------------------
+
+Public offer detail pages now show:
+
+- Teacher timezone.
+- Weekly availability summary.
+- Upcoming scheduled sessions for the offer.
+- A translated message when no availability exists.
+
+Students can request a preferred date, time and timezone when applying to private request or scheduled group offers.
+
+Open public scheduled sessions
+------------------------------
+
+When an open public offer has scheduled sessions, the application form asks the student to choose a specific session.
+
+The backend checks:
+
+- Session belongs to the offer.
+- Session is still scheduled.
+- Session starts in the future.
+- Session capacity is not full.
+- The student is not already enrolled in that session.
+
+If the application is accepted, a class session attendee record is created.
+
+Student preferred time requests
+-------------------------------
+
+The teaching_offer_applications table now includes:
+
+- preferred_starts_at nullable datetime
+- preferred_timezone nullable string
+
+The existing availability_note field continues to store free-text schedule notes.
+
+Class sessions
+--------------
+
+Concrete scheduled classes are stored in:
+
+- class_sessions
+
+Fields include:
+
+- teaching_offer_id
+- teacher_user_id
+- application_id
+- title
+- description
+- starts_at
+- ends_at
+- timezone
+- capacity
+- meeting_tool
+- meeting_url
+- status
+- cancellation_reason
+- completed_at
+- cancelled_at
+- no_show_marked_at
+
+Supported statuses:
+
+- scheduled
+- completed
+- cancelled
+- no_show
+
+Session attendees
+-----------------
+
+Group and open public sessions use:
+
+- class_session_attendees
+
+Fields include:
+
+- class_session_id
+- user_id
+- application_id
+- status
+- joined_at
+- cancelled_at
+- no_show_at
+
+Supported attendee statuses:
+
+- enrolled
+- cancelled
+- attended
+- no_show
+
+A user cannot be duplicated as an attendee in the same session.
+
+Teacher scheduling flow
+-----------------------
+
+Teachers can schedule a session directly from requests to their offers:
+
+- POST /teacher/applications/{application}/schedule-session
+
+Scheduling:
+
+- Accepts the application if it was pending or waitlisted.
+- Creates a class_sessions record.
+- Creates a class_session_attendees record for the student.
+- Checks whether the time is inside teacher availability.
+- Allows scheduling outside availability but shows a warning-style success message.
+- Sends internal notifications.
+- Sends external email notifications only when the recipient email preference allows it.
+
+Teacher sessions page
+---------------------
+
+Teachers can manage their own sessions at:
+
+- GET /teacher/sessions
+- PATCH /teacher/sessions/{session}/complete
+- PATCH /teacher/sessions/{session}/cancel
+- PATCH /teacher/sessions/{session}/no-show
+
+Teacher actions:
+
+- Mark completed.
+- Cancel with a required cancellation reason.
+- Mark no-show.
+
+These actions update session status, update attendee status where appropriate and notify students.
+
+Student sessions page
+---------------------
+
+Students can view enrolled sessions at:
+
+- GET /my-sessions
+- PATCH /my-sessions/{session}/cancel
+
+The page shows:
+
+- Session title.
+- Teacher.
+- Offer.
+- Starts and ends.
+- Timezone.
+- Status.
+- Meeting tool.
+- Meeting URL only for allowed enrolled/scheduled sessions.
+
+Admin sessions page
+-------------------
+
+Admins can review all sessions at:
+
+- GET /admin/sessions
+
+The admin sessions page supports status, search and date filters and shows:
+
+- Session.
+- Teacher.
+- Offer.
+- Starts at.
+- Status.
+- Capacity.
+- Enrolled attendee count.
+- Teacher country.
+- Created date.
+
+The admin dashboard now includes session counters:
+
+- Scheduled sessions.
+- Completed sessions.
+- Cancelled sessions.
+- No-show sessions.
+- Upcoming sessions this week.
+
+Notification and email preferences
+----------------------------------
+
+Users can manage external email notification preferences at:
+
+- GET /profile/notification-preferences
+- PUT /profile/notification-preferences
+
+Preferences are stored in:
+
+- user_notification_preferences
+
+Internal notifications remain active by default because they are part of platform activity.
+
+External email preferences include:
+
+- email_session_scheduled_enabled
+- email_session_cancelled_enabled
+- email_session_completed_enabled
+- email_session_reminder_24h_enabled
+- email_session_reminder_1h_enabled
+- email_application_received_enabled
+- email_application_accepted_enabled
+- email_application_rejected_enabled
+- email_application_cancelled_enabled
+- email_waiting_list_enabled
+- email_platform_updates_enabled
+
+Important account emails are not controlled by these settings:
+
+- Email verification.
+- Password reset.
+- Security/account emails.
+- Admin/legal account notices.
+
+Session and application notifications still create internal notifications even when the matching external email is disabled.
+
+Session notifications and emails
+--------------------------------
+
+The first session notification class handles:
+
+- Session scheduled.
+- Student added to session.
+- Session cancelled.
+- Session completed.
+- No-show marked.
+- Student cancelled participation.
+
+Meeting URLs are only shown to allowed recipients:
+
+- The teacher.
+- Enrolled/accepted students for scheduled session notifications.
+
+Dashboard and navigation updates
+--------------------------------
+
+The user dashboard now includes cards for:
+
+- My availability.
+- My sessions.
+- Teacher sessions.
+- Notification preferences.
+
+The user menu and authenticated sidebar now include links for:
+
+- My availability.
+- My sessions.
+- Teacher sessions.
+- Notification preferences.
+
+Demo session data
+-----------------
+
+After running:
+
+- php artisan migrate:fresh --seed
+
+The current local demo database contains:
+
+- 59 users.
+- 37 student profiles.
+- 32 teacher profiles.
+- 50 teaching offers.
+- 100 applications.
+- 64 teacher availability blocks.
+- 12 availability exceptions.
+- 20 class sessions.
+- 26 session attendees.
+- 59 notification preference records.
+- 15 incidents.
+
+The required demo users are still present:
+
+- admin@example.com / password
+- user@example.com / password
+
+Run migrations and seeders
+--------------------------
+
+For a clean local demo database:
+
+- php artisan migrate:fresh --seed
+
+For an existing local database:
+
+- php artisan migrate --seed
+
+What remains pending after this scheduling task
+-----------------------------------------------
+
+The following items remain intentionally pending:
+
+- Real calendar UI with month/week views.
+- Advanced timezone conversion UI.
+- Reminder emails 24h and 1h before sessions.
+- Review system after completed sessions.
+- Badges and reputation.
+- No-show penalty logic.
+- Session rescheduling.
+- Calendar export/integration.
+- Calendar invitations.
+- Optional Jitsi integration.
+- Full map visualization.
+- Full searchable audit log UI.

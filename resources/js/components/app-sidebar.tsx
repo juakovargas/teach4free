@@ -1,6 +1,9 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
     BookOpenCheck,
+    BellRing,
+    CalendarClock,
+    CalendarDays,
     FileText,
     Inbox,
     Languages,
@@ -56,14 +59,34 @@ export function AppSidebar() {
             icon: FileText,
         },
         {
+            title: 'navigation.my_availability',
+            href: '/teacher/availability',
+            icon: CalendarClock,
+        },
+        {
             title: 'navigation.my_applications',
             href: '/my-applications',
             icon: Inbox,
         },
         {
+            title: 'navigation.my_sessions',
+            href: '/my-sessions',
+            icon: CalendarDays,
+        },
+        {
             title: 'navigation.requests_to_my_offers',
             href: '/teacher/applications',
             icon: Presentation,
+        },
+        {
+            title: 'navigation.teacher_sessions',
+            href: '/teacher/sessions',
+            icon: CalendarDays,
+        },
+        {
+            title: 'navigation.notification_preferences',
+            href: '/profile/notification-preferences',
+            icon: BellRing,
         },
     ];
 

@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\ImpersonationController as AdminImpersonationCont
 use App\Http\Controllers\Admin\IncidentController as AdminIncidentController;
 use App\Http\Controllers\Admin\LanguageController as AdminLanguageController;
 use App\Http\Controllers\Admin\PlaceholderController as AdminPlaceholderController;
+use App\Http\Controllers\Admin\SessionController as AdminSessionController;
 use App\Http\Controllers\Admin\TeachingCategoryController as AdminTeachingCategoryController;
 use App\Http\Controllers\Admin\TeachingOfferApplicationController as AdminTeachingOfferApplicationController;
 use App\Http\Controllers\Admin\TeachingOfferController as AdminTeachingOfferController;
@@ -14,15 +15,20 @@ use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\MySessionController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\NotificationPreferenceController;
 use App\Http\Controllers\ProfilePreferencesController;
 use App\Http\Controllers\PublicOfferController;
 use App\Http\Controllers\StudentApplicationController;
 use App\Http\Controllers\StudentProfileController;
 use App\Http\Controllers\SupportReportController;
 use App\Http\Controllers\TeacherApplicationController;
+use App\Http\Controllers\TeacherApplicationSessionController;
+use App\Http\Controllers\TeacherAvailabilityController;
 use App\Http\Controllers\TeacherOfferController;
 use App\Http\Controllers\TeacherProfileController;
+use App\Http\Controllers\TeacherSessionController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
@@ -48,6 +54,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('my-applications', [StudentApplicationController::class, 'index'])->name('my-applications.index');
     Route::patch('my-applications/{application}/cancel', [StudentApplicationController::class, 'cancel'])->name('my-applications.cancel');
+    Route::get('my-sessions', [MySessionController::class, 'index'])->name('my-sessions.index');
+    Route::patch('my-sessions/{session}/cancel', [MySessionController::class, 'cancel'])->name('my-sessions.cancel');
 
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::patch('notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
@@ -58,6 +66,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('profile/preferences', [ProfilePreferencesController::class, 'update'])->name('profile.preferences.update');
     Route::post('profile/preferences/avatar', [ProfilePreferencesController::class, 'updateAvatar'])->name('profile.preferences.avatar.update');
     Route::delete('profile/preferences/avatar', [ProfilePreferencesController::class, 'destroyAvatar'])->name('profile.preferences.avatar.destroy');
+    Route::get('profile/notification-preferences', [NotificationPreferenceController::class, 'edit'])->name('profile.notification-preferences.edit');
+    Route::put('profile/notification-preferences', [NotificationPreferenceController::class, 'update'])->name('profile.notification-preferences.update');
 
     Route::get('profile/student', [StudentProfileController::class, 'edit'])->name('profile.student.edit');
     Route::put('profile/student', [StudentProfileController::class, 'update'])->name('profile.student.update');
@@ -68,10 +78,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('profile/teacher/pause', [TeacherProfileController::class, 'pause'])->name('profile.teacher.pause');
 
     Route::prefix('teacher')->name('teacher.')->group(function () {
+        Route::get('availability', [TeacherAvailabilityController::class, 'index'])->name('availability.index');
+        Route::post('availability', [TeacherAvailabilityController::class, 'store'])->name('availability.store');
+        Route::patch('availability/{availability}', [TeacherAvailabilityController::class, 'update'])->name('availability.update');
+        Route::delete('availability/{availability}', [TeacherAvailabilityController::class, 'destroy'])->name('availability.destroy');
+        Route::post('availability/exceptions', [TeacherAvailabilityController::class, 'storeException'])->name('availability.exceptions.store');
+        Route::patch('availability/exceptions/{exception}', [TeacherAvailabilityController::class, 'updateException'])->name('availability.exceptions.update');
+        Route::delete('availability/exceptions/{exception}', [TeacherAvailabilityController::class, 'destroyException'])->name('availability.exceptions.destroy');
         Route::get('applications', [TeacherApplicationController::class, 'index'])->name('applications.index');
         Route::patch('applications/{application}/accept', [TeacherApplicationController::class, 'accept'])->name('applications.accept');
         Route::patch('applications/{application}/reject', [TeacherApplicationController::class, 'reject'])->name('applications.reject');
         Route::patch('applications/{application}/cancel', [TeacherApplicationController::class, 'cancel'])->name('applications.cancel');
+        Route::post('applications/{application}/schedule-session', [TeacherApplicationSessionController::class, 'store'])->name('applications.schedule-session');
+        Route::get('sessions', [TeacherSessionController::class, 'index'])->name('sessions.index');
+        Route::patch('sessions/{session}/complete', [TeacherSessionController::class, 'complete'])->name('sessions.complete');
+        Route::patch('sessions/{session}/cancel', [TeacherSessionController::class, 'cancel'])->name('sessions.cancel');
+        Route::patch('sessions/{session}/no-show', [TeacherSessionController::class, 'noShow'])->name('sessions.no-show');
         Route::resource('offers', TeacherOfferController::class)
             ->except(['show', 'destroy'])
             ->parameters(['offers' => 'offer']);
@@ -108,6 +130,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('teaching-offers/{offer}', [AdminTeachingOfferController::class, 'show'])->name('teaching-offers.show');
             Route::patch('teaching-offers/{offer}/toggle-active', [AdminTeachingOfferController::class, 'toggleActive'])->name('teaching-offers.toggle-active');
             Route::get('applications', [AdminTeachingOfferApplicationController::class, 'index'])->name('applications.index');
+            Route::get('sessions', [AdminSessionController::class, 'index'])->name('sessions.index');
             Route::get('{section}', AdminPlaceholderController::class)->name('placeholder');
         });
     });

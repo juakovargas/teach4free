@@ -172,6 +172,14 @@ class TeachingOffer extends Model
         return $this->hasMany(TeachingOfferApplication::class);
     }
 
+    /**
+     * @return HasMany<ClassSession, $this>
+     */
+    public function sessions(): HasMany
+    {
+        return $this->hasMany(ClassSession::class);
+    }
+
     public function acceptedApplicationsCount(): int
     {
         return $this->applications()

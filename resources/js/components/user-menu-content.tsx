@@ -1,6 +1,8 @@
 import { Link, router } from '@inertiajs/react';
 import {
     BookOpenCheck,
+    CalendarClock,
+    CalendarDays,
     FileText,
     Inbox,
     Languages,
@@ -91,6 +93,17 @@ export function UserMenuContent({ user }: Props) {
                 <DropdownMenuItem asChild>
                     <Link
                         className="block w-full cursor-pointer"
+                        href="/my-sessions"
+                        prefetch
+                        onClick={cleanup}
+                    >
+                        <CalendarDays className="mr-2" />
+                        {t('navigation.my_sessions')}
+                    </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                    <Link
+                        className="block w-full cursor-pointer"
                         href="/teacher/offers"
                         prefetch
                         onClick={cleanup}
@@ -102,12 +115,45 @@ export function UserMenuContent({ user }: Props) {
                 <DropdownMenuItem asChild>
                     <Link
                         className="block w-full cursor-pointer"
+                        href="/teacher/availability"
+                        prefetch
+                        onClick={cleanup}
+                    >
+                        <CalendarClock className="mr-2" />
+                        {t('navigation.my_availability')}
+                    </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                    <Link
+                        className="block w-full cursor-pointer"
                         href="/teacher/applications"
                         prefetch
                         onClick={cleanup}
                     >
                         <Presentation className="mr-2" />
                         {t('navigation.requests_to_my_offers')}
+                    </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                    <Link
+                        className="block w-full cursor-pointer"
+                        href="/teacher/sessions"
+                        prefetch
+                        onClick={cleanup}
+                    >
+                        <CalendarDays className="mr-2" />
+                        {t('navigation.teacher_sessions')}
+                    </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                    <Link
+                        className="block w-full cursor-pointer"
+                        href="/profile/notification-preferences"
+                        prefetch
+                        onClick={cleanup}
+                    >
+                        <Settings className="mr-2" />
+                        {t('navigation.notification_preferences')}
                     </Link>
                 </DropdownMenuItem>
                 {user.role === 'admin' && (

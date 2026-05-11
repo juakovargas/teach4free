@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Models\TeachingOffer;
 use App\Models\TeachingOfferApplication;
+use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -50,9 +51,17 @@ class TeachingOfferApplicationNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return in_array($this->event, self::MAIL_EVENTS, true)
-            ? ['database', 'mail']
-            : ['database'];
+        $channels = ['database'];
+
+        if (
+            $notifiable instanceof User
+            && in_array($this->event, self::MAIL_EVENTS, true)
+            && $notifiable->wantsEmailNotification($this->preferenceField())
+        ) {
+            $channels[] = 'mail';
+        }
+
+        return $channels;
     }
 
     /**
@@ -120,6 +129,20 @@ class TeachingOfferApplicationNotification extends Notification
         }
 
         return route('my-applications.index');
+    }
+
+    private function preferenceField(): string
+    {
+        return match ($this->event) {
+            self::EVENT_STUDENT_APPLIED => 'email_application_received_enabled',
+            self::EVENT_APPLICATION_ACCEPTED,
+            self::EVENT_WAITING_LIST_PROMOTED => 'email_application_accepted_enabled',
+            self::EVENT_APPLICATION_REJECTED => 'email_application_rejected_enabled',
+            self::EVENT_APPLICATION_CANCELLED,
+            self::EVENT_APPLICATION_CANCELLED_BY_TEACHER => 'email_application_cancelled_enabled',
+            self::EVENT_JOINED_WAITING_LIST => 'email_waiting_list_enabled',
+            default => 'email_platform_updates_enabled',
+        };
     }
 
     private function meetingUrlFor(TeachingOffer $offer): ?string

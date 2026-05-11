@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ClassSessionAttendee;
 use App\Models\Language;
 use App\Models\TeachingCategory;
 use App\Models\TeachingOffer;
@@ -84,9 +85,16 @@ class PublicOfferController extends Controller
 
         $offer->load([
             'user:id,name,email,avatar_path,avatar_url,bio',
+            'user.teacherAvailabilities' => fn ($query) => $query->where('is_active', true)->orderBy('day_of_week')->orderBy('starts_at'),
             'category:id,name,slug,color',
             'subject:id,name,slug',
             'languages:id,code,name,native_name',
+            'sessions' => fn ($query) => $query
+                ->withCount(['attendees as enrolled_attendees_count' => fn ($query) => $query->where('status', ClassSessionAttendee::STATUS_ENROLLED)])
+                ->where('status', 'scheduled')
+                ->where('starts_at', '>=', now())
+                ->orderBy('starts_at')
+                ->limit(5),
         ]);
 
         $currentApplication = null;
@@ -113,6 +121,25 @@ class PublicOfferController extends Controller
             'currentApplication' => $currentApplication?->only(['id', 'status']),
             'isOwnOffer' => $isOwnOffer,
             'visibleMeetingUrl' => $this->visibleMeetingUrl($offer, $currentApplication),
+            'teacherAvailability' => [
+                'timezone' => $offer->user->teacherAvailabilities->first()?->timezone ?? $offer->timezone,
+                'weekly' => $offer->user->teacherAvailabilities->map(fn ($availability): array => [
+                    'day_of_week' => $availability->day_of_week,
+                    'starts_at' => substr((string) $availability->starts_at, 0, 5),
+                    'ends_at' => substr((string) $availability->ends_at, 0, 5),
+                    'timezone' => $availability->timezone,
+                ]),
+            ],
+            'upcomingSessions' => $offer->sessions->map(fn ($session): array => [
+                'id' => $session->id,
+                'title' => $session->title,
+                'starts_at' => $session->starts_at,
+                'ends_at' => $session->ends_at,
+                'timezone' => $session->timezone,
+                'capacity' => $session->capacity,
+                'enrolled_attendees_count' => $session->enrolled_attendees_count,
+                'status' => $session->status,
+            ]),
         ]);
     }
 

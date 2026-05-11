@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ClassSession;
 use App\Models\Incident;
 use App\Models\Language;
 use App\Models\StudentProfile;
@@ -23,6 +24,7 @@ class AdminDashboardController extends Controller
         $lastWeek = now()->subDays(7);
         $hasIncidents = Schema::hasTable('incidents');
         $hasNotifications = Schema::hasTable('notifications');
+        $hasSessions = Schema::hasTable('class_sessions');
         $countryRows = User::query()
             ->whereNotNull('country_code')
             ->selectRaw('country_code, count(*) as users_count')
@@ -65,6 +67,14 @@ class AdminDashboardController extends Controller
                 'internal_notifications_sent' => $hasNotifications ? DB::table('notifications')->count() : 0,
                 'google_users' => User::query()->whereNotNull('google_id')->count(),
                 'suspended_offers' => TeachingOffer::query()->where('is_active', false)->count(),
+                'scheduled_sessions' => $hasSessions ? ClassSession::query()->where('status', ClassSession::STATUS_SCHEDULED)->count() : 0,
+                'completed_sessions' => $hasSessions ? ClassSession::query()->where('status', ClassSession::STATUS_COMPLETED)->count() : 0,
+                'cancelled_sessions' => $hasSessions ? ClassSession::query()->where('status', ClassSession::STATUS_CANCELLED)->count() : 0,
+                'no_show_sessions' => $hasSessions ? ClassSession::query()->where('status', ClassSession::STATUS_NO_SHOW)->count() : 0,
+                'upcoming_sessions_this_week' => $hasSessions ? ClassSession::query()
+                    ->where('status', ClassSession::STATUS_SCHEDULED)
+                    ->whereBetween('starts_at', [now(), now()->addWeek()])
+                    ->count() : 0,
                 'reports' => $hasIncidents ? Incident::query()->count() : 0,
                 'reviews' => 0,
             ],

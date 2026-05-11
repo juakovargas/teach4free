@@ -1,6 +1,8 @@
 import { Head, Link } from '@inertiajs/react';
 import {
     BookOpenCheck,
+    CalendarClock,
+    CalendarDays,
     FileText,
     Globe2,
     Inbox,
@@ -18,6 +20,9 @@ type Summary = {
     timezone: string;
     language_count: number;
     teaching_offers_count: number;
+    teacher_availability_count: number;
+    upcoming_student_sessions_count: number;
+    upcoming_teacher_sessions_count: number;
     pending_applications_count: number;
     accepted_applications_count: number;
     waitlisted_applications_count: number;
@@ -84,6 +89,15 @@ export default function Dashboard({ summary }: Props) {
             icon: FileText,
         },
         {
+            title: t('dashboard.my_availability'),
+            body: t('dashboard.my_availability_body'),
+            status: t('dashboard.availability_blocks_count', {
+                count: summary.teacher_availability_count,
+            }),
+            href: '/teacher/availability',
+            icon: CalendarClock,
+        },
+        {
             title: t('dashboard.my_applications'),
             body: t('dashboard.my_applications_body', {
                 pending: summary.pending_applications_count,
@@ -97,6 +111,24 @@ export default function Dashboard({ summary }: Props) {
             icon: Inbox,
         },
         {
+            title: t('dashboard.my_sessions'),
+            body: t('dashboard.my_sessions_body'),
+            status: t('dashboard.upcoming_sessions_count', {
+                count: summary.upcoming_student_sessions_count,
+            }),
+            href: '/my-sessions',
+            icon: CalendarDays,
+        },
+        {
+            title: t('dashboard.teacher_sessions'),
+            body: t('dashboard.teacher_sessions_body'),
+            status: t('dashboard.upcoming_sessions_count', {
+                count: summary.upcoming_teacher_sessions_count,
+            }),
+            href: '/teacher/sessions',
+            icon: CalendarDays,
+        },
+        {
             title: t('dashboard.requests_to_my_offers'),
             body: t('dashboard.requests_to_my_offers_body'),
             status: t('dashboard.requests_to_my_offers_count', {
@@ -104,6 +136,13 @@ export default function Dashboard({ summary }: Props) {
             }),
             href: '/teacher/applications',
             icon: Inbox,
+        },
+        {
+            title: t('dashboard.notification_preferences'),
+            body: t('dashboard.notification_preferences_body'),
+            status: t('dashboard.external_email_controls'),
+            href: '/profile/notification-preferences',
+            icon: Settings2,
         },
         {
             title: t('dashboard.notifications'),

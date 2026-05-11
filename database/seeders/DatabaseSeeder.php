@@ -2,9 +2,13 @@
 
 namespace Database\Seeders;
 
+use App\Models\ClassSession;
+use App\Models\ClassSessionAttendee;
 use App\Models\Incident;
 use App\Models\Language;
 use App\Models\StudentProfile;
+use App\Models\TeacherAvailability;
+use App\Models\TeacherAvailabilityException;
 use App\Models\TeacherProfile;
 use App\Models\TeachingCategory;
 use App\Models\TeachingOffer;
@@ -12,6 +16,7 @@ use App\Models\TeachingOfferApplication;
 use App\Models\TeachingSubject;
 use App\Models\User;
 use App\Models\UserLanguage;
+use App\Models\UserNotificationPreference;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -236,6 +241,69 @@ class DatabaseSeeder extends Seeder
             }
         }
 
+        foreach ($allLearners->merge($allTeachers)->push($admin)->unique('id')->values() as $index => $user) {
+            UserNotificationPreference::updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'email_session_scheduled_enabled' => true,
+                    'email_session_cancelled_enabled' => true,
+                    'email_session_completed_enabled' => true,
+                    'email_session_reminder_24h_enabled' => true,
+                    'email_session_reminder_1h_enabled' => true,
+                    'email_application_received_enabled' => true,
+                    'email_application_accepted_enabled' => true,
+                    'email_application_rejected_enabled' => true,
+                    'email_application_cancelled_enabled' => true,
+                    'email_waiting_list_enabled' => true,
+                    'email_platform_updates_enabled' => $index % 5 === 0,
+                ],
+            );
+        }
+
+        foreach ($allTeachers as $index => $teacher) {
+            $teacherProfile = $teacherProfiles[$teacher->id];
+            $firstDay = ($index % 5) + 1;
+            $secondDay = (($index + 2) % 5) + 1;
+
+            foreach ([[$firstDay, '17:00', '19:00'], [$secondDay, '10:00', '12:00']] as [$day, $startsAt, $endsAt]) {
+                TeacherAvailability::updateOrCreate(
+                    [
+                        'user_id' => $teacher->id,
+                        'day_of_week' => $day,
+                        'starts_at' => $startsAt,
+                    ],
+                    [
+                        'teacher_profile_id' => $teacherProfile->id,
+                        'ends_at' => $endsAt,
+                        'timezone' => $teacher->timezone ?? 'Europe/Madrid',
+                        'default_duration_minutes' => $teacherProfile->default_session_duration_minutes,
+                        'default_capacity' => $teacherProfile->max_students_per_session,
+                        'is_active' => true,
+                        'notes' => 'Demo weekly availability block.',
+                    ],
+                );
+            }
+
+            if ($index < 12) {
+                TeacherAvailabilityException::updateOrCreate(
+                    [
+                        'user_id' => $teacher->id,
+                        'date' => now()->addDays($index + 3)->toDateString(),
+                        'type' => $index % 2 === 0
+                            ? TeacherAvailabilityException::TYPE_UNAVAILABLE
+                            : TeacherAvailabilityException::TYPE_EXTRA_AVAILABLE,
+                    ],
+                    [
+                        'teacher_profile_id' => $teacherProfile->id,
+                        'starts_at' => $index % 2 === 0 ? null : '16:00',
+                        'ends_at' => $index % 2 === 0 ? null : '18:00',
+                        'reason' => $index % 2 === 0 ? 'Demo unavailable day.' : 'Demo extra teaching window.',
+                        'is_full_day' => $index % 2 === 0,
+                    ],
+                );
+            }
+        }
+
         $categories = collect([
             ['name' => 'Programming', 'slug' => 'programming', 'description' => 'Free software, web and coding help.', 'color' => '#0f766e', 'icon' => 'code', 'sort_order' => 1],
             ['name' => 'Languages', 'slug' => 'languages', 'description' => 'Conversation practice and language support.', 'color' => '#2563eb', 'icon' => 'languages', 'sort_order' => 2],
@@ -373,6 +441,8 @@ class DatabaseSeeder extends Seeder
                     [
                         'teacher_user_id' => $offer->user_id,
                         'preferred_language_id' => $offer->languages()->first()?->id ?? $languages['en']->id,
+                        'preferred_starts_at' => now()->addDays(($offerIndex % 14) + 1)->setTime(17 + $slot, 0),
+                        'preferred_timezone' => $student->timezone ?? 'Europe/Madrid',
                         'status' => $status,
                         'message' => 'I would like to join this free demo learning session.',
                         'availability_note' => ['Evenings work best.', 'Weekend preferred.', 'Flexible this month.'][$slot],
@@ -386,6 +456,88 @@ class DatabaseSeeder extends Seeder
                         'completed_at' => null,
                     ],
                 );
+            }
+        }
+
+        $sessionStatuses = [
+            ClassSession::STATUS_SCHEDULED,
+            ClassSession::STATUS_COMPLETED,
+            ClassSession::STATUS_CANCELLED,
+            ClassSession::STATUS_NO_SHOW,
+        ];
+
+        $sessionApplications = TeachingOfferApplication::query()
+            ->whereIn('teaching_offer_id', $offers->pluck('id'))
+            ->where('status', TeachingOfferApplication::STATUS_ACCEPTED)
+            ->with(['offer', 'student'])
+            ->limit(28)
+            ->get();
+
+        foreach ($sessionApplications as $index => $application) {
+            $status = $sessionStatuses[$index % count($sessionStatuses)];
+            $startsAt = $status === ClassSession::STATUS_SCHEDULED
+                ? now()->addDays(($index % 14) + 1)->setTime(17 + ($index % 3), 0)
+                : now()->subDays(($index % 20) + 1)->setTime(17 + ($index % 3), 0);
+            $endsAt = (clone $startsAt)->addMinutes($application->offer->duration_minutes);
+
+            $session = ClassSession::updateOrCreate(
+                ['application_id' => $application->id],
+                [
+                    'teaching_offer_id' => $application->teaching_offer_id,
+                    'teacher_user_id' => $application->teacher_user_id,
+                    'title' => $application->offer->title,
+                    'description' => 'Demo class session generated from an accepted application.',
+                    'starts_at' => $startsAt,
+                    'ends_at' => $endsAt,
+                    'timezone' => $application->preferred_timezone ?? $application->offer->timezone,
+                    'capacity' => $application->offer->max_students ?? 6,
+                    'meeting_tool' => $application->offer->meeting_tool,
+                    'meeting_url' => $application->offer->meeting_url,
+                    'status' => $status,
+                    'cancellation_reason' => $status === ClassSession::STATUS_CANCELLED ? 'Demo cancellation reason.' : null,
+                    'completed_at' => $status === ClassSession::STATUS_COMPLETED ? now()->subDays($index % 5) : null,
+                    'cancelled_at' => $status === ClassSession::STATUS_CANCELLED ? now()->subDays($index % 5) : null,
+                    'no_show_marked_at' => $status === ClassSession::STATUS_NO_SHOW ? now()->subDays($index % 5) : null,
+                ],
+            );
+
+            $attendeeStatus = match ($status) {
+                ClassSession::STATUS_COMPLETED => ClassSessionAttendee::STATUS_ATTENDED,
+                ClassSession::STATUS_CANCELLED => ClassSessionAttendee::STATUS_CANCELLED,
+                ClassSession::STATUS_NO_SHOW => ClassSessionAttendee::STATUS_NO_SHOW,
+                default => ClassSessionAttendee::STATUS_ENROLLED,
+            };
+
+            ClassSessionAttendee::updateOrCreate(
+                [
+                    'class_session_id' => $session->id,
+                    'user_id' => $application->student_user_id,
+                ],
+                [
+                    'application_id' => $application->id,
+                    'status' => $attendeeStatus,
+                    'joined_at' => $application->accepted_at ?? now(),
+                    'cancelled_at' => $attendeeStatus === ClassSessionAttendee::STATUS_CANCELLED ? $session->cancelled_at : null,
+                    'no_show_at' => $attendeeStatus === ClassSessionAttendee::STATUS_NO_SHOW ? $session->no_show_marked_at : null,
+                ],
+            );
+
+            if ($application->offer->session_type !== TeachingOffer::SESSION_PRIVATE_REQUEST && $status === ClassSession::STATUS_SCHEDULED) {
+                foreach ($allLearners->reject(fn (User $learner): bool => $learner->id === $application->student_user_id)->take(2) as $extraLearner) {
+                    ClassSessionAttendee::updateOrCreate(
+                        [
+                            'class_session_id' => $session->id,
+                            'user_id' => $extraLearner->id,
+                        ],
+                        [
+                            'application_id' => null,
+                            'status' => ClassSessionAttendee::STATUS_ENROLLED,
+                            'joined_at' => now()->subDays($index % 3),
+                            'cancelled_at' => null,
+                            'no_show_at' => null,
+                        ],
+                    );
+                }
             }
         }
 

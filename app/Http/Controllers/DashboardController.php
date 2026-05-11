@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ClassSession;
+use App\Models\ClassSessionAttendee;
 use App\Models\TeachingOfferApplication;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -22,6 +24,17 @@ class DashboardController extends Controller
                 'timezone' => $user->timezone ?? 'Europe/Madrid',
                 'language_count' => $user->user_languages_count,
                 'teaching_offers_count' => $user->teachingOffers()->count(),
+                'teacher_availability_count' => $user->teacherAvailabilities()->where('is_active', true)->count(),
+                'upcoming_student_sessions_count' => $user->sessionAttendances()
+                    ->where('status', ClassSessionAttendee::STATUS_ENROLLED)
+                    ->whereHas('session', fn ($query) => $query
+                        ->where('status', ClassSession::STATUS_SCHEDULED)
+                        ->where('starts_at', '>=', now()))
+                    ->count(),
+                'upcoming_teacher_sessions_count' => $user->taughtSessions()
+                    ->where('status', ClassSession::STATUS_SCHEDULED)
+                    ->where('starts_at', '>=', now())
+                    ->count(),
                 'pending_applications_count' => $user->learningApplications()
                     ->where('status', TeachingOfferApplication::STATUS_PENDING)
                     ->count(),

@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ClassSession;
+use App\Models\ClassSessionAttendee;
 use App\Models\TeachingOffer;
 use App\Models\TeachingOfferApplication;
+use App\Notifications\ClassSessionNotification;
 use App\Services\TeachingOfferApplicationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -32,6 +36,8 @@ class StudentApplicationController extends Controller
                 'status' => $application->status,
                 'message' => $application->message,
                 'availability_note' => $application->availability_note,
+                'preferred_starts_at' => $application->preferred_starts_at,
+                'preferred_timezone' => $application->preferred_timezone,
                 'teacher_response' => $application->teacher_response,
                 'requested_at' => $application->requested_at,
                 'accepted_at' => $application->accepted_at,
@@ -69,7 +75,12 @@ class StudentApplicationController extends Controller
             'message' => ['nullable', 'string', 'max:2000'],
             'availability_note' => ['nullable', 'string', 'max:2000'],
             'preferred_language_id' => ['nullable', 'integer', Rule::in($languageIds)],
+            'preferred_starts_at' => ['nullable', 'date', 'after:now'],
+            'preferred_timezone' => ['nullable', 'string', 'timezone'],
+            'class_session_id' => ['nullable', 'integer', 'exists:class_sessions,id'],
         ]);
+
+        $data['preferred_timezone'] ??= $request->user()->timezone ?? 'Europe/Madrid';
 
         if (count($languageIds) > 1 && empty($data['preferred_language_id'])) {
             return back()->withErrors([
@@ -77,7 +88,13 @@ class StudentApplicationController extends Controller
             ])->withInput();
         }
 
+        $session = $this->requestedSession($request, $offer, $data['class_session_id'] ?? null);
+
         $application = $service->apply($offer, $request->user(), $data);
+
+        if ($session && $application->status === TeachingOfferApplication::STATUS_ACCEPTED) {
+            $this->enrollInSession($session, $application, $request);
+        }
 
         return redirect()
             ->route('my-applications.index')
@@ -107,5 +124,82 @@ class StudentApplicationController extends Controller
         }
 
         return $application->offer->meeting_url;
+    }
+
+    private function requestedSession(Request $request, TeachingOffer $offer, ?int $sessionId): ?ClassSession
+    {
+        $hasScheduledSessions = $offer->sessions()
+            ->where('status', ClassSession::STATUS_SCHEDULED)
+            ->where('starts_at', '>=', now())
+            ->exists();
+
+        if ($offer->session_type === TeachingOffer::SESSION_OPEN_PUBLIC && $hasScheduledSessions && ! $sessionId) {
+            throw ValidationException::withMessages([
+                'class_session_id' => __('ui.applications.session_required'),
+            ]);
+        }
+
+        if (! $sessionId) {
+            return null;
+        }
+
+        $session = ClassSession::query()
+            ->whereKey($sessionId)
+            ->where('teaching_offer_id', $offer->id)
+            ->where('status', ClassSession::STATUS_SCHEDULED)
+            ->where('starts_at', '>=', now())
+            ->first();
+
+        if (! $session) {
+            throw ValidationException::withMessages([
+                'class_session_id' => __('ui.applications.session_not_available_error'),
+            ]);
+        }
+
+        if ($session->attendees()->where('user_id', $request->user()->id)->exists()) {
+            throw ValidationException::withMessages([
+                'class_session_id' => __('ui.applications.already_enrolled_session'),
+            ]);
+        }
+
+        if ($session->attendees()->where('status', ClassSessionAttendee::STATUS_ENROLLED)->count() >= $session->capacity) {
+            throw ValidationException::withMessages([
+                'class_session_id' => __('ui.applications.session_full_error'),
+            ]);
+        }
+
+        return $session;
+    }
+
+    private function enrollInSession(ClassSession $session, TeachingOfferApplication $application, Request $request): void
+    {
+        $enrolledCount = $session->attendees()
+            ->where('status', ClassSessionAttendee::STATUS_ENROLLED)
+            ->count();
+
+        if ($enrolledCount >= $session->capacity) {
+            throw ValidationException::withMessages([
+                'class_session_id' => __('ui.applications.session_full_error'),
+            ]);
+        }
+
+        if ($session->attendees()->where('user_id', $request->user()->id)->exists()) {
+            throw ValidationException::withMessages([
+                'class_session_id' => __('ui.applications.already_enrolled_session'),
+            ]);
+        }
+
+        ClassSessionAttendee::create([
+            'class_session_id' => $session->id,
+            'user_id' => $request->user()->id,
+            'application_id' => $application->id,
+            'status' => ClassSessionAttendee::STATUS_ENROLLED,
+            'joined_at' => now(),
+        ]);
+
+        $request->user()->notify(new ClassSessionNotification(
+            $session,
+            ClassSessionNotification::EVENT_STUDENT_ADDED,
+        ));
     }
 }

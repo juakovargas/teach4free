@@ -918,3 +918,84 @@ Manual verification checklist:
 16. Open /offers and confirm many demo offers exist.
 
 17. Confirm public search looks populated.
+
+Teacher availability, sessions and notification preferences - 2026-05-11
+-------------------------------------------------------------------------
+
+Automated PHPUnit tests were not run in this task.
+
+Reason:
+
+- The task focused on implementing migrations, routes, controllers, Inertia pages, notifications, email preference checks and demo data.
+- Existing full test coverage was not extended in this pass.
+
+Commands executed:
+
+- php -l lang/en/ui.php; php -l lang/es/ui.php; php -l lang/fr/ui.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l on new/changed session, availability, notification preference controllers, models, notifications and the seeder.
+- Result: Passed. No PHP syntax errors.
+
+- php artisan route:list --path=teacher --no-interaction
+- Result: Passed. Teacher availability, application scheduling and teacher session routes are registered.
+
+- php artisan route:list --path=my-sessions --no-interaction
+- Result: Passed. Student session routes are registered.
+
+- php artisan route:list --path=admin/sessions --no-interaction
+- Result: Passed. Admin sessions route is registered.
+
+- php artisan route:list --path=profile/notification-preferences --no-interaction
+- Result: Passed. Notification preference routes are registered.
+
+- npm run types:check
+- Result: Passed. TypeScript reported no errors.
+
+- npm run lint:check
+- Result: Passed. ESLint reported no errors.
+
+- composer lint:check
+- Initial result: Failed. Pint reported ordered imports, spacing and one unused import in newly touched PHP files.
+
+- composer lint
+- Result: Passed. Pint fixed the reported PHP style issues.
+
+- composer lint:check
+- Result: Passed. Pint reported no required changes.
+
+- php artisan migrate --pretend --no-interaction
+- Result: Passed. Laravel generated SQL for notification preferences, teacher availability, exceptions, preferred application time fields, class sessions and session attendees.
+
+- php artisan migrate:fresh --seed --no-interaction
+- Result: Passed. Database was rebuilt and seeded successfully.
+
+- php -r count check after seeding
+- Result: Passed. users=59, teachers=32, students=37, offers=50, applications=100, availabilities=64, exceptions=12, sessions=20, attendees=26, preferences=59, incidents=15. admin@example.com and user@example.com exist.
+
+- npm run build
+- Result: Passed. Vite production build completed. Vite printed plugin timing warnings, but the build succeeded.
+
+- npm run format:check
+- Result: Failed. Prettier reported existing formatting differences across many resources files. This was not auto-fixed because it would rewrite a broad set of unrelated frontend files.
+
+Manual verification checklist:
+
+1. Run php artisan migrate:fresh --seed.
+2. Login as teacher1@example.com / password.
+3. Open /teacher/availability.
+4. Add a weekly availability block and confirm it appears.
+5. Try adding an overlapping block on the same day and confirm validation blocks it.
+6. Add an unavailable or extra_available exception and confirm it appears.
+7. Open /offers and inspect an offer detail page.
+8. Confirm teacher availability and upcoming sessions are shown.
+9. Apply to a private or group offer with preferred date/time and timezone.
+10. Login as the teacher for that offer and open /teacher/applications.
+11. Schedule a session from the application and confirm the student is notified.
+12. Open /my-sessions as the student and confirm the scheduled session appears.
+13. Open /teacher/sessions as the teacher and mark a session completed, cancelled and no-show in separate demo records.
+14. Open /admin/sessions as admin@example.com and confirm all sessions are visible with filters.
+15. Open /profile/notification-preferences and disable session scheduled emails.
+16. Schedule another session and confirm internal notifications still exist.
+17. Re-enable the email preference and repeat the scheduling flow if mail logging is configured.
+18. Confirm verification and password reset emails are not controlled by these preferences.

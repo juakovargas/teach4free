@@ -49,6 +49,8 @@ class TeachingOfferApplicationService
             'student_user_id' => $student->id,
             'teacher_user_id' => $offer->user_id,
             'preferred_language_id' => $data['preferred_language_id'] ?? null,
+            'preferred_starts_at' => $data['preferred_starts_at'] ?? null,
+            'preferred_timezone' => $data['preferred_timezone'] ?? $student->timezone ?? 'Europe/Madrid',
             'status' => $status,
             'message' => $data['message'] ?? null,
             'availability_note' => $data['availability_note'] ?? null,

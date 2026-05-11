@@ -1,10 +1,14 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { CheckCircle2, Inbox, XCircle } from 'lucide-react';
+import { CalendarPlus, CheckCircle2, Inbox, XCircle } from 'lucide-react';
 import type { MouseEvent } from 'react';
+import type { ReactNode } from 'react';
 import { ContextualHelp } from '@/components/contextual-help';
+import InputError from '@/components/input-error';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useInitials } from '@/hooks/use-initials';
 import { useTranslation } from '@/hooks/use-translation';
@@ -14,6 +18,8 @@ type Application = {
     status: string;
     message: string | null;
     availability_note: string | null;
+    preferred_starts_at: string | null;
+    preferred_timezone: string | null;
     teacher_response: string | null;
     requested_at: string | null;
     preferred_language: { name: string } | null;
@@ -23,6 +29,16 @@ type Application = {
         slug: string;
         session_type: string;
         max_students: number | null;
+        duration_minutes: number;
+        meeting_tool: string;
+        meeting_url: string | null;
+        timezone: string;
+        teacher_profile?: {
+            default_session_duration_minutes: number;
+            max_students_per_session: number;
+            meeting_tool: string;
+            meeting_url: string | null;
+        } | null;
         category: { name: string; color: string | null };
         subject: { name: string } | null;
         languages: { code: string; name: string }[];
@@ -85,6 +101,15 @@ function ApplicationCard({ application }: { application: Application }) {
     const { data, setData, patch, processing, errors } = useForm({
         teacher_response: application.teacher_response ?? '',
     });
+    const scheduleForm = useForm({
+        starts_at: toDateTimeLocal(application.preferred_starts_at),
+        duration_minutes: String(application.offer.duration_minutes || application.offer.teacher_profile?.default_session_duration_minutes || 60),
+        timezone: application.preferred_timezone ?? application.offer.timezone ?? 'Europe/Madrid',
+        capacity: String(application.offer.max_students ?? application.offer.teacher_profile?.max_students_per_session ?? 1),
+        meeting_tool: application.offer.meeting_tool ?? application.offer.teacher_profile?.meeting_tool ?? 'not_decided',
+        meeting_url: application.offer.meeting_url ?? application.offer.teacher_profile?.meeting_url ?? '',
+        teacher_response: application.teacher_response ?? '',
+    });
 
     const submit = (event: MouseEvent<HTMLButtonElement>, action: 'accept' | 'reject' | 'cancel') => {
         event.preventDefault();
@@ -95,6 +120,7 @@ function ApplicationCard({ application }: { application: Application }) {
 
     const actionable = ['pending', 'waitlisted'].includes(application.status);
     const cancellable = ['pending', 'waitlisted', 'accepted'].includes(application.status);
+    const scheduleable = ['pending', 'waitlisted', 'accepted'].includes(application.status);
 
     return (
         <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
@@ -127,6 +153,14 @@ function ApplicationCard({ application }: { application: Application }) {
                     )}
                     {application.availability_note && (
                         <p className="rounded-lg bg-slate-50 p-3 text-sm text-muted-foreground dark:bg-slate-950">{application.availability_note}</p>
+                    )}
+                    {application.preferred_starts_at && (
+                        <p className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-950 dark:bg-emerald-950/30 dark:text-emerald-100">
+                            {t('teacher_applications.preferred_time', {
+                                time: new Date(application.preferred_starts_at).toLocaleString(),
+                                timezone: application.preferred_timezone ?? application.offer.timezone,
+                            })}
+                        </p>
                     )}
                 </div>
 
@@ -162,8 +196,79 @@ function ApplicationCard({ application }: { application: Application }) {
                     </div>
                 </form>
             </div>
+            {scheduleable && (
+                <form
+                    className="mt-5 grid gap-4 rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950"
+                    onSubmit={(event) => {
+                        event.preventDefault();
+                        scheduleForm.post(`/teacher/applications/${application.id}/schedule-session`, { preserveScroll: true });
+                    }}
+                >
+                    <div className="flex items-center gap-2">
+                        <CalendarPlus className="size-5 text-emerald-700 dark:text-emerald-300" />
+                        <h3 className="font-semibold">{t('teacher_applications.schedule_session')}</h3>
+                    </div>
+                    <div className="grid gap-3 md:grid-cols-3">
+                        <Field label={t('sessions.starts_at')} error={scheduleForm.errors.starts_at}>
+                            <Input type="datetime-local" value={scheduleForm.data.starts_at} onChange={(event) => scheduleForm.setData('starts_at', event.target.value)} />
+                        </Field>
+                        <Field label={t('sessions.duration_minutes')} error={scheduleForm.errors.duration_minutes}>
+                            <Input type="number" min="15" max="240" value={scheduleForm.data.duration_minutes} onChange={(event) => scheduleForm.setData('duration_minutes', event.target.value)} />
+                        </Field>
+                        <Field label={t('sessions.timezone')} error={scheduleForm.errors.timezone}>
+                            <Input value={scheduleForm.data.timezone} onChange={(event) => scheduleForm.setData('timezone', event.target.value)} />
+                        </Field>
+                        <Field label={t('sessions.capacity')} error={scheduleForm.errors.capacity}>
+                            <Input type="number" min="1" max="500" value={scheduleForm.data.capacity} onChange={(event) => scheduleForm.setData('capacity', event.target.value)} />
+                        </Field>
+                        <Field label={t('sessions.meeting_tool')} error={scheduleForm.errors.meeting_tool}>
+                            <select className="h-10 rounded-md border border-input bg-background px-3 text-sm" value={scheduleForm.data.meeting_tool} onChange={(event) => scheduleForm.setData('meeting_tool', event.target.value)}>
+                                {['not_decided', 'google_meet', 'jitsi', 'zoom', 'discord', 'microsoft_teams', 'custom'].map((tool) => (
+                                    <option key={tool} value={tool}>{t(`meeting_tools.${tool}`)}</option>
+                                ))}
+                            </select>
+                        </Field>
+                        <Field label={t('sessions.meeting_url')} error={scheduleForm.errors.meeting_url}>
+                            <Input value={scheduleForm.data.meeting_url} onChange={(event) => scheduleForm.setData('meeting_url', event.target.value)} />
+                        </Field>
+                    </div>
+                    <Field label={t('teacher_applications.response_placeholder')} error={scheduleForm.errors.teacher_response}>
+                        <Textarea value={scheduleForm.data.teacher_response} onChange={(event) => scheduleForm.setData('teacher_response', event.target.value)} />
+                    </Field>
+                    <Button className="w-fit" disabled={scheduleForm.processing}>
+                        <CalendarPlus />
+                        {t('teacher_applications.schedule_session')}
+                    </Button>
+                </form>
+            )}
         </article>
     );
+}
+
+function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
+    return (
+        <div className="grid gap-2">
+            <Label>{label}</Label>
+            {children}
+            <InputError message={error} />
+        </div>
+    );
+}
+
+function toDateTimeLocal(value: string | null): string {
+    if (!value) {
+        return '';
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return '';
+    }
+
+    date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+
+    return date.toISOString().slice(0, 16);
 }
 
 TeacherApplications.layout = {

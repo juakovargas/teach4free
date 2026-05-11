@@ -2,6 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import {
     Ban,
     Bell,
+    CalendarClock,
     FileText,
     Flag,
     Globe2,
@@ -43,6 +44,11 @@ type Stats = {
     internal_notifications_sent: number;
     google_users: number;
     suspended_offers: number;
+    scheduled_sessions: number;
+    completed_sessions: number;
+    cancelled_sessions: number;
+    no_show_sessions: number;
+    upcoming_sessions_this_week: number;
     reports: number;
     reviews: number;
 };
@@ -139,7 +145,17 @@ export default function AdminDashboard({ stats, growth, activity, world }: Props
         { label: t('admin.categories'), value: stats.categories, icon: FileText, href: '/admin/categories' },
         { label: t('admin.subjects'), value: stats.subjects, icon: FileText, href: '/admin/subjects' },
         { label: t('admin.google_users'), value: stats.google_users, icon: Users, href: '/admin/users?profile=google' },
+        { label: t('admin.scheduled_sessions'), value: stats.scheduled_sessions, icon: CalendarClock, href: '/admin/sessions?status=scheduled' },
+        { label: t('admin.upcoming_sessions_this_week'), value: stats.upcoming_sessions_this_week, icon: CalendarClock, href: '/admin/sessions?status=scheduled' },
         { label: t('admin.internal_notifications_sent'), value: stats.internal_notifications_sent, icon: Bell, href: '/admin/notifications' },
+    ];
+
+    const sessionCards = [
+        { label: t('admin.scheduled_sessions'), value: stats.scheduled_sessions, icon: CalendarClock, href: '/admin/sessions?status=scheduled' },
+        { label: t('admin.completed_sessions'), value: stats.completed_sessions, icon: CalendarClock, href: '/admin/sessions?status=completed' },
+        { label: t('admin.cancelled_sessions'), value: stats.cancelled_sessions, icon: CalendarClock, href: '/admin/sessions?status=cancelled' },
+        { label: t('admin.no_show_sessions'), value: stats.no_show_sessions, icon: CalendarClock, href: '/admin/sessions?status=no_show' },
+        { label: t('admin.upcoming_sessions_this_week'), value: stats.upcoming_sessions_this_week, icon: CalendarClock, href: '/admin/sessions?status=scheduled' },
     ];
 
     const growthCards = [
@@ -180,6 +196,7 @@ export default function AdminDashboard({ stats, growth, activity, world }: Props
                 <DashboardSection title={t('admin.platform_health')} items={platformHealth} />
                 <DashboardSection title={t('admin.moderation')} items={moderation} />
                 <DashboardSection title={t('admin.operations')} items={operations} />
+                <DashboardSection title={t('admin.sessions')} items={sessionCards} />
 
                 <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
                     <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

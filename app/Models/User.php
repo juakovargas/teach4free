@@ -72,6 +72,21 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->isBanned() || $this->isBlocked();
     }
 
+    public function wantsEmailNotification(string $field): bool
+    {
+        if (! in_array($field, UserNotificationPreference::EMAIL_FIELDS, true)) {
+            return false;
+        }
+
+        $preference = $this->notificationPreference;
+
+        if (! $preference) {
+            return $field !== 'email_platform_updates_enabled';
+        }
+
+        return (bool) $preference->{$field};
+    }
+
     public function getAvatarAttribute(): ?string
     {
         if ($this->avatar_path) {
@@ -122,11 +137,35 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * @return HasOne<UserNotificationPreference, $this>
+     */
+    public function notificationPreference(): HasOne
+    {
+        return $this->hasOne(UserNotificationPreference::class);
+    }
+
+    /**
      * @return HasMany<TeachingOffer, $this>
      */
     public function teachingOffers(): HasMany
     {
         return $this->hasMany(TeachingOffer::class);
+    }
+
+    /**
+     * @return HasMany<TeacherAvailability, $this>
+     */
+    public function teacherAvailabilities(): HasMany
+    {
+        return $this->hasMany(TeacherAvailability::class);
+    }
+
+    /**
+     * @return HasMany<TeacherAvailabilityException, $this>
+     */
+    public function teacherAvailabilityExceptions(): HasMany
+    {
+        return $this->hasMany(TeacherAvailabilityException::class);
     }
 
     /**
@@ -143,6 +182,22 @@ class User extends Authenticatable implements MustVerifyEmail
     public function teachingApplications(): HasMany
     {
         return $this->hasMany(TeachingOfferApplication::class, 'teacher_user_id');
+    }
+
+    /**
+     * @return HasMany<ClassSession, $this>
+     */
+    public function taughtSessions(): HasMany
+    {
+        return $this->hasMany(ClassSession::class, 'teacher_user_id');
+    }
+
+    /**
+     * @return HasMany<ClassSessionAttendee, $this>
+     */
+    public function sessionAttendances(): HasMany
+    {
+        return $this->hasMany(ClassSessionAttendee::class);
     }
 
     /**

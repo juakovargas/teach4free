@@ -5,12 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'teaching_offer_id',
     'student_user_id',
     'teacher_user_id',
     'preferred_language_id',
+    'preferred_starts_at',
+    'preferred_timezone',
     'status',
     'message',
     'availability_note',
@@ -94,12 +97,21 @@ class TeachingOfferApplication extends Model
     }
 
     /**
+     * @return HasMany<ClassSession, $this>
+     */
+    public function sessions(): HasMany
+    {
+        return $this->hasMany(ClassSession::class, 'application_id');
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
     {
         return [
             'requested_at' => 'datetime',
+            'preferred_starts_at' => 'datetime',
             'accepted_at' => 'datetime',
             'rejected_at' => 'datetime',
             'cancelled_at' => 'datetime',
