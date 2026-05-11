@@ -1,0 +1,94 @@
+<?php
+
+use App\Http\Controllers\Admin\PlaceholderController as AdminPlaceholderController;
+use App\Http\Controllers\Admin\TeachingCategoryController as AdminTeachingCategoryController;
+use App\Http\Controllers\Admin\TeachingOfferApplicationController as AdminTeachingOfferApplicationController;
+use App\Http\Controllers\Admin\TeachingOfferController as AdminTeachingOfferController;
+use App\Http\Controllers\Admin\TeachingSubjectController as AdminTeachingSubjectController;
+use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\Auth\GoogleAuthController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ProfilePreferencesController;
+use App\Http\Controllers\PublicOfferController;
+use App\Http\Controllers\StudentApplicationController;
+use App\Http\Controllers\StudentProfileController;
+use App\Http\Controllers\TeacherApplicationController;
+use App\Http\Controllers\TeacherOfferController;
+use App\Http\Controllers\TeacherProfileController;
+use Illuminate\Support\Facades\Route;
+use Laravel\Fortify\Features;
+
+Route::inertia('/', 'welcome', [
+    'canRegister' => Features::enabled(Features::registration()),
+])->name('home');
+
+Route::inertia('/about', 'about')->name('about');
+
+Route::get('/offers', [PublicOfferController::class, 'index'])->name('offers.index');
+Route::get('/offers/{offer}', [PublicOfferController::class, 'show'])->name('offers.show');
+
+Route::post('/locale', [LocaleController::class, 'update'])->name('locale.update');
+
+Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect'])->name('auth.google.redirect');
+Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('dashboard', DashboardController::class)->name('dashboard');
+    Route::post('offers/{offer}/apply', [StudentApplicationController::class, 'store'])->name('offers.apply');
+
+    Route::get('my-applications', [StudentApplicationController::class, 'index'])->name('my-applications.index');
+    Route::patch('my-applications/{application}/cancel', [StudentApplicationController::class, 'cancel'])->name('my-applications.cancel');
+
+    Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::patch('notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
+    Route::patch('notifications/{notification}/read', [NotificationController::class, 'read'])->name('notifications.read');
+
+    Route::get('profile/preferences', [ProfilePreferencesController::class, 'edit'])->name('profile.preferences.edit');
+    Route::put('profile/preferences', [ProfilePreferencesController::class, 'update'])->name('profile.preferences.update');
+    Route::post('profile/preferences/avatar', [ProfilePreferencesController::class, 'updateAvatar'])->name('profile.preferences.avatar.update');
+    Route::delete('profile/preferences/avatar', [ProfilePreferencesController::class, 'destroyAvatar'])->name('profile.preferences.avatar.destroy');
+
+    Route::get('profile/student', [StudentProfileController::class, 'edit'])->name('profile.student.edit');
+    Route::put('profile/student', [StudentProfileController::class, 'update'])->name('profile.student.update');
+
+    Route::get('profile/teacher', [TeacherProfileController::class, 'edit'])->name('profile.teacher.edit');
+    Route::put('profile/teacher', [TeacherProfileController::class, 'update'])->name('profile.teacher.update');
+    Route::post('profile/teacher/activate', [TeacherProfileController::class, 'activate'])->name('profile.teacher.activate');
+    Route::post('profile/teacher/pause', [TeacherProfileController::class, 'pause'])->name('profile.teacher.pause');
+
+    Route::prefix('teacher')->name('teacher.')->group(function () {
+        Route::get('applications', [TeacherApplicationController::class, 'index'])->name('applications.index');
+        Route::patch('applications/{application}/accept', [TeacherApplicationController::class, 'accept'])->name('applications.accept');
+        Route::patch('applications/{application}/reject', [TeacherApplicationController::class, 'reject'])->name('applications.reject');
+        Route::patch('applications/{application}/cancel', [TeacherApplicationController::class, 'cancel'])->name('applications.cancel');
+        Route::resource('offers', TeacherOfferController::class)
+            ->except(['show', 'destroy'])
+            ->parameters(['offers' => 'offer']);
+        Route::get('offers/{offer}/applications', [TeacherApplicationController::class, 'offerIndex'])->name('offers.applications.index');
+        Route::post('offers/{offer}/publish', [TeacherOfferController::class, 'publish'])->name('offers.publish');
+        Route::post('offers/{offer}/unpublish', [TeacherOfferController::class, 'unpublish'])->name('offers.unpublish');
+        Route::post('offers/{offer}/pause-applications', [TeacherOfferController::class, 'pauseApplications'])->name('offers.pause-applications');
+        Route::post('offers/{offer}/resume-applications', [TeacherOfferController::class, 'resumeApplications'])->name('offers.resume-applications');
+    });
+
+    Route::middleware('admin')->group(function () {
+        Route::prefix('admin')->name('admin.')->group(function () {
+            Route::get('/', AdminDashboardController::class)->name('dashboard');
+            Route::resource('categories', AdminTeachingCategoryController::class)
+                ->except(['show'])
+                ->parameters(['categories' => 'category']);
+            Route::resource('subjects', AdminTeachingSubjectController::class)
+                ->except(['show'])
+                ->parameters(['subjects' => 'subject']);
+            Route::get('teaching-offers', [AdminTeachingOfferController::class, 'index'])->name('teaching-offers.index');
+            Route::get('teaching-offers/{offer}', [AdminTeachingOfferController::class, 'show'])->name('teaching-offers.show');
+            Route::patch('teaching-offers/{offer}/toggle-active', [AdminTeachingOfferController::class, 'toggleActive'])->name('teaching-offers.toggle-active');
+            Route::get('applications', [AdminTeachingOfferApplicationController::class, 'index'])->name('applications.index');
+            Route::get('{section}', AdminPlaceholderController::class)->name('placeholder');
+        });
+    });
+});
+
+require __DIR__.'/settings.php';

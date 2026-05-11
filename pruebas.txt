@@ -1,0 +1,581 @@
+Teach4Free - Manual Testing Notes
+=================================
+
+How to run tests manually
+-------------------------
+
+Install dependencies:
+
+- composer install
+- npm install
+
+Prepare the local environment:
+
+- copy .env.example .env
+- php artisan key:generate
+- Create a MySQL/MariaDB database named teach4free.
+- php artisan migrate --seed
+
+Useful checks:
+
+- php artisan test
+- composer run lint:check
+- npm run lint:check
+- npm run types:check
+- npm run build
+
+Run the application locally:
+
+- composer run dev
+
+Then open:
+
+- http://127.0.0.1:8000
+
+Test log - 2026-05-10
+---------------------
+
+Command:
+
+- php artisan test --filter='PublicPagesTest|DashboardTest|AdminDashboardTest|LocaleTest'
+
+Initial result:
+
+- Failed.
+- 8 tests executed.
+- 4 passed.
+- 4 failed.
+- Error: Vite manifest not found at public/build/manifest.json during Inertia page rendering.
+
+Fix applied:
+
+- Updated tests/TestCase.php to call withoutVite() during tests.
+
+Command:
+
+- php artisan test --filter='PublicPagesTest|DashboardTest|AdminDashboardTest|LocaleTest'
+
+Result:
+
+- Passed.
+- 8 tests executed.
+- 8 passed.
+- 14 assertions.
+
+Command:
+
+- npm install
+
+Result:
+
+- Passed.
+- 489 packages installed.
+- 0 vulnerabilities reported.
+
+Command:
+
+- npm run types:check
+
+Initial result:
+
+- Failed.
+- TypeScript reported auth.user could be null in resources/js/pages/settings/profile.tsx.
+
+Fix applied:
+
+- Narrowed the authenticated user into a local user constant after the null guard.
+
+Command:
+
+- npm run types:check
+
+Result:
+
+- Passed.
+
+Command:
+
+- composer run lint:check
+
+Initial result:
+
+- Failed.
+- Pint reported import ordering in bootstrap/app.php.
+
+Fix applied:
+
+- Reordered imports in bootstrap/app.php.
+
+Command:
+
+- composer run lint:check
+
+Result:
+
+- Passed.
+
+Command:
+
+- npm run lint:check
+
+Initial result:
+
+- Failed.
+- ESLint reported import ordering issues in five TypeScript/TSX files.
+
+Fix applied:
+
+- Reordered imports in the reported files.
+
+Command:
+
+- npm run lint:check
+
+Result:
+
+- Passed.
+
+Command:
+
+- npm run build
+
+Result:
+
+- Passed.
+- Vite production build completed.
+- Note: Vite printed plugin timing warnings, but the build succeeded.
+
+Command:
+
+- npm run lint:check
+
+Result:
+
+- Passed.
+- ESLint reported no errors.
+
+Command:
+
+- composer run lint:check
+
+Initial result:
+
+- Failed.
+- Pint reported ordered imports needed in routes/web.php.
+
+Fix applied:
+
+- Reordered the admin controller imports in routes/web.php.
+
+Command:
+
+- composer run lint:check
+
+Result:
+
+- Passed.
+
+Command:
+
+- php artisan test
+
+Result:
+
+- Passed.
+- 46 tests executed.
+- 46 passed.
+- 147 assertions.
+
+Additional local setup/verification
+-----------------------------------
+
+Command:
+
+- mysql -u root -e "CREATE DATABASE IF NOT EXISTS teach4free CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+Result:
+
+- Passed.
+
+Command:
+
+- php artisan migrate --seed
+
+Result:
+
+- Passed.
+- Initial migrations ran.
+- Development seed users were created.
+
+Command:
+
+- Invoke-WebRequest http://127.0.0.1:8000
+
+Result:
+
+- Passed.
+- HTTP status 200.
+
+Profile, language and Google login task - 2026-05-10
+----------------------------------------------------
+
+Command:
+
+- php artisan test --filter='ProfileSetupTest|AdminProfileCountsTest|GoogleAuthenticationTest'
+
+Result:
+
+- Passed.
+- 13 tests executed.
+- 13 passed.
+- 59 assertions.
+
+Command:
+
+- npm run types:check
+
+Result:
+
+- Passed.
+- TypeScript reported no errors.
+
+Command:
+
+- npm run lint:check
+
+Initial result:
+
+- Failed.
+- ESLint reported type-only import issues in:
+- resources/js/pages/profile/preferences.tsx
+- resources/js/pages/profile/student.tsx
+- resources/js/pages/profile/teacher.tsx
+
+Fix applied:
+
+- Ran npm run lint to apply the project's automatic ESLint fixes.
+
+Command:
+
+- composer run lint:check
+
+Initial result:
+
+- Failed.
+- Pint reported import ordering issues in:
+- app/Models/Language.php
+- app/Models/StudentProfile.php
+- app/Models/TeacherProfile.php
+- app/Models/UserLanguage.php
+
+Fix applied:
+
+- Ran composer run lint to apply the project's automatic Pint fixes.
+
+Command:
+
+- npm run lint:check
+
+Result:
+
+- Passed.
+
+Command:
+
+- composer run lint:check
+
+Result:
+
+- Passed.
+
+Command:
+
+- npm run build
+
+Result:
+
+- Passed.
+- Vite production build completed.
+- Note: Vite printed plugin timing warnings, but the build succeeded.
+
+Command:
+
+- php artisan test
+
+Result:
+
+- Passed.
+- 59 tests executed.
+- 59 passed.
+- 206 assertions.
+
+Command:
+
+- php artisan migrate --seed
+
+Result:
+
+- Passed.
+- The new profile, language and Google user field migrations ran.
+- The development seeder completed.
+
+Command:
+
+- Invoke-WebRequest http://127.0.0.1:8000
+- Invoke-WebRequest http://127.0.0.1:8000/about
+- Invoke-WebRequest http://127.0.0.1:8000/login
+
+Result:
+
+- Passed.
+- Each request returned HTTP status 200.
+
+First product block: avatars, admin catalog and teaching offers - 2026-05-10
+----------------------------------------------------------------------------
+
+Command:
+
+- php artisan route:list --path=offers
+- php artisan route:list --path=teacher/offers
+- php artisan route:list --path=admin
+
+Result:
+
+- Passed.
+- Public offer routes, teacher offer routes and admin routes were registered.
+
+Command:
+
+- php artisan test --filter='TeachingOffersTest|AdminCatalogTest|AvatarUploadTest'
+
+Result:
+
+- Passed.
+- 13 tests executed.
+- 13 passed.
+- 92 assertions.
+
+Command:
+
+- npm run types:check
+
+Result:
+
+- Passed.
+- TypeScript reported no errors.
+
+Command:
+
+- npm run lint:check
+
+Initial result:
+
+- Failed.
+- ESLint reported formatting/import ordering issues in the new React pages.
+- ESLint also reported one unused icon import in resources/js/pages/offers/index.tsx.
+
+Fix applied:
+
+- Ran npm run lint for automatic fixes.
+- Removed the unused GraduationCap import manually.
+
+Command:
+
+- composer run lint:check
+
+Initial result:
+
+- Failed.
+- Pint reported import/style issues in routes, controllers and the seeder.
+
+Fix applied:
+
+- Ran composer run lint to apply the project's automatic Pint fixes.
+
+Command:
+
+- npm run lint:check
+
+Result:
+
+- Passed.
+
+Command:
+
+- composer run lint:check
+
+Result:
+
+- Passed.
+
+Command:
+
+- npm run types:check
+
+Result:
+
+- Passed.
+
+Command:
+
+- php artisan migrate --seed
+
+Result:
+
+- Passed.
+- The avatar, teaching category, teaching subject, teaching offer and offer language migrations ran.
+- The development seeder completed and created demo catalog/offer data.
+
+Command:
+
+- php artisan test
+
+Result:
+
+- Passed.
+- 72 tests executed.
+- 72 passed.
+- 298 assertions.
+
+Command:
+
+- npm run build
+
+Result:
+
+- Passed.
+- Vite production build completed.
+- Note: Vite printed plugin timing warnings, but the build succeeded.
+
+Command:
+
+- Invoke-WebRequest http://127.0.0.1:8000/offers
+- Invoke-WebRequest "http://127.0.0.1:8000/offers?category=programming&language=en&level=beginner"
+- Invoke-WebRequest http://127.0.0.1:8000/offers/laravel-for-beginners
+
+Result:
+
+- Passed.
+- Each public request returned HTTP status 200.
+
+Command:
+
+- Invoke-WebRequest http://127.0.0.1:8000/teacher/offers -MaximumRedirection 0
+
+Result:
+
+- Passed.
+- Guest access returned HTTP status 302, redirecting to authentication as expected.
+
+Application flow and notification task
+======================================
+
+Manual test instructions
+------------------------
+
+Run backend tests manually with:
+
+- php artisan test
+
+Run frontend type checks manually with:
+
+- npm run types:check
+
+Run the frontend production build manually with:
+
+- npm run build
+
+Useful browser checks:
+
+- Register a new account and confirm that email verification is requested.
+- Log in as user@example.com / password.
+- Open /offers/laravel-for-beginners and apply from a verified non-owner account.
+- Open /teacher/applications as the teacher account to accept or reject requests.
+- Open /my-applications as the student account to view or cancel applications.
+- Open /notifications and confirm unread/read behavior.
+- Log in as admin@example.com / password and open /admin/applications.
+
+Test log
+--------
+
+Command:
+
+- php artisan route:list --except-vendor
+
+Result:
+
+- Passed.
+- Route list rendered successfully.
+- New routes for applications, teacher requests, notifications and admin applications were present.
+
+Command:
+
+- php artisan about --only=environment
+
+Result:
+
+- Passed.
+- Laravel environment information rendered successfully.
+
+Command:
+
+- php artisan test tests\Feature\TeachingOfferApplicationsTest.php
+
+Result:
+
+- Passed.
+- 13 tests executed.
+- 13 passed.
+- 85 assertions.
+
+Command:
+
+- php artisan test tests\Feature\Auth\RegistrationTest.php tests\Feature\Auth\EmailVerificationTest.php tests\Feature\Auth\VerificationNotificationTest.php tests\Feature\Auth\GoogleAuthenticationTest.php tests\Feature\TeachingOffersTest.php tests\Feature\DashboardTest.php tests\Feature\AdminDashboardTest.php tests\Feature\AdminProfileCountsTest.php
+
+Result:
+
+- Passed.
+- 26 tests executed.
+- 26 passed.
+- 117 assertions.
+
+Command:
+
+- npm run types:check
+
+Result:
+
+- Passed.
+- TypeScript reported no errors.
+
+Command:
+
+- npm run build
+
+Result:
+
+- Passed.
+- Vite production build completed.
+- Note: Vite printed plugin timing warnings, but the build succeeded.
+
+Command:
+
+- php artisan test
+
+Result:
+
+- Passed.
+- 85 tests executed.
+- 85 passed.
+- 385 assertions.
+
+Command:
+
+- php artisan test --filter=RegistrationTest
+
+Result:
+
+- Passed.
+- 2 tests executed.
+- 2 passed.
+- 6 assertions.

@@ -236,3 +236,1074 @@ Next step
 ---------
 
 Create the Laravel project base with authentication, multilingual structure, roles, layouts and the first dashboards.
+
+Application foundation created - 2026-05-10
+-------------------------------------------
+
+The Laravel application base has been created directly in the repository root, next to this documentation file.
+
+Selected stack:
+
+- Laravel 13.8
+- Laravel React Starter Kit
+- Laravel Fortify authentication
+- Inertia
+- React
+- TypeScript
+- Tailwind CSS
+- Vite
+- MySQL / MariaDB compatible migrations
+
+Authentication foundation
+-------------------------
+
+The application includes the authentication scaffolding provided by the Laravel React starter kit:
+
+- Register
+- Login
+- Logout
+- Forgot password / password reset
+- Email verification
+- Two-factor authentication support from the starter kit
+- Authenticated dashboard
+- Profile, security and appearance settings
+
+Initial pages
+-------------
+
+Public pages:
+
+- Home page
+- About page
+
+Authenticated pages:
+
+- User dashboard
+- Profile/settings pages from the starter kit
+
+Admin pages:
+
+- Admin dashboard
+
+Access rules:
+
+- Guests can view Home and About.
+- Logged-in users can view Dashboard.
+- Only admin users can view the Admin dashboard.
+
+Initial role decision
+---------------------
+
+The first role structure uses a simple string field on the users table:
+
+- role = admin
+- role = user
+
+This role is only for platform-level access, especially admin access.
+
+Student and teacher must not be hard exclusive roles. A normal user can later become a student, a teacher, or both through future profile/capability tables. The current role field must not be used to decide whether someone is a student or teacher.
+
+The users table is prepared with:
+
+- name
+- email
+- password
+- preferred_locale
+- role
+- timestamps
+
+Multilingual foundation
+-----------------------
+
+The application is multilingual from the beginning.
+
+Initial interface languages:
+
+- English
+- Spanish
+- French
+
+English is the default locale.
+
+Translation files are stored under:
+
+- lang/en/ui.php
+- lang/es/ui.php
+- lang/fr/ui.php
+
+Visible React interface texts use the shared translation structure through Inertia props and the frontend translation hook.
+
+Locale handling:
+
+- Supported locales are configured in config/app.php.
+- A SetLocale middleware applies the current locale.
+- Guests can switch language and the selected locale is stored in the session.
+- Authenticated users can switch language and the selected locale is persisted in users.preferred_locale.
+- A simple LanguageSelector component is available in public, auth and authenticated navigation areas.
+
+Layouts created
+---------------
+
+Initial layout structure:
+
+- Public layout for guest pages.
+- Authenticated app layout from the starter kit, adapted for Teach4Free navigation.
+- Admin-ready layout wrapper for admin pages.
+
+The default starter kit branding has been replaced with Teach4Free branding and the first UI is intentionally simple, modern and calm.
+
+Contextual help foundation
+--------------------------
+
+Contextual help currently uses a reusable React component:
+
+- ContextualHelp
+
+It has been added to:
+
+- Home
+- Dashboard
+- Admin dashboard
+
+For now, help content is translated and embedded in each page. In future tasks, contextual help should evolve into a page-keyed system that can be managed centrally, and possibly edited by admins, while still using translation files or a translation management layer.
+
+Development seed users
+----------------------
+
+The development seeder creates these local-only users:
+
+Admin:
+
+- email: admin@example.com
+- password: password
+
+Regular user:
+
+- email: user@example.com
+- password: password
+
+These credentials are only for local development and must not be used in production.
+
+Testing foundation
+------------------
+
+Initial feature tests have been added for:
+
+- Guest home page access.
+- Guest about page access.
+- Authentication scaffolding from the starter kit.
+- Authenticated dashboard access.
+- Non-admin denial for the admin dashboard.
+- Admin access to the admin dashboard.
+- Guest locale switching.
+- Authenticated locale switching with persistence to users.preferred_locale.
+
+Test execution details must be tracked in pruebas.txt.
+
+Pending work
+------------
+
+The following features are intentionally not built yet:
+
+- Teaching offers.
+- Categories and subjects.
+- Language filtering for future teaching offer search.
+- Availability calendar.
+- Student applications.
+- Waiting lists.
+- Reviews and ratings.
+- Badges and reputation details.
+- Reports and moderation workflows.
+- Admin management screens beyond the first real dashboard counts.
+- Public teacher pages.
+- Public class pages.
+- Chat.
+- Notifications.
+
+Future work should continue to respect the core product rule: Teach4Free must remain completely free, with no payments, credits, subscriptions, commissions, wallets, paid plans or monetization logic.
+
+Profile, language and Google login foundation - 2026-05-10
+----------------------------------------------------------
+
+This task added the first profile system needed before teaching offers and calendars are created.
+
+User preferences
+----------------
+
+Authenticated users now have a preferences page:
+
+- GET /profile/preferences
+- PUT /profile/preferences
+
+The page allows users to update:
+
+- Name.
+- Preferred interface language.
+- Timezone.
+- Short bio.
+- Public profile visibility.
+- Learning interests summary.
+- Teaching interests summary.
+
+The preferred locale supports the initial interface languages:
+
+- English: en
+- Spanish: es
+- French: fr
+
+The default timezone used by the new profile fields is Europe/Madrid.
+
+Language preferences
+--------------------
+
+A languages table has been added for active platform languages.
+
+Initial seeded languages:
+
+- en / English / English
+- es / Spanish / Español
+- fr / French / Français
+
+User language preferences are stored separately in user_languages, so a user can define which languages they understand, speak and can teach in.
+
+Supported language levels:
+
+- native
+- advanced
+- intermediate
+- basic
+
+Validation rule:
+
+- A user cannot teach in a language unless they can also speak it.
+
+The current UI automatically keeps "speaks" enabled when a user selects "can teach in".
+
+Student profile
+---------------
+
+A student profile table has been added.
+
+Authenticated users can edit their learning profile at:
+
+- GET /profile/student
+- PUT /profile/student
+
+The learning profile stores:
+
+- Learning goals.
+- Current level.
+- Preferred learning mode.
+- Availability notes.
+- Whether the user is active as a student.
+
+Supported current levels:
+
+- beginner
+- intermediate
+- advanced
+- mixed
+
+Supported learning modes:
+
+- one_to_one
+- small_group
+- open_group
+- mentoring
+- any
+
+Teacher profile activation
+--------------------------
+
+A teacher profile table has been added.
+
+Authenticated users can manage their teacher profile at:
+
+- GET /profile/teacher
+- PUT /profile/teacher
+- POST /profile/teacher/activate
+- POST /profile/teacher/pause
+
+The teacher profile stores:
+
+- Headline.
+- Teaching bio.
+- Experience summary.
+- Preferred teaching mode.
+- Maximum students per session.
+- Default session duration.
+- External meeting tool.
+- Optional meeting URL.
+- Whether the teacher is active.
+- Whether the teacher is accepting requests.
+- Whether the teacher is verified.
+- Activation and pause timestamps.
+
+A regular user can activate or pause their teacher profile. Student and teacher status remain independent from the platform role field.
+
+External meeting links
+----------------------
+
+Teach4Free does not provide internal video streaming yet.
+
+Teachers can select an external meeting tool and optionally provide a meeting URL. Supported meeting tools for now:
+
+- Google Meet
+- Jitsi
+- Zoom
+- Discord
+- Microsoft Teams
+- Custom
+- Not decided
+
+If the meeting tool is custom, a valid meeting URL is required.
+
+Google login
+------------
+
+Google login has been added using Laravel Socialite.
+
+Routes:
+
+- GET /auth/google/redirect
+- GET /auth/google/callback
+
+The feature is optional and safe:
+
+- The application still works with normal email/password authentication if Google credentials are missing.
+- If credentials are missing, users see a clean translated error instead of an application crash.
+- If a Google account email already exists, the Google ID is linked to that existing user.
+- If no user exists, a new normal user account is created with role = user.
+- Google login never creates admin users.
+- Google access tokens are not stored.
+
+Required Google environment variables:
+
+- GOOGLE_CLIENT_ID
+- GOOGLE_CLIENT_SECRET
+- GOOGLE_REDIRECT_URI
+
+The local default redirect URI is:
+
+- http://127.0.0.1:8000/auth/google/callback
+
+Dashboard updates
+-----------------
+
+The user dashboard now shows useful profile status cards:
+
+- Preferences.
+- Learning profile.
+- Teacher profile.
+- Languages.
+- Future teaching offers.
+- Future applications.
+
+The admin dashboard now shows real counts where available:
+
+- Total users.
+- Active students.
+- Active teachers.
+- Active languages.
+- Users with Google login configured.
+- Pending teacher verifications.
+
+Contextual help updates
+-----------------------
+
+Translated contextual help has been added or updated for:
+
+- Dashboard.
+- Preferences page.
+- Learning profile page.
+- Teacher profile page.
+- Login page.
+- Register page.
+
+For now, contextual help remains component-based and page-local. A later task can centralize help by page key and make it manageable from the admin area.
+
+Seeder updates
+--------------
+
+The development seeder keeps these local users:
+
+Admin:
+
+- email: admin@example.com
+- password: password
+
+Regular user:
+
+- email: user@example.com
+- password: password
+
+The seeder also creates:
+
+- English, Spanish and French languages.
+- An active student profile for user@example.com.
+- An inactive teacher profile for user@example.com, ready to activate from the UI.
+- Initial language preferences for user@example.com.
+
+Pending after this task
+-----------------------
+
+The following work remains intentionally pending:
+
+- Teaching offer creation and management.
+- Categories and subjects.
+- Teacher availability calendar.
+- Student applications.
+- Waiting lists.
+- Reviews, ratings, badges and reputation.
+- Public teacher pages.
+- Public class pages.
+- Admin CRUD screens for users, profiles, languages and reports.
+- Teacher verification workflow.
+- Notifications.
+- Chat.
+- Internal video streaming, if ever needed.
+
+First product block: avatars, admin catalog and teaching offers - 2026-05-10
+----------------------------------------------------------------------------
+
+This task added the first real product block for Teach4Free while keeping the platform completely free.
+
+No payments, credits, subscriptions, wallets, paid plans, commissions, monetization logic or premium visibility were added.
+
+User avatar and photo support
+-----------------------------
+
+Users now support:
+
+- Local uploaded profile photos stored on the public disk.
+- Existing Google avatar URLs.
+- Initials fallback when no photo exists.
+
+Display priority:
+
+1. Local uploaded avatar_path.
+2. Google avatar_url.
+3. Initials fallback.
+
+The profile preferences page now includes photo upload and local photo removal.
+
+Validation:
+
+- Uploaded avatar must be an image.
+- Maximum size is 2 MB.
+
+Local setup note:
+
+- Run php artisan storage:link when local uploaded photos need to be served through /storage.
+
+Header user menu
+----------------
+
+The authenticated header now groups these controls on the right:
+
+- Language selector.
+- User avatar/photo.
+- User name.
+- Dropdown menu.
+
+The user dropdown includes:
+
+- Preferences.
+- Learning profile.
+- Teacher profile.
+- Admin dashboard for admins only.
+- Settings.
+- Logout.
+
+The guest header keeps:
+
+- Language selector.
+- Login.
+- Register.
+- Public navigation including Find free classes.
+
+Admin dashboard and sidebar
+---------------------------
+
+The admin dashboard is now clearly separated from the normal user dashboard.
+
+It shows platform administration counts, not student or teacher personal cards:
+
+- Total users.
+- Active students.
+- Active teachers.
+- Teaching offers.
+- Active teaching offers.
+- Categories.
+- Subjects.
+- Languages.
+- Reports.
+- Reviews.
+- Google users.
+- Pending teacher verifications.
+
+An admin layout with a left sidebar has been added.
+
+Admin sidebar areas:
+
+- Admin dashboard.
+- Users.
+- Teachers.
+- Students.
+- Languages.
+- Categories.
+- Subjects.
+- Teaching offers.
+- Applications.
+- Sessions.
+- Reviews.
+- Reports.
+- Badges.
+- Content pages.
+- Translations.
+- Platform settings.
+
+Areas without full CRUD yet route to intentional admin placeholder pages instead of broken links.
+
+Categories
+----------
+
+Teaching categories are now stored in teaching_categories.
+
+Fields:
+
+- name
+- slug
+- description
+- color
+- icon
+- is_active
+- sort_order
+- timestamps
+
+Admin routes:
+
+- GET /admin/categories
+- GET /admin/categories/create
+- POST /admin/categories
+- GET /admin/categories/{category}/edit
+- PUT/PATCH /admin/categories/{category}
+- DELETE /admin/categories/{category}
+
+Delete currently deactivates the category to preserve existing data.
+
+Seeded categories:
+
+- Programming
+- Languages
+- Mathematics
+- Science
+- Music
+- Design
+- Business
+- Personal development
+
+Subjects
+--------
+
+Teaching subjects are now stored in teaching_subjects and belong to teaching categories.
+
+Fields:
+
+- teaching_category_id
+- name
+- slug
+- description
+- is_active
+- sort_order
+- timestamps
+
+Admin routes:
+
+- GET /admin/subjects
+- GET /admin/subjects/create
+- POST /admin/subjects
+- GET /admin/subjects/{subject}/edit
+- PUT/PATCH /admin/subjects/{subject}
+- DELETE /admin/subjects/{subject}
+
+Delete currently deactivates the subject to preserve existing data.
+
+Seeded subjects include:
+
+- Laravel
+- PHP
+- JavaScript
+- React
+- Python
+- Git
+- English conversation
+- Spanish conversation
+- French conversation
+- Basic mathematics
+- Algebra
+- UI design
+- Figma
+
+Teaching offers
+---------------
+
+Teaching offers are now stored in teaching_offers.
+
+A teaching offer is a free public announcement created by a teacher.
+
+Fields include:
+
+- user_id
+- teacher_profile_id
+- teaching_category_id
+- teaching_subject_id
+- title
+- slug
+- summary
+- description
+- level
+- teaching_mode
+- session_type
+- max_students
+- duration_minutes
+- meeting_tool
+- meeting_url
+- timezone
+- availability_summary
+- requirements
+- materials_summary
+- is_public
+- is_active
+- is_accepting_applications
+- published_at
+- timestamps
+
+Supported levels:
+
+- beginner
+- intermediate
+- advanced
+- mixed
+
+Supported teaching modes:
+
+- one_to_one
+- small_group
+- open_group
+- mentoring
+- any
+
+Supported session types:
+
+- private_request
+- scheduled_group
+- open_public
+
+Session type meaning:
+
+- private_request: the student will apply and the teacher will manually accept when application logic exists.
+- scheduled_group: a limited group class with a maximum number of seats.
+- open_public: an open free session using an external meeting link.
+
+Open public sessions and external tools
+---------------------------------------
+
+Teach4Free still does not provide internal video streaming.
+
+For now, "open public session" means a teacher can publish a free session that uses an external free meeting link, such as:
+
+- Google Meet
+- Jitsi
+- Zoom
+- Discord
+- Microsoft Teams
+- Custom link
+
+The meeting URL is required for open public sessions when a meeting tool is selected.
+
+Offer languages
+---------------
+
+Teaching offer languages are stored in teaching_offer_languages.
+
+Rules:
+
+- Published offers require at least one language.
+- Languages come from active languages.
+- Teacher offer forms only offer languages the teacher marked as teachable in profile preferences.
+- If no teaching languages are configured, the teacher offer page shows guidance and links to preferences.
+
+Teacher offer management
+------------------------
+
+Teacher-facing offer routes:
+
+- GET /teacher/offers
+- GET /teacher/offers/create
+- POST /teacher/offers
+- GET /teacher/offers/{offer}/edit
+- PUT/PATCH /teacher/offers/{offer}
+- POST /teacher/offers/{offer}/publish
+- POST /teacher/offers/{offer}/unpublish
+- POST /teacher/offers/{offer}/pause-applications
+- POST /teacher/offers/{offer}/resume-applications
+
+Rules:
+
+- Only authenticated users with an active teacher profile can create offers.
+- Teachers can manage only their own offers.
+- Users without an active teacher profile see guidance with a link to activate teaching.
+
+Public offer search
+-------------------
+
+Public routes:
+
+- GET /offers
+- GET /offers/{offer:slug}
+
+The public search page supports filters for:
+
+- Search text.
+- Category.
+- Subject.
+- Language.
+- Level.
+- Teaching mode.
+- Session type.
+- Availability text.
+- Only accepting applications.
+
+Public pages only show offers that are active, public and published.
+
+Public offer detail pages
+-------------------------
+
+Public offer detail pages show:
+
+- Title.
+- Summary.
+- Description.
+- Teacher name and avatar.
+- Category.
+- Subject.
+- Level.
+- Languages.
+- Teaching mode.
+- Session type.
+- Max students when applicable.
+- Duration.
+- Timezone.
+- Availability summary.
+- Requirements.
+- Materials summary.
+- Meeting tool name.
+- Real apply/join area with seat and waiting-list status.
+
+Student applications are implemented in the later application and notification block below.
+
+Admin teaching offer visibility
+-------------------------------
+
+Admin offer routes:
+
+- GET /admin/teaching-offers
+- GET /admin/teaching-offers/{offer:slug}
+- PATCH /admin/teaching-offers/{offer:slug}/toggle-active
+
+Admins can list all offers, view details and activate/deactivate offers.
+
+Seeder updates
+--------------
+
+The seeder still keeps:
+
+Admin:
+
+- email: admin@example.com
+- password: password
+
+Regular user:
+
+- email: user@example.com
+- password: password
+
+The regular user now has an active teacher profile in development data so demo teaching offers can be managed locally.
+
+Demo offers:
+
+1. Laravel for beginners.
+2. English conversation practice.
+3. Git basics for new developers.
+
+All demo offers are free.
+
+Contextual help updates
+-----------------------
+
+Contextual help has been added or updated for:
+
+- Public offers search.
+- Public offer detail.
+- Teacher offers list.
+- Teacher offer create/edit.
+- Admin dashboard.
+- Admin categories.
+- Admin subjects.
+- Admin teaching offers.
+- Admin placeholder pages.
+- Dashboard.
+- Preferences page with avatar upload.
+
+Pending after this product block
+--------------------------------
+
+The following work remains intentionally pending:
+
+- Teacher availability calendar.
+- Session scheduling.
+- Reviews.
+- Badges and reputation.
+- Reports and moderation workflows.
+- Internal chat.
+- Optional deeper Jitsi integration.
+- Advanced moderation.
+- Full admin CRUD for users, teachers, students, languages, reports, reviews, badges, content pages, translations and platform settings.
+
+Student applications and notifications block
+============================================
+
+This block adds the first real student-to-teacher application flow while keeping Teach4Free completely free.
+
+Email verification
+------------------
+
+Laravel native email verification is enabled for registered users.
+
+Rules:
+
+- Users created with normal registration must verify their email.
+- Verified-only routes include the dashboard, profile pages, teacher offer management, applications and notifications.
+- Google login still works. When Google returns a confirmed email, the local user is marked as verified.
+- Local development users seeded by the application are verified so they remain usable.
+
+Local mail should use:
+
+- MAIL_MAILER=log
+- MAIL_FROM_ADDRESS="hello@teach4free.test"
+- MAIL_FROM_NAME="Teach4Free"
+
+External email notifications
+----------------------------
+
+Laravel notifications are used for short external emails. They are synchronous for now and can later be moved to queues.
+
+Emails are sent when:
+
+- A student applies to an offer, notifying the teacher.
+- A teacher accepts an application, notifying the student.
+- A teacher rejects an application, notifying the student.
+- A student cancels an application, notifying the teacher.
+- A student joins a waiting list.
+- A waiting list status changes.
+
+Private or scheduled meeting URLs are only included after acceptance. Open public meeting links are also protected by the signup/application flow when applications are enabled.
+
+Internal notifications and header inbox
+---------------------------------------
+
+Database notifications are enabled through Laravel notification storage.
+
+Authenticated users now have a notification bell in the header showing:
+
+- Unread count.
+- Latest notifications.
+- Link to the full notifications page.
+
+Routes:
+
+- GET /notifications
+- PATCH /notifications/{notification}/read
+- PATCH /notifications/read-all
+
+Internal notifications are created for application, waiting list and admin offer deactivation events.
+
+Teaching offer applications
+---------------------------
+
+Applications are stored in teaching_offer_applications.
+
+Main fields:
+
+- teaching_offer_id
+- student_user_id
+- teacher_user_id
+- preferred_language_id
+- status
+- message
+- availability_note
+- teacher_response
+- requested_at
+- accepted_at
+- rejected_at
+- cancelled_at
+- completed_at
+
+Supported statuses:
+
+- pending
+- accepted
+- rejected
+- cancelled
+- waitlisted
+
+Rules:
+
+- Guests cannot apply.
+- Unverified users are sent to email verification before applying.
+- A user cannot apply to their own offer.
+- A user cannot create duplicate active applications for the same offer.
+- Active application statuses are pending, accepted and waitlisted.
+- A teacher can also apply to another teacher's offer as a student.
+- A learning profile is created or activated automatically when a verified user applies.
+
+Seat control and waiting list
+-----------------------------
+
+Teaching offers now support:
+
+- allow_waiting_list
+- waiting_list_limit
+
+Seat behavior:
+
+- Accepted applications count against max_students.
+- Scheduled group and private request applications start as pending when seats are available.
+- When accepted seats are full, new applications go to waitlisted if waiting lists are enabled and not full.
+- If waiting lists are disabled or full, the application is blocked.
+- Open public offers create accepted applications automatically while seats are available.
+- When an accepted application is cancelled, the first waitlisted user is promoted.
+
+Promotion behavior:
+
+- Private request and scheduled group waitlisted users are promoted to pending.
+- Open public waitlisted users are promoted to accepted.
+
+Teacher request management
+--------------------------
+
+Teacher-facing request routes:
+
+- GET /teacher/applications
+- GET /teacher/offers/{offer:slug}/applications
+- PATCH /teacher/applications/{application}/accept
+- PATCH /teacher/applications/{application}/reject
+- PATCH /teacher/applications/{application}/cancel
+
+Teachers can only manage applications for their own offers.
+
+The UI uses "Requests to my offers" instead of wording that implies a user is only a teacher.
+
+Student application dashboard
+-----------------------------
+
+Student-facing routes:
+
+- GET /my-applications
+- PATCH /my-applications/{application}/cancel
+
+The page shows:
+
+- Offer title.
+- Teacher name and avatar.
+- Application status.
+- Message sent.
+- Teacher response.
+- Requested and decision dates.
+- Meeting tool.
+- Meeting URL only when allowed.
+- Cancel action for active applications.
+
+The regular dashboard now shows real counts for:
+
+- Pending applications.
+- Accepted applications.
+- Waitlisted applications.
+- Requests to my offers.
+- Unread notifications.
+
+Admin application visibility
+----------------------------
+
+Admin route:
+
+- GET /admin/applications
+
+The admin page lists applications with offer, teacher, student, status and dates.
+
+The admin dashboard remains a platform administration page and does not show personal student/teacher cards.
+
+Flexible student and teacher identity
+-------------------------------------
+
+Student and teacher are not mutually exclusive roles.
+
+A user can:
+
+- Learn only.
+- Teach only.
+- Learn and teach.
+- Be an admin.
+
+The UI uses learning and teaching wording instead of exclusive role wording.
+
+Seeder updates
+--------------
+
+Existing local users remain:
+
+Admin:
+
+- email: admin@example.com
+- password: password
+
+Regular user:
+
+- email: user@example.com
+- password: password
+
+Additional demo users:
+
+Demo teacher learner:
+
+- email: teacher@example.com
+- password: password
+
+Demo student:
+
+- email: student@example.com
+- password: password
+
+Seeded application examples:
+
+- One pending application.
+- One accepted application.
+- One waitlisted application.
+
+Pending after this block
+------------------------
+
+The following work remains intentionally pending:
+
+- Advanced teacher availability calendar.
+- Real class/session scheduling.
+- Calendar invitations.
+- Review system after completed classes.
+- Badges and reputation.
+- Reports and moderation workflow.
+- Notification preferences.
+- Queued mail setup.
+- Rich internal messaging/chat.
+- Advanced open session handling.
+- Optional Jitsi integration.
