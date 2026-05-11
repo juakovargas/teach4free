@@ -38,6 +38,8 @@ type Profile = {
     name: string;
     preferred_locale: string;
     timezone: string;
+    country_code: string | null;
+    city: string | null;
     bio: string | null;
     is_public: boolean;
     learning_interests: string | null;
@@ -72,6 +74,8 @@ export default function Preferences({
     const { data, setData, put, processing, errors } =
         useForm<PreferencesForm>({
             ...profile,
+            country_code: profile.country_code ?? '',
+            city: profile.city ?? '',
             bio: profile.bio ?? '',
             learning_interests: profile.learning_interests ?? '',
             teaching_interests: profile.teaching_interests ?? '',
@@ -285,6 +289,38 @@ export default function Preferences({
                             </SelectContent>
                         </Select>
                         <InputError message={errors.timezone} />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="country_code">
+                            {t('profile_preferences.country_code')}
+                        </Label>
+                        <Input
+                            id="country_code"
+                            maxLength={2}
+                            value={data.country_code ?? ''}
+                            onChange={(event) =>
+                                setData(
+                                    'country_code',
+                                    event.target.value.toUpperCase(),
+                                )
+                            }
+                        />
+                        <InputError message={errors.country_code} />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="city">
+                            {t('profile_preferences.city')}
+                        </Label>
+                        <Input
+                            id="city"
+                            value={data.city ?? ''}
+                            onChange={(event) =>
+                                setData('city', event.target.value)
+                            }
+                        />
+                        <InputError message={errors.city} />
                     </div>
 
                     <div className="flex items-center gap-3 pt-8">

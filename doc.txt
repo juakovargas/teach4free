@@ -1526,3 +1526,384 @@ The preferences page now states the accepted formats and maximum size clearly:
 
 - JPG, PNG or WebP.
 - Maximum 2 MB.
+
+Professional admin area and demo data - 2026-05-11
+--------------------------------------------------
+
+This task created a clearer professional admin experience and richer local demo data.
+
+Teach4Free remains completely free. No payments, subscriptions, credits, wallets, commissions, paid plans, monetization logic or premium visibility were added.
+
+Admin/user area separation
+--------------------------
+
+Admins now land on the admin dashboard after login.
+
+Admin pages use a dedicated admin layout instead of the normal user sidebar layout. This keeps user/student/teacher dashboard items away from the primary admin experience.
+
+The admin account menu is intentionally small:
+
+- Preferences.
+- Admin dashboard.
+- Go to user dashboard.
+- Logout.
+
+The user dashboard still exists for admins who want to view the platform as a normal user, but it is a secondary route, not the admin landing experience.
+
+Admin dashboard
+---------------
+
+The admin dashboard is focused on platform administration and no longer centers normal user cards such as My learning, My teaching, My applications or profile activation.
+
+It now shows real platform counts where available:
+
+- Total users.
+- Active students.
+- Active teachers.
+- Mixed users with both learning and teaching profiles.
+- Published teaching offers.
+- Open public sessions.
+- Pending applications.
+- Waitlisted applications.
+- Open incidents.
+- Incidents pending review.
+- Banned users.
+- Blocked users.
+- Active languages.
+- Categories.
+- Subjects.
+- Internal notifications sent.
+- Users with Google login.
+- Suspended offers.
+
+Dashboard sections:
+
+- Platform health.
+- Moderation.
+- Operations.
+- Growth over the last 7 days.
+- Latest users, offers, applications and incidents.
+- World distribution summary with located users and top countries.
+
+Admin sidebar structure
+-----------------------
+
+The admin sidebar is grouped into professional sections:
+
+- Overview: Dashboard, World map, Analytics.
+- User management: Users, Teachers, Students, Banned users, Verification requests.
+- Learning content: Languages, Translations, Categories, Subjects, Teaching offers, Open sessions.
+- Operations: Applications, Waiting lists, Sessions, Calendar overview, Notifications, Email log.
+- Moderation: Incidents, Reports, Reviews moderation, Blocked content, Audit log.
+- Gamification: Badges, Reputation rules.
+- Content and settings: Content pages, Help pages, Platform settings, Legal pages.
+
+Implemented admin pages route to real screens. Not-yet-built areas route to intentional admin placeholder pages with contextual help, current status and future tasks.
+
+User administration
+-------------------
+
+New admin user management routes:
+
+- GET /admin/users
+- GET /admin/users/{user}
+- PATCH /admin/users/{user}
+- POST /admin/users/{user}/ban
+- POST /admin/users/{user}/unban
+- POST /admin/users/{user}/block
+- POST /admin/users/{user}/unblock
+- POST /admin/users/{user}/impersonate
+
+The users list supports filters for:
+
+- Search text.
+- Role.
+- Active, banned or blocked state.
+- Email verification state.
+- Learning profile, teaching profile, both profiles or Google login.
+
+The user detail page shows:
+
+- Basic account information.
+- Avatar and account badges.
+- Preferred locale, timezone, country code and city.
+- Email verification state.
+- Learning and teaching profile context.
+- Languages.
+- Teaching offers.
+- Related incidents.
+- Admin actions.
+
+Safety rules:
+
+- Admins cannot ban or block themselves.
+- Admin-to-admin restriction actions are blocked.
+- Admin-to-admin impersonation is blocked.
+- Restricted users cannot be impersonated.
+
+Banning and blocking users
+--------------------------
+
+The users table now supports:
+
+- banned_at.
+- banned_reason.
+- blocked_at.
+- blocked_reason.
+- last_login_at.
+- last_login_ip.
+- country_code.
+- city.
+
+Banned or blocked users are logged out and redirected to login with a translated restricted-account message when they try to continue using the app.
+
+Login tracking updates last login date and IP for normal Fortify login and Google login.
+
+Impersonation
+-------------
+
+Admins can impersonate a normal unrestricted user from the admin user detail page.
+
+Routes:
+
+- POST /admin/users/{user}/impersonate
+- POST /admin/impersonation/stop
+
+Rules:
+
+- Only admins can start impersonation.
+- Admins cannot impersonate themselves.
+- Admins cannot impersonate another admin.
+- Restricted users cannot be impersonated.
+- A visible banner appears while impersonating.
+- Stopping impersonation returns to the admin account.
+
+Impersonation start and stop events are written to audit_logs.
+
+Incidents and reports
+---------------------
+
+A basic incident/report system has been added.
+
+New table:
+
+- incidents
+
+Supported incident types:
+
+- user
+- teaching_offer
+- application
+- session
+- technical
+- abuse
+- spam
+- other
+
+Supported statuses:
+
+- open
+- in_review
+- resolved
+- dismissed
+
+Supported priorities:
+
+- low
+- normal
+- high
+- urgent
+
+Public/user-facing report route:
+
+- GET /support/report
+- POST /support/report
+
+Offer detail pages include a "Report this offer" action that preselects the teaching_offer report type.
+
+Admin incident routes:
+
+- GET /admin/incidents
+- GET /admin/incidents/{incident}
+- PATCH /admin/incidents/{incident}
+
+Admins can filter incidents, inspect context, update status and priority, and add admin notes.
+
+Language administration
+-----------------------
+
+Admin language routes:
+
+- GET /admin/languages
+- GET /admin/languages/create
+- POST /admin/languages
+- GET /admin/languages/{language}/edit
+- PATCH /admin/languages/{language}
+
+Language fields:
+
+- code
+- name
+- native_name
+- is_active
+- sort_order
+
+Translations remain file-based in:
+
+- lang/en/ui.php
+- lang/es/ui.php
+- lang/fr/ui.php
+
+A future Portuguese translation can be added by creating the language record and adding/translating a clear ui.php language file group.
+
+World map / location statistics
+-------------------------------
+
+Admin route:
+
+- GET /admin/world-map
+
+The world map page is currently a professional aggregate overview rather than a heavy map dependency.
+
+It uses:
+
+- users.country_code
+- users.city
+
+Users can maintain optional country code and city values from profile preferences. Admins can also adjust them from user administration when helping with demo or support data.
+
+Privacy rule:
+
+- No precise address or geolocation is stored.
+- The admin view shows aggregate country-level counts.
+- Public pages do not expose exact user location.
+
+The page shows:
+
+- Total located users.
+- Number of countries.
+- Teachers by country.
+- Students by country.
+- Country share percentage.
+
+Audit log foundation
+--------------------
+
+A simple audit_logs table was added.
+
+It records selected sensitive admin events:
+
+- User updates.
+- Ban/unban.
+- Block/unblock.
+- Incident updates.
+- Impersonation start/stop.
+
+A full searchable audit log UI remains pending.
+
+Rich demo data
+--------------
+
+The development seeder now creates a richer local dataset while preserving:
+
+Admin:
+
+- email: admin@example.com
+- password: password
+
+Regular user:
+
+- email: user@example.com
+- password: password
+
+Additional demo data:
+
+- At least 25 student-oriented users.
+- At least 20 teacher-oriented users.
+- At least 10 users who are both learners and teachers.
+- At least 50 teaching offers across programming, languages, mathematics, design, music, science, business, personal development, writing and career mentoring.
+- Multiple categories and subjects, including SQL, Portuguese conversation, entrepreneurship, freelancing basics, creative writing and portfolio review.
+- Active English, Spanish and French languages.
+- Inactive example German, Portuguese and Italian languages.
+- User language preferences.
+- Teacher profiles.
+- Student profiles.
+- Applications using pending, accepted, rejected, cancelled and waitlisted statuses.
+- At least 15 demo incidents using different types, statuses and priorities.
+- Demo internal notifications.
+- Country/city data for aggregate world-map statistics across ES, FR, US, GB, DE, IT, PT, MX, AR, CO, CL and BR.
+
+New migrations
+--------------
+
+New migrations added by this admin task:
+
+- 2026_05_11_100000_add_admin_status_and_location_fields_to_users_table.php
+- 2026_05_11_100001_create_incidents_table.php
+- 2026_05_11_100002_create_audit_logs_table.php
+
+Run locally with:
+
+- php artisan migrate --seed
+
+Recovery fix completed - 2026-05-11
+-----------------------------------
+
+The recovery pass fixed the login crash caused by login tracking writing to missing users columns.
+
+The users table migration now adds these fields when they do not already exist:
+
+- last_login_at nullable timestamp.
+- last_login_ip nullable string with length 45.
+
+The same migration also guards the admin status and location fields against duplicate-column failures in partially migrated local databases.
+
+Admin login now redirects directly to the admin dashboard route instead of allowing an old intended user-dashboard route to take priority.
+
+Both admin dashboard routes are valid:
+
+- /admin
+- /admin/dashboard
+
+After running php artisan migrate --seed in this workspace, the local demo database contains:
+
+- 59 users.
+- 39 student profiles.
+- 33 teacher profiles.
+- 13 users with both profiles.
+- 53 teaching offers, because the non-destructive seed kept a few older demo offers and added the new richer set.
+- 103 applications.
+- 15 incidents.
+- 12 represented countries.
+
+Admin placeholder pages
+-----------------------
+
+Not-yet-built admin areas now render intentional placeholder pages instead of blank or broken routes.
+
+Each placeholder includes:
+
+- Title.
+- Short explanation.
+- What will be managed there.
+- Current status.
+- Related future tasks.
+- Contextual help.
+
+Pending after this admin task
+-----------------------------
+
+The following work remains intentionally pending:
+
+- Full audit log UI.
+- Advanced report moderation.
+- Admin email log.
+- Advanced translation database editor.
+- Full map visualization.
+- Teacher availability calendar.
+- Class sessions.
+- Reminder system.
+- Reviews.
+- Badges.
+- Reputation rules.
+- Advanced notification preferences.

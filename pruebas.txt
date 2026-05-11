@@ -771,3 +771,150 @@ Storage setup performed:
 Result:
 
 - public/storage is connected to storage/app/public.
+
+Professional admin area and demo data - 2026-05-11
+--------------------------------------------------
+
+Tests were not executed in this task.
+
+Reason:
+
+- The task was a broad admin-area implementation and demo-data update.
+- Automated tests were not run automatically.
+
+Sanity checks executed, not automated tests:
+
+- php -l on changed PHP controllers, middleware, models, seeder and routes.
+- Result: Passed. No PHP syntax errors were reported.
+- npm run types:check.
+- Result: Passed. TypeScript reported no errors.
+- php artisan route:list --path=admin and php artisan route:list --path=support/report.
+- Result: Passed. New admin and support report routes were registered.
+- composer run lint:check.
+- Initial result: Failed. Pint reported ordered imports in app/Providers/FortifyServiceProvider.php and routes/web.php.
+- Fix applied: composer run lint.
+- composer run lint:check.
+- Result: Passed. Pint reported no required changes.
+- npm run lint:check.
+- Initial result: Failed. ESLint reported import ordering and padding-line formatting in admin TSX files.
+- Fix applied: npm run lint.
+- npm run lint:check.
+- Result: Passed. ESLint reported no errors.
+
+Recommended manual verification:
+
+1. Run php artisan migrate --seed.
+2. Log in as admin@example.com / password.
+3. Confirm login lands on /admin.
+4. Confirm the admin dashboard does not show normal user/student/teacher dashboard cards.
+5. Confirm the admin sidebar shows grouped admin sections.
+6. Open /admin/users and test search/filter controls.
+7. Open a normal user detail page, update basic fields, and verify ban/block controls are protected for admins.
+8. Start impersonation for a normal user and confirm the banner appears.
+9. Stop impersonation and confirm the admin account is restored.
+10. Open /admin/incidents and update an incident status or priority.
+11. Open /admin/languages and create or edit a language record.
+12. Open /admin/world-map and confirm aggregate country data is shown.
+13. Open a placeholder admin section and confirm it renders intentional content.
+14. Open a public offer and confirm the report action opens /support/report.
+
+Admin recovery/fix task - 2026-05-11
+------------------------------------
+
+Automated tests were not run in this task.
+
+Reason:
+
+- This was a recovery task focused on fixing the schema/login error, completing the admin-area foundation and reseeding demo data.
+- Manual verification is still required for the browser flows below.
+
+Commands executed:
+
+- php -l database\migrations\2026_05_11_100000_add_admin_status_and_location_fields_to_users_table.php; php -l database\migrations\2026_05_11_100001_create_incidents_table.php; php -l database\migrations\2026_05_11_100002_create_audit_logs_table.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l app\Http\Controllers\AdminDashboardController.php; php -l app\Http\Controllers\Admin\UserController.php; php -l app\Http\Controllers\Admin\WorldMapController.php; php -l app\Http\Controllers\SupportReportController.php; php -l app\Http\Responses\LoginResponse.php; php -l database\seeders\DatabaseSeeder.php; php -l routes\web.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l lang\en\ui.php; php -l lang\es\ui.php; php -l lang\fr\ui.php
+- Result: Passed. No PHP syntax errors.
+
+- php artisan route:list --path=admin
+- Result: Passed. Admin routes rendered, including /admin, /admin/dashboard, /admin/users, /admin/world-map and /admin/incidents.
+
+- php artisan route:list --path=support/report
+- Result: Passed. Support report routes rendered.
+
+- php artisan migrate --seed
+- Result: Passed. The last_login_at and last_login_ip migration ran, incidents and audit logs migrations ran, and the seeder completed.
+
+- php artisan tinker --execute="echo 'users=' . \App\Models\User::count() . ' students=' . \App\Models\StudentProfile::count() . ' teachers=' . \App\Models\TeacherProfile::count() . ' mixed=' . \App\Models\User::whereHas('studentProfile')->whereHas('teacherProfile')->count() . ' offers=' . \App\Models\TeachingOffer::count() . ' applications=' . \App\Models\TeachingOfferApplication::count() . ' incidents=' . \App\Models\Incident::count();"
+- Result: Passed. users=59 students=39 teachers=33 mixed=13 offers=53 applications=103 incidents=15.
+
+- php artisan tinker --execute="echo 'last_login_at=' . (\Illuminate\Support\Facades\Schema::hasColumn('users', 'last_login_at') ? 'yes' : 'no') . ' last_login_ip=' . (\Illuminate\Support\Facades\Schema::hasColumn('users', 'last_login_ip') ? 'yes' : 'no') . ' countries=' . \App\Models\User::whereNotNull('country_code')->distinct()->count('country_code');"
+- Result: Passed. last_login_at=yes last_login_ip=yes countries=12.
+
+- php artisan tinker --execute="echo 'admin=' . (\App\Models\User::where('email', 'admin@example.com')->exists() ? 'yes' : 'no') . ' user=' . (\App\Models\User::where('email', 'user@example.com')->exists() ? 'yes' : 'no') . ' teacher1=' . (\App\Models\User::where('email', 'teacher1@example.com')->exists() ? 'yes' : 'no');"
+- Result: Passed. admin=yes user=yes teacher1=yes.
+
+- npm run types:check
+- Result: Passed. TypeScript reported no errors.
+
+- npm run lint:check
+- Result: Passed. ESLint reported no errors.
+
+- composer run lint:check
+- Initial result: Failed. Pint reported unused imports in app\Http\Controllers\SupportReportController.php after validation was changed to use table names.
+- Fix applied: removed unused imports.
+
+- composer run lint:check
+- Result: Passed. Pint reported no required changes.
+
+Note:
+
+- An initial tinker count command failed because of PowerShell escaping. It was rerun with corrected escaping and passed as recorded above.
+
+Manual verification checklist:
+
+1. Run:
+   php artisan migrate:fresh --seed
+
+2. Login as:
+   admin@example.com
+   password
+
+3. Confirm admin lands on admin dashboard.
+
+4. Confirm admin dashboard does NOT show:
+   - My learning
+   - My teaching
+   - Learning profile
+   - Teaching profile
+   - My applications
+   - Favorite teachers
+
+5. Confirm admin dashboard shows platform statistics.
+
+6. Confirm admin sidebar has administration sections.
+
+7. Open /admin/users and confirm many users exist.
+
+8. Open a demo teacher user detail.
+
+9. Confirm ban/block actions are visible.
+
+10. Confirm admin cannot ban/block self.
+
+11. Open /admin/world-map and confirm multiple countries appear.
+
+12. Open /admin/incidents and confirm demo incidents exist.
+
+13. Login as teacher1@example.com / password.
+
+14. Confirm no SQL error with last_login_at.
+
+15. Confirm teacher/user dashboard still works.
+
+16. Open /offers and confirm many demo offers exist.
+
+17. Confirm public search looks populated.

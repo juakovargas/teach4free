@@ -42,20 +42,27 @@ Security notes:
 Future platform work
 --------------------
 
+- Manual browser verification of the recovered admin dashboard, user admin, world-map statistics and demo login flow after php artisan migrate:fresh --seed.
+- Add focused automated admin tests for login redirection, admin dashboard separation, user restriction safety, impersonation and incidents.
+- Full searchable audit log UI.
+- Advanced report moderation queues.
+- Admin email log.
+- Advanced translation database editor if file-based translations become limiting.
+- Full map visualization with a lightweight map library.
 - Advanced teacher availability calendar.
 - Class sessions and real class/session scheduling.
 - Calendar invitations.
 - Reminder system.
 - Review system after completed classes.
 - Badges and reputation.
-- Reports and moderation workflow.
+- Reputation rules.
 - Advanced notification preferences.
 - Queued mail setup.
 - Rich internal messaging/chat.
 - Advanced open session handling.
 - Optional Jitsi integration.
 - Public teacher and class pages.
-- Full admin CRUD screens beyond categories, subjects, teaching offer visibility and application visibility.
+- Full admin CRUD screens beyond the newly implemented users, languages, incidents, categories, subjects, teaching offer visibility and application visibility.
 - Teacher verification workflow.
 
 Local avatar storage setup

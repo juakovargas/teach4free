@@ -1,10 +1,15 @@
 <?php
 
+use App\Http\Controllers\Admin\ImpersonationController as AdminImpersonationController;
+use App\Http\Controllers\Admin\IncidentController as AdminIncidentController;
+use App\Http\Controllers\Admin\LanguageController as AdminLanguageController;
 use App\Http\Controllers\Admin\PlaceholderController as AdminPlaceholderController;
 use App\Http\Controllers\Admin\TeachingCategoryController as AdminTeachingCategoryController;
 use App\Http\Controllers\Admin\TeachingOfferApplicationController as AdminTeachingOfferApplicationController;
 use App\Http\Controllers\Admin\TeachingOfferController as AdminTeachingOfferController;
 use App\Http\Controllers\Admin\TeachingSubjectController as AdminTeachingSubjectController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Admin\WorldMapController as AdminWorldMapController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\DashboardController;
@@ -14,6 +19,7 @@ use App\Http\Controllers\ProfilePreferencesController;
 use App\Http\Controllers\PublicOfferController;
 use App\Http\Controllers\StudentApplicationController;
 use App\Http\Controllers\StudentProfileController;
+use App\Http\Controllers\SupportReportController;
 use App\Http\Controllers\TeacherApplicationController;
 use App\Http\Controllers\TeacherOfferController;
 use App\Http\Controllers\TeacherProfileController;
@@ -28,6 +34,8 @@ Route::inertia('/about', 'about')->name('about');
 
 Route::get('/offers', [PublicOfferController::class, 'index'])->name('offers.index');
 Route::get('/offers/{offer}', [PublicOfferController::class, 'show'])->name('offers.show');
+Route::get('/support/report', [SupportReportController::class, 'create'])->name('support.report.create');
+Route::post('/support/report', [SupportReportController::class, 'store'])->name('support.report.store');
 
 Route::post('/locale', [LocaleController::class, 'update'])->name('locale.update');
 
@@ -44,6 +52,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::patch('notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
     Route::patch('notifications/{notification}/read', [NotificationController::class, 'read'])->name('notifications.read');
+    Route::post('admin/impersonation/stop', [AdminImpersonationController::class, 'stop'])->name('admin.impersonation.stop');
 
     Route::get('profile/preferences', [ProfilePreferencesController::class, 'edit'])->name('profile.preferences.edit');
     Route::put('profile/preferences', [ProfilePreferencesController::class, 'update'])->name('profile.preferences.update');
@@ -76,6 +85,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('admin')->group(function () {
         Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/', AdminDashboardController::class)->name('dashboard');
+            Route::get('dashboard', AdminDashboardController::class)->name('dashboard.show');
+            Route::get('world-map', AdminWorldMapController::class)->name('world-map');
+            Route::resource('users', AdminUserController::class)
+                ->only(['index', 'show', 'update']);
+            Route::post('users/{user}/ban', [AdminUserController::class, 'ban'])->name('users.ban');
+            Route::post('users/{user}/unban', [AdminUserController::class, 'unban'])->name('users.unban');
+            Route::post('users/{user}/block', [AdminUserController::class, 'block'])->name('users.block');
+            Route::post('users/{user}/unblock', [AdminUserController::class, 'unblock'])->name('users.unblock');
+            Route::post('users/{user}/impersonate', [AdminImpersonationController::class, 'start'])->name('users.impersonate');
+            Route::resource('incidents', AdminIncidentController::class)
+                ->only(['index', 'show', 'update']);
+            Route::resource('languages', AdminLanguageController::class)
+                ->except(['show', 'destroy']);
             Route::resource('categories', AdminTeachingCategoryController::class)
                 ->except(['show'])
                 ->parameters(['categories' => 'category']);

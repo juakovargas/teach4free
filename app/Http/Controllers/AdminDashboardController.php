@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Incident;
 use App\Models\Language;
 use App\Models\StudentProfile;
 use App\Models\TeacherProfile;
@@ -10,6 +11,8 @@ use App\Models\TeachingOffer;
 use App\Models\TeachingOfferApplication;
 use App\Models\TeachingSubject;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -17,27 +20,90 @@ class AdminDashboardController extends Controller
 {
     public function __invoke(): Response
     {
+        $lastWeek = now()->subDays(7);
+        $hasIncidents = Schema::hasTable('incidents');
+        $hasNotifications = Schema::hasTable('notifications');
+        $countryRows = User::query()
+            ->whereNotNull('country_code')
+            ->selectRaw('country_code, count(*) as users_count')
+            ->groupBy('country_code')
+            ->orderByDesc('users_count')
+            ->limit(5)
+            ->get();
+
         return Inertia::render('admin/dashboard', [
             'stats' => [
                 'total_users' => User::query()->count(),
                 'active_students' => StudentProfile::query()->where('is_active', true)->count(),
                 'active_teachers' => TeacherProfile::query()->where('is_active', true)->count(),
-                'teaching_offers' => TeachingOffer::query()->count(),
-                'active_teaching_offers' => TeachingOffer::query()->where('is_active', true)->count(),
-                'applications' => TeachingOfferApplication::query()->count(),
+                'mixed_users' => User::query()
+                    ->whereHas('studentProfile', fn ($query) => $query->where('is_active', true))
+                    ->whereHas('teacherProfile', fn ($query) => $query->where('is_active', true))
+                    ->count(),
+                'published_teaching_offers' => TeachingOffer::query()->whereNotNull('published_at')->count(),
+                'open_public_sessions' => TeachingOffer::query()
+                    ->where('session_type', TeachingOffer::SESSION_OPEN_PUBLIC)
+                    ->where('is_active', true)
+                    ->count(),
                 'pending_applications' => TeachingOfferApplication::query()
                     ->where('status', TeachingOfferApplication::STATUS_PENDING)
                     ->count(),
+                'waitlisted_applications' => TeachingOfferApplication::query()
+                    ->where('status', TeachingOfferApplication::STATUS_WAITLISTED)
+                    ->count(),
+                'open_incidents' => $hasIncidents ? Incident::query()
+                    ->where('status', Incident::STATUS_OPEN)
+                    ->count() : 0,
+                'incidents_pending_review' => $hasIncidents ? Incident::query()
+                    ->whereIn('status', [Incident::STATUS_OPEN, Incident::STATUS_IN_REVIEW])
+                    ->count() : 0,
+                'banned_users' => User::query()->whereNotNull('banned_at')->count(),
+                'blocked_users' => User::query()->whereNotNull('blocked_at')->count(),
+                'active_languages' => Language::query()->where('is_active', true)->count(),
                 'categories' => TeachingCategory::query()->count(),
                 'subjects' => TeachingSubject::query()->count(),
-                'active_languages' => Language::query()->where('is_active', true)->count(),
-                'reports' => 0,
-                'reviews' => 0,
+                'internal_notifications_sent' => $hasNotifications ? DB::table('notifications')->count() : 0,
                 'google_users' => User::query()->whereNotNull('google_id')->count(),
-                'pending_teacher_verifications' => TeacherProfile::query()
-                    ->where('is_active', true)
-                    ->where('is_verified', false)
-                    ->count(),
+                'suspended_offers' => TeachingOffer::query()->where('is_active', false)->count(),
+                'reports' => $hasIncidents ? Incident::query()->count() : 0,
+                'reviews' => 0,
+            ],
+            'growth' => [
+                'new_users' => User::query()->where('created_at', '>=', $lastWeek)->count(),
+                'new_teachers' => TeacherProfile::query()->where('created_at', '>=', $lastWeek)->count(),
+                'new_offers' => TeachingOffer::query()->where('created_at', '>=', $lastWeek)->count(),
+                'new_applications' => TeachingOfferApplication::query()->where('created_at', '>=', $lastWeek)->count(),
+            ],
+            'activity' => [
+                'latest_users' => User::query()
+                    ->latest()
+                    ->limit(5)
+                    ->get(['id', 'name', 'email', 'role', 'created_at', 'avatar_path', 'avatar_url']),
+                'latest_offers' => TeachingOffer::query()
+                    ->with('user:id,name,email,avatar_path,avatar_url')
+                    ->latest()
+                    ->limit(5)
+                    ->get(['id', 'user_id', 'title', 'slug', 'is_active', 'published_at', 'created_at']),
+                'latest_applications' => TeachingOfferApplication::query()
+                    ->with(['student:id,name,email,avatar_path,avatar_url', 'offer:id,title,slug'])
+                    ->latest()
+                    ->limit(5)
+                    ->get(['id', 'student_user_id', 'teaching_offer_id', 'status', 'requested_at', 'created_at']),
+                'latest_incidents' => $hasIncidents
+                    ? Incident::query()
+                        ->with('reporter:id,name,email,avatar_path,avatar_url')
+                        ->latest()
+                        ->limit(5)
+                        ->get(['id', 'reporter_user_id', 'type', 'status', 'priority', 'subject', 'created_at'])
+                    : [],
+            ],
+            'world' => [
+                'countries_represented' => User::query()->whereNotNull('country_code')->distinct('country_code')->count('country_code'),
+                'located_users' => User::query()->whereNotNull('country_code')->count(),
+                'top_countries' => $countryRows->map(fn ($row): array => [
+                    'country_code' => (string) $row->country_code,
+                    'users_count' => (int) $row->users_count,
+                ]),
             ],
         ]);
     }

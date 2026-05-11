@@ -4,11 +4,12 @@ import { ContextualHelp } from '@/components/contextual-help';
 import { useTranslation } from '@/hooks/use-translation';
 
 type Props = {
+    section: string;
     titleKey: string;
     descriptionKey: string;
 };
 
-export default function AdminPlaceholder({ titleKey, descriptionKey }: Props) {
+export default function AdminPlaceholder({ section, titleKey, descriptionKey }: Props) {
     const { t } = useTranslation();
 
     return (
@@ -23,6 +24,26 @@ export default function AdminPlaceholder({ titleKey, descriptionKey }: Props) {
                             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">{t(descriptionKey)}</p>
                         </div>
                     </div>
+                </section>
+                <section className="grid gap-4 md:grid-cols-3">
+                    <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+                        <h2 className="text-sm font-semibold">{t('admin_placeholder.managed_here')}</h2>
+                        <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                            {t(`admin_placeholder_details.${section}.managed`)}
+                        </p>
+                    </article>
+                    <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+                        <h2 className="text-sm font-semibold">{t('admin_placeholder.current_status')}</h2>
+                        <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                            {t(`admin_placeholder_details.${section}.status`)}
+                        </p>
+                    </article>
+                    <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+                        <h2 className="text-sm font-semibold">{t('admin_placeholder.future_tasks')}</h2>
+                        <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                            {t(`admin_placeholder_details.${section}.future`)}
+                        </p>
+                    </article>
                 </section>
                 <ContextualHelp title={t('admin.placeholder_help_title')}>
                     {t('admin.placeholder_help_body')}

@@ -14,6 +14,7 @@ import { useInitials } from '@/hooks/use-initials';
 import { useTranslation } from '@/hooks/use-translation';
 
 type Offer = {
+    id: number;
     slug: string;
     title: string;
     summary: string;
@@ -255,6 +256,11 @@ export default function PublicOfferShow({ offer, seatSummary, currentApplication
                                 </>
                             )}
                         </div>
+                        <Button variant="outline" className="w-full" asChild>
+                            <Link href={`/support/report?type=teaching_offer&teaching_offer_id=${offer.id}`}>
+                                {t('offers.report_offer')}
+                            </Link>
+                        </Button>
                     </aside>
                 </section>
 

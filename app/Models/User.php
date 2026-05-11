@@ -20,6 +20,8 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
     'password',
     'preferred_locale',
     'timezone',
+    'country_code',
+    'city',
     'bio',
     'is_public',
     'learning_interests',
@@ -28,6 +30,12 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
     'google_id',
     'avatar_url',
     'avatar_path',
+    'banned_at',
+    'banned_reason',
+    'blocked_at',
+    'blocked_reason',
+    'last_login_at',
+    'last_login_ip',
 ])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail
@@ -47,6 +55,21 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isAdmin(): bool
     {
         return $this->role === self::ROLE_ADMIN;
+    }
+
+    public function isBanned(): bool
+    {
+        return $this->banned_at !== null;
+    }
+
+    public function isBlocked(): bool
+    {
+        return $this->blocked_at !== null;
+    }
+
+    public function isRestricted(): bool
+    {
+        return $this->isBanned() || $this->isBlocked();
     }
 
     public function getAvatarAttribute(): ?string
@@ -123,6 +146,22 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * @return HasMany<Incident, $this>
+     */
+    public function reportedIncidents(): HasMany
+    {
+        return $this->hasMany(Incident::class, 'reported_user_id');
+    }
+
+    /**
+     * @return HasMany<Incident, $this>
+     */
+    public function submittedIncidents(): HasMany
+    {
+        return $this->hasMany(Incident::class, 'reporter_user_id');
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -132,6 +171,9 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'is_public' => 'boolean',
+            'banned_at' => 'datetime',
+            'blocked_at' => 'datetime',
+            'last_login_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
         ];

@@ -70,9 +70,20 @@ class GoogleAuthController extends Controller
             ]);
         }
 
+        if ($user->isRestricted()) {
+            Auth::guard('web')->logout();
+
+            return redirect()->route('login')->with('status', __('ui.auth.account_restricted'));
+        }
+
         Auth::login($user);
 
-        return redirect()->route('dashboard');
+        $user->forceFill([
+            'last_login_at' => now(),
+            'last_login_ip' => request()->ip(),
+        ])->save();
+
+        return redirect()->route($user->isAdmin() ? 'admin.dashboard' : 'dashboard');
     }
 
     private function googleIsConfigured(): bool

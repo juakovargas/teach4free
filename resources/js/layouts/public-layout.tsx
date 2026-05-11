@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import type { PropsWithChildren } from 'react';
 import AppLogo from '@/components/app-logo';
+import { ImpersonationBanner } from '@/components/impersonation-banner';
 import { NavbarActions } from '@/components/navbar-actions';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
@@ -69,6 +70,7 @@ export default function PublicLayout({ children }: Props) {
                     </div>
                 </div>
             </header>
+            <ImpersonationBanner />
             <main>{children}</main>
         </div>
     );
