@@ -579,3 +579,109 @@ Result:
 - 2 tests executed.
 - 2 passed.
 - 6 assertions.
+
+Global navigation, appearance and avatar polish - 2026-05-11
+------------------------------------------------------------
+
+Command:
+
+- npm run types:check
+
+Result:
+
+- Passed.
+- TypeScript reported no errors.
+
+Command:
+
+- php artisan test tests\Feature\AvatarUploadTest.php tests\Feature\NavigationExperienceTest.php
+
+Result:
+
+- Passed.
+- 9 tests executed.
+- 9 passed.
+- 71 assertions.
+
+Command:
+
+- composer run lint:check
+
+Result:
+
+- Passed.
+- Pint reported no required changes.
+
+Command:
+
+- composer run lint:check
+
+Result:
+
+- Passed.
+- Pint still reported no required changes after the storage URL refinement.
+
+Command:
+
+- npm run lint:check
+
+Initial result:
+
+- Failed.
+- ESLint reported import ordering in resources/js/layouts/auth/auth-simple-layout.tsx.
+
+Fix applied:
+
+- Reordered the new AppearanceToggle import after AppLogoIcon.
+
+Command:
+
+- npm run lint:check
+
+Result:
+
+- Passed.
+- ESLint reported no errors.
+
+Command:
+
+- php artisan test
+
+Result:
+
+- Passed.
+- 92 tests executed.
+- 92 passed.
+- 440 assertions.
+
+Command:
+
+- npm run build
+
+Result:
+
+- Passed.
+- Vite production build completed.
+- Note: Vite printed plugin timing warnings, but the build succeeded.
+
+Command:
+
+- php artisan test tests\Feature\AvatarUploadTest.php
+
+Result:
+
+- Passed.
+- 5 tests executed.
+- 5 passed.
+- 48 assertions.
+
+Command:
+
+- php artisan test
+
+Result:
+
+- Passed.
+- 92 tests executed.
+- 92 passed.
+- 440 assertions.

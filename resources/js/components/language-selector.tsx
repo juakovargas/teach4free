@@ -1,5 +1,6 @@
 import { router } from '@inertiajs/react';
 import { Languages } from 'lucide-react';
+import type { HTMLAttributes } from 'react';
 import {
     Select,
     SelectContent,
@@ -8,13 +9,26 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/use-translation';
+import { cn } from '@/lib/utils';
 
-export function LanguageSelector() {
+type Props = {
+    showIcon?: boolean;
+    triggerClassName?: string;
+} & HTMLAttributes<HTMLDivElement>;
+
+export function LanguageSelector({
+    className,
+    showIcon = true,
+    triggerClassName,
+    ...props
+}: Props) {
     const { t, locale, locales } = useTranslation();
 
     return (
-        <div className="flex items-center gap-2">
-            <Languages className="hidden size-4 text-muted-foreground sm:block" />
+        <div className={cn('flex items-center gap-2', className)} {...props}>
+            {showIcon && (
+                <Languages className="hidden size-4 text-muted-foreground sm:block" />
+            )}
             <Select
                 value={locale}
                 onValueChange={(selectedLocale) =>
@@ -29,8 +43,12 @@ export function LanguageSelector() {
             >
                 <SelectTrigger
                     size="sm"
-                    className="min-w-28"
+                    className={cn(
+                        'min-w-[4.75rem] sm:min-w-32',
+                        triggerClassName,
+                    )}
                     aria-label={t('navigation.language')}
+                    data-testid="language-selector"
                 >
                     <SelectValue />
                 </SelectTrigger>
@@ -40,7 +58,12 @@ export function LanguageSelector() {
                             key={availableLocale.code}
                             value={availableLocale.code}
                         >
-                            {availableLocale.name}
+                            <span className="font-medium uppercase">
+                                {availableLocale.code}
+                            </span>
+                            <span className="hidden sm:inline">
+                                {availableLocale.name}
+                            </span>
                         </SelectItem>
                     ))}
                 </SelectContent>

@@ -43,12 +43,13 @@ Future platform work
 --------------------
 
 - Advanced teacher availability calendar.
-- Real class/session scheduling.
+- Class sessions and real class/session scheduling.
 - Calendar invitations.
+- Reminder system.
 - Review system after completed classes.
 - Badges and reputation.
 - Reports and moderation workflow.
-- Notification preferences.
+- Advanced notification preferences.
 - Queued mail setup.
 - Rich internal messaging/chat.
 - Advanced open session handling.
@@ -56,3 +57,8 @@ Future platform work
 - Public teacher and class pages.
 - Full admin CRUD screens beyond categories, subjects, teaching offer visibility and application visibility.
 - Teacher verification workflow.
+
+Local avatar storage setup
+--------------------------
+
+- Run php artisan storage:link in each local or deployed environment that serves uploaded profile photos from the public disk.

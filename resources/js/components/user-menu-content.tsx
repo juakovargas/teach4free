@@ -96,7 +96,7 @@ export function UserMenuContent({ user }: Props) {
                         onClick={cleanup}
                     >
                         <FileText className="mr-2" />
-                        {t('navigation.teaching_offers')}
+                        {t('navigation.my_teaching_offers')}
                     </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>

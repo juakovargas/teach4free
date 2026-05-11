@@ -1,7 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
     BookOpenCheck,
-    ChevronDown,
     Languages,
     LayoutGrid,
     Menu,
@@ -12,15 +11,8 @@ import {
 import AppLogo from '@/components/app-logo';
 import AppLogoIcon from '@/components/app-logo-icon';
 import { Breadcrumbs } from '@/components/breadcrumbs';
-import { LanguageSelector } from '@/components/language-selector';
-import { NotificationMenu } from '@/components/notification-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { NavbarActions } from '@/components/navbar-actions';
 import { Button } from '@/components/ui/button';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import {
     NavigationMenu,
     NavigationMenuItem,
@@ -34,9 +26,7 @@ import {
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
-import { UserMenuContent } from '@/components/user-menu-content';
 import { useCurrentUrl } from '@/hooks/use-current-url';
-import { useInitials } from '@/hooks/use-initials';
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 import { dashboard } from '@/routes';
@@ -52,7 +42,6 @@ const activeItemStyles =
 export function AppHeader({ breadcrumbs = [] }: Props) {
     const page = usePage();
     const { auth } = page.props;
-    const getInitials = useInitials();
     const { t } = useTranslation();
     const { isCurrentUrl, whenCurrentUrl } = useCurrentUrl();
 
@@ -138,7 +127,6 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                                                 </Link>
                                             ))}
                                         </div>
-                                        <LanguageSelector />
                                     </div>
                                 </div>
                             </SheetContent>
@@ -187,37 +175,7 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                     </div>
 
                     <div className="ml-auto flex items-center space-x-2">
-                        <div className="hidden sm:block">
-                            <LanguageSelector />
-                        </div>
-                        <NotificationMenu />
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    className="h-10 gap-2 rounded-full px-2"
-                                >
-                                    <Avatar className="size-8 overflow-hidden rounded-full">
-                                        <AvatarImage
-                                            src={auth.user?.avatar ?? undefined}
-                                            alt={auth.user?.name ?? ''}
-                                        />
-                                        <AvatarFallback className="rounded-lg bg-emerald-100 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-50">
-                                            {getInitials(auth.user?.name ?? '')}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <span className="hidden max-w-36 truncate text-sm font-medium sm:inline">
-                                        {auth.user?.name}
-                                    </span>
-                                    <ChevronDown className="hidden size-4 text-muted-foreground sm:block" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-56" align="end">
-                                {auth.user && (
-                                    <UserMenuContent user={auth.user} />
-                                )}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                        <NavbarActions showGuestLinks={false} />
                     </div>
                 </div>
             </div>

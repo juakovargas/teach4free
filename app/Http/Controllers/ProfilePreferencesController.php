@@ -121,9 +121,17 @@ class ProfilePreferencesController extends Controller
 
     public function updateAvatar(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'avatar' => ['required', 'image', 'max:2048'],
-        ]);
+        $validated = $request->validate(
+            [
+                'avatar' => ['required', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:2048'],
+            ],
+            [
+                'avatar.required' => __('ui.profile_preferences.avatar_required'),
+                'avatar.image' => __('ui.profile_preferences.avatar_image'),
+                'avatar.mimes' => __('ui.profile_preferences.avatar_mimes'),
+                'avatar.max' => __('ui.profile_preferences.avatar_max'),
+            ],
+        );
 
         $user = $request->user();
 
@@ -131,7 +139,7 @@ class ProfilePreferencesController extends Controller
             Storage::disk('public')->delete($user->avatar_path);
         }
 
-        $path = $validated['avatar']->store('avatars', 'public');
+        $path = $validated['avatar']->store('avatars/users', 'public');
 
         $user->forceFill(['avatar_path' => $path])->save();
 

@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import AppLogoIcon from '@/components/app-logo-icon';
+import { AppearanceToggle } from '@/components/appearance-toggle';
 import { LanguageSelector } from '@/components/language-selector';
 import { home } from '@/routes';
 import type { AuthLayoutProps } from '@/types';
@@ -11,7 +12,8 @@ export default function AuthSimpleLayout({
 }: AuthLayoutProps) {
     return (
         <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-background p-6 md:p-10">
-            <div className="absolute top-4 right-4">
+            <div className="absolute top-4 right-4 flex items-center gap-2">
+                <AppearanceToggle />
                 <LanguageSelector />
             </div>
             <div className="w-full max-w-sm">

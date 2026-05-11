@@ -1307,3 +1307,177 @@ The following work remains intentionally pending:
 - Rich internal messaging/chat.
 - Advanced open session handling.
 - Optional Jitsi integration.
+
+Global navigation, appearance and avatar polish - 2026-05-11
+------------------------------------------------------------
+
+This task improved the global navigation experience before calendar and session features are built.
+
+No payments, credits, subscriptions, wallets, paid plans, commissions, monetization logic or premium visibility were added.
+
+Navbar language selector
+------------------------
+
+The language selector is now part of the top navbar/global header controls instead of living at the bottom of the authenticated sidebar.
+
+It appears in:
+
+- Authenticated user header.
+- Admin header, because admin pages use the shared authenticated header.
+- Public header.
+- Auth pages as a compact top-right control.
+
+The existing locale behavior remains in place:
+
+- Guests store the selected locale in the session.
+- Authenticated users store the selected locale in the session and persist it to users.preferred_locale.
+
+Admin sidebar cleanup
+---------------------
+
+The admin sidebar remains focused on admin navigation areas:
+
+- Admin dashboard.
+- Users.
+- Teachers.
+- Students.
+- Languages.
+- Categories.
+- Subjects.
+- Teaching offers.
+- Applications.
+- Sessions.
+- Reviews.
+- Reports.
+- Badges.
+- Content pages.
+- Translations.
+- Platform settings.
+
+The duplicated bottom language selector was removed from the authenticated sidenav/sidebar area.
+
+Navbar action order
+-------------------
+
+The right side of the authenticated navbar now follows this order:
+
+1. Appearance quick toggle.
+2. Language selector.
+3. Notifications bell.
+4. User avatar/photo dropdown.
+
+For guests on public pages, the right side follows this order:
+
+1. Appearance quick toggle.
+2. Language selector.
+3. Login.
+4. Register, when registration is enabled.
+
+User dropdown structure
+-----------------------
+
+The authenticated user dropdown remains avatar-first and shows the user's name or email.
+
+It includes:
+
+- Preferences.
+- Learning profile.
+- Teaching profile.
+- My applications.
+- My teaching offers.
+- Requests to my offers.
+- Admin dashboard, only for admins.
+- Account settings.
+- Logout.
+
+Logout stays inside the dropdown.
+
+Appearance quick toggle
+-----------------------
+
+A quick appearance button was added to the navbar.
+
+Behavior:
+
+- When the effective mode is light, the navbar shows a moon button to switch to dark mode.
+- When the effective mode is dark, the navbar shows a sun button to switch to light mode.
+- If the saved preference is system, the button uses the resolved effective mode.
+- Clicking the button persists the new light or dark preference through the existing appearance system.
+
+The full Appearance settings page still exists and now explains that the navbar button is a quick shortcut.
+
+Profile photo/avatar flow
+-------------------------
+
+Local profile photo uploads now use a consistent public-disk path:
+
+- avatars/users
+
+Validation:
+
+- The uploaded file is required.
+- It must be an image.
+- Accepted types: JPG, JPEG, PNG, WebP and GIF.
+- Maximum size: 2 MB.
+- Validation messages are translated in English, Spanish and French.
+
+Display priority:
+
+1. Uploaded local avatar_path.
+2. Google avatar_url.
+3. Initials fallback.
+
+Removing a local photo deletes the public-disk file, clears users.avatar_path and then falls back to Google avatar_url or initials.
+
+Public avatar URLs are generated from the public disk. The public disk now defaults to the root-relative /storage URL so local pages do not depend on a mismatched APP_URL host. Deployments that need an absolute storage URL can set APP_STORAGE_URL.
+
+Storage link requirement
+------------------------
+
+Local uploaded photos require Laravel's public storage link:
+
+- php artisan storage:link
+
+Without that link, avatar files can be stored correctly but the browser cannot serve them from /storage.
+
+Contextual help updates
+-----------------------
+
+Contextual help text was updated for:
+
+- Home page language and appearance controls.
+- User dashboard navbar controls.
+- Admin dashboard/sidebar separation.
+- Preferences page profile photo behavior.
+- Appearance settings quick toggle behavior.
+
+Tests added or updated
+----------------------
+
+Tests were added or updated for:
+
+- Navbar action order.
+- Public and authenticated headers using global navbar actions.
+- Language selector absence from sidebars.
+- Admin sidebar links remaining present.
+- User dropdown required entries and logout.
+- Avatar upload storage path.
+- Uploaded avatar URL generation.
+- Uploaded avatar priority over Google avatar.
+- Google avatar fallback.
+- Initials fallback through null avatar payload.
+- Removing uploaded avatar and falling back to Google avatar.
+
+Pending after this navigation task
+----------------------------------
+
+The following work remains intentionally pending:
+
+- Teacher availability calendar.
+- Class sessions.
+- Reminder system.
+- Reviews.
+- Badges.
+- Advanced notification preferences.
+- Calendar invitations.
+- Full admin CRUD screens beyond the current completed areas.

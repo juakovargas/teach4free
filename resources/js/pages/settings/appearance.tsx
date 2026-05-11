@@ -1,5 +1,6 @@
 import { Head } from '@inertiajs/react';
 import AppearanceTabs from '@/components/appearance-tabs';
+import { ContextualHelp } from '@/components/contextual-help';
 import Heading from '@/components/heading';
 import { useTranslation } from '@/hooks/use-translation';
 import { edit as editAppearance } from '@/routes/appearance';
@@ -20,6 +21,9 @@ export default function Appearance() {
                     description={t('settings.appearance_description')}
                 />
                 <AppearanceTabs />
+                <ContextualHelp title={t('appearance.help_title')}>
+                    {t('appearance.help_body')}
+                </ContextualHelp>
             </div>
         </>
     );
