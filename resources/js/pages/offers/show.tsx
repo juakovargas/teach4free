@@ -2,7 +2,6 @@ import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, CalendarClock, Clock, ExternalLink, GraduationCap, Languages, Users } from 'lucide-react';
 import type { FormEvent } from 'react';
 import type { ComponentType } from 'react';
-import { ContextualHelp } from '@/components/contextual-help';
 import InputError from '@/components/input-error';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -31,7 +30,17 @@ type Offer = {
     requirements: string | null;
     materials_summary: string | null;
     is_accepting_applications: boolean;
-    user: { name: string; bio?: string | null; avatar?: string | null };
+    user: {
+        id: number;
+        name: string;
+        bio?: string | null;
+        avatar?: string | null;
+        city?: string | null;
+        country_code?: string | null;
+        profile_url?: string | null;
+        headline?: string | null;
+        languages?: { id: number; code: string; name: string }[];
+    };
     category: { name: string; color: string | null };
     subject: { name: string } | null;
     languages: { id: number; code: string; name: string }[];
@@ -85,6 +94,7 @@ export default function PublicOfferShow({ offer, seatSummary, currentApplication
         class_session_id: offer.session_type === 'open_public' && upcomingSessions.length > 0 ? String(upcomingSessions[0].id) : '',
         availability_note: '',
     });
+    const teacherLocation = [offer.user.city, offer.user.country_code].filter(Boolean).join(', ');
 
     const submit = (event: FormEvent) => {
         event.preventDefault();
@@ -115,16 +125,33 @@ export default function PublicOfferShow({ offer, seatSummary, currentApplication
                             <h1 className="max-w-4xl text-3xl font-semibold tracking-normal sm:text-4xl">{offer.title}</h1>
                             <p className="mt-4 max-w-3xl text-base leading-7 text-muted-foreground">{offer.summary}</p>
                         </div>
-                        <div className="flex min-w-64 items-center gap-3 rounded-lg border border-slate-200 p-4 dark:border-slate-800">
+                        <Link
+                            href={offer.user.profile_url ?? `/offers?teacher=${offer.user.id}`}
+                            className="group flex min-w-64 items-start gap-3 rounded-lg border border-slate-200 p-4 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md dark:border-slate-800 dark:hover:border-emerald-700"
+                        >
                             <Avatar className="size-12">
                                 <AvatarImage src={offer.user.avatar ?? undefined} alt={offer.user.name} />
                                 <AvatarFallback>{getInitials(offer.user.name)}</AvatarFallback>
                             </Avatar>
-                            <div>
+                            <div className="min-w-0">
                                 <p className="text-sm text-muted-foreground">{t('offers.teacher')}</p>
-                                <p className="font-semibold">{offer.user.name}</p>
+                                <p className="font-semibold group-hover:text-emerald-700 dark:group-hover:text-emerald-300">{offer.user.name}</p>
+                                <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">
+                                    {offer.user.headline ?? t('home.teacher_default_headline')}
+                                </p>
+                                {teacherLocation && <p className="mt-1 text-xs text-muted-foreground">{teacherLocation}</p>}
+                                {offer.user.languages && offer.user.languages.length > 0 && (
+                                    <div className="mt-2 flex flex-wrap gap-1">
+                                        {offer.user.languages.slice(0, 3).map((language) => (
+                                            <Badge key={language.id} variant="outline" className="text-[0.7rem]">
+                                                {language.name}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                )}
+                                <p className="mt-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300">{t('teachers.view_profile')}</p>
                             </div>
-                        </div>
+                        </Link>
                     </div>
                 </section>
 
@@ -337,9 +364,6 @@ export default function PublicOfferShow({ offer, seatSummary, currentApplication
                     </aside>
                 </section>
 
-                <ContextualHelp title={t('offers.detail_help_title')}>
-                    {t('offers.detail_help_body')}
-                </ContextualHelp>
             </div>
         </>
     );

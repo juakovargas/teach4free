@@ -1,7 +1,6 @@
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { MessageSquareWarning } from 'lucide-react';
 import type { FormEvent } from 'react';
-import { ContextualHelp } from '@/components/contextual-help';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -75,9 +74,6 @@ export default function SupportReport({ type, teachingOfferId, reportedUserId, t
                     <Button type="submit" disabled={form.processing}>{t('support_report.submit')}</Button>
                 </form>
 
-                <ContextualHelp title={t('support_report.help_title')}>
-                    {t('support_report.help_body')}
-                </ContextualHelp>
             </div>
         </>
     );

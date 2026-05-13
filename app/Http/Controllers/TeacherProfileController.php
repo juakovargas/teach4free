@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\TeacherProfile;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -25,6 +26,8 @@ class TeacherProfileController extends Controller
                 'default_session_duration_minutes' => $profile->default_session_duration_minutes,
                 'meeting_tool' => $profile->meeting_tool,
                 'meeting_url' => $profile->meeting_url,
+                'banner' => $profile->banner,
+                'has_banner' => $profile->banner_path !== null,
                 'is_active' => $profile->is_active,
                 'is_accepting_requests' => $profile->is_accepting_requests,
                 'is_verified' => $profile->is_verified,
@@ -61,6 +64,37 @@ class TeacherProfileController extends Controller
         $profile->update($validated);
 
         return back()->with('status', __('ui.teacher_profile.saved'));
+    }
+
+    public function updateBanner(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'banner' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+        ]);
+
+        $profile = $this->profileFor($request);
+
+        if ($profile->banner_path) {
+            Storage::disk('public')->delete($profile->banner_path);
+        }
+
+        $path = $validated['banner']->store('banners/teachers', 'public');
+
+        $profile->forceFill(['banner_path' => $path])->save();
+
+        return back()->with('status', __('ui.teacher_profile.banner_updated'));
+    }
+
+    public function destroyBanner(Request $request): RedirectResponse
+    {
+        $profile = $this->profileFor($request);
+
+        if ($profile->banner_path) {
+            Storage::disk('public')->delete($profile->banner_path);
+            $profile->forceFill(['banner_path' => null])->save();
+        }
+
+        return back()->with('status', __('ui.teacher_profile.banner_removed'));
     }
 
     public function activate(Request $request): RedirectResponse

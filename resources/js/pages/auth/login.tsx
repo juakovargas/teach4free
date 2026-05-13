@@ -1,5 +1,4 @@
 import { Form, Head } from '@inertiajs/react';
-import { ContextualHelp } from '@/components/contextual-help';
 import { GoogleLoginButton } from '@/components/google-login-button';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
@@ -118,10 +117,6 @@ export default function Login({
             </Form>
 
             <GoogleLoginButton />
-
-            <ContextualHelp title={t('auth.login.help_title')}>
-                {t('auth.login.help_body')}
-            </ContextualHelp>
 
             {status && (
                 <div className="mb-4 text-center text-sm font-medium text-green-600">

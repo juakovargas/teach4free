@@ -403,7 +403,7 @@ Test execution details must be tracked in pruebas.txt.
 Pending work
 ------------
 
-The following features are intentionally not built yet:
+The following early backlog items were recorded at project start. Later sections in this document and todo.txt track the current status, including items that have since been completed or superseded:
 
 - Teaching offers.
 - Categories and subjects.
@@ -2272,3 +2272,534 @@ The following items remain intentionally pending:
 - Optional Jitsi integration.
 - Full map visualization.
 - Full searchable audit log UI.
+
+Public visual identity and discovery refresh - 2026-05-13
+---------------------------------------------------------
+
+This task strengthened the public Teach4Free identity and discovery experience while preserving the core product rule:
+
+- Teach4Free remains completely free.
+- No payments, subscriptions, credits, wallets, commissions, paid plans, monetization logic or premium visibility were added.
+
+Visual identity direction
+-------------------------
+
+The public interface now uses a warmer and more distinctive Teach4Free visual system centered on open knowledge, generosity and multilingual community learning.
+
+The main identity concept is a knowledge constellation:
+
+- Teachers, learners, languages and topics appear as connected community signals.
+- The logo icon was updated from a literal book mark to an abstract constellation-style mark.
+- Public backgrounds use warm, soft gradients and clean contrast.
+- Cards, panels, chips, badges and CTAs share a consistent Tailwind style.
+- Shared public identity components now live in:
+
+- resources/js/components/public/public-identity.tsx
+
+Reusable public UI patterns include:
+
+- Public section headers.
+- Feature/value cards.
+- Teacher cards.
+- Offer cards.
+- Free, language, level, teaching mode and session type badges.
+- Stat cards.
+- Empty states.
+- Final CTA section.
+
+Home page purpose
+-----------------
+
+The home page is now a real public discovery page instead of only an explanatory landing page.
+
+It clearly communicates:
+
+- People can learn for free.
+- People can teach for free.
+- There are no payments, no credits and no commissions.
+- Visitors can immediately discover real teachers and free teaching offers.
+
+The hero includes two primary CTAs:
+
+- Find free classes, linking to /offers.
+- Start teaching for free, linking guests to registration and authenticated users to their teaching profile flow.
+
+The trust/value strip highlights:
+
+- 100% free.
+- Multilingual teachers.
+- Community reputation.
+- Flexible availability.
+- Open public sessions.
+- One-to-one mentoring.
+
+Featured teachers
+-----------------
+
+The home page now shows real teachers from the database.
+
+Selection rules:
+
+- Users must have an active teacher profile.
+- Teachers are ordered by active public offer count.
+- Cards show avatar or initials, name, headline, teaching languages, categories, subjects, location when available, verification signal when present and active offer count.
+- Teacher cards link to public teacher profile pages at /teachers/{user}. If a teacher profile route is not available for a card, offer-based discovery can still use /offers?teacher={id}.
+
+If no teachers are available, the page shows a translated empty state instead of a broken layout.
+
+Featured free classes
+---------------------
+
+The home page now shows real published public teaching offers.
+
+Selection rules:
+
+- Offers must be public, active and published.
+- Offers matching the current interface language are loaded first.
+- If fewer than the target number match the current language, other public offers fill the remaining slots.
+- Offer cards show title, teacher, category, subject, level, teaching mode, session type, languages, duration, availability summary when available and a free label.
+
+Open public sessions
+--------------------
+
+The home page includes a dedicated open free sessions section when public offers with session_type = open_public exist.
+
+The section explains that community learning events may use free external tools such as Jitsi, Meet, Zoom or Discord.
+
+Language-aware discovery
+------------------------
+
+The locale system now prioritizes the interface language as follows:
+
+- Authenticated users use users.preferred_locale.
+- Guests use the session locale when set.
+- Guests without a session locale use the browser Accept-Language header when it matches a supported interface language.
+- The fallback remains English.
+
+The home page shows a translated language-aware discovery message such as:
+
+- Showing free classes available in English.
+- Mostrando clases gratuitas disponibles en Espanol.
+- Affichage des cours gratuits disponibles en Francais.
+
+The home page provides two discovery paths:
+
+- View offers in my language, linking to /offers?language={locale}.
+- View all offers, linking to /offers without the language filter.
+
+Language-aware discovery does not lock users into one language. Users can always clear filters and explore all offers.
+
+Public offers visual improvements
+---------------------------------
+
+The public /offers page now matches the refreshed public identity.
+
+Improvements include:
+
+- Warmer page header.
+- Clear result count.
+- Polished search/filter panel.
+- Teacher filter chip with a clear action.
+- Shared offer cards with free, language, level, teaching mode and session type badges.
+- Improved empty state.
+- Clear filters button.
+
+Existing filters remain available:
+
+- Search text.
+- Category.
+- Subject.
+- Language.
+- Level.
+- Teaching mode.
+- Session type.
+- Availability text.
+- Accepting applications.
+- Teacher query parameter.
+
+Public teacher discovery
+------------------------
+
+Public teacher discovery now includes:
+
+- A public teacher directory at /teachers.
+- Public teacher detail pages at /teachers/{user}.
+- Featured teacher cards on the home page linking to public teacher profiles.
+- Public offers search accepting the teacher query parameter for offer-focused discovery.
+
+Demo data for public discovery
+------------------------------
+
+The existing rich development seeder already exceeds the minimum needed for public discovery.
+
+The current local database check showed:
+
+- 59 users.
+- 32 active teachers.
+- 37 active students.
+- 46 public active published offers.
+- 3 active languages.
+- 12 represented countries.
+- 15 public open-session offers.
+
+The required local development users remain:
+
+- admin@example.com / password.
+- user@example.com / password.
+
+For a clean local demo database, run:
+
+- php artisan migrate:fresh --seed
+
+Contextual help
+---------------
+
+Developer-style contextual help was removed from public marketing and discovery surfaces touched by the public polish work.
+
+The home page, public offers search, offer detail, login, register and public report page no longer render contextual help panels.
+
+Contextual help remains available in authenticated user/admin workflows where it supports task completion.
+
+Translations
+------------
+
+New visible public identity, home and offers texts are translated in:
+
+- lang/en/ui.php
+- lang/es/ui.php
+- lang/fr/ui.php
+
+No duplicate translation system was added.
+
+Pending after this public identity task
+---------------------------------------
+
+The following work remains intentionally pending:
+
+- Admin-editable CMS for legal and content pages.
+- Advanced teacher profile customization.
+- SEO metadata for public teacher profiles.
+- Custom brand artwork or hero illustration.
+- Advanced recommendation engine.
+- Reviews and reputation display.
+- Badges display.
+- Real session calendar.
+- SEO metadata for public pages.
+- Better offer ranking beyond the current simple language-first fallback.
+
+Public profile, legal and trust polish - 2026-05-13
+---------------------------------------------------
+
+This task polished the public-facing product experience around teacher identity, trust, legal clarity and public navigation.
+
+The core product rule remains unchanged:
+
+- Teach4Free is completely free.
+- Teachers cannot require payment, sell classes, advertise paid services inside offers or use the platform mainly to capture paying clients.
+- Teach4Free does not process payments, tips, donations or commissions.
+- External voluntary tips may exist outside the platform only when they are not required, not pressured, not requested as a condition and not handled by Teach4Free.
+
+Public teacher profiles
+-----------------------
+
+Public teacher pages were added:
+
+- GET /teachers
+- GET /teachers/{user}
+
+The directory only shows users with active teacher profiles.
+
+The directory supports:
+
+- Search by name, headline, bio, experience and offer text.
+- Language filter.
+- Category filter.
+- Subject filter.
+- Country filter when user country data exists.
+- Simple availability text filter using teacher availability notes and offer availability summaries.
+
+Teacher cards show:
+
+- Avatar/profile photo or initials.
+- Name.
+- Headline.
+- Teaching bio excerpt.
+- Teaching languages.
+- Main categories and subjects from active offers.
+- City/country when available.
+- Active public offer count.
+- Link to the public teacher profile.
+
+Teacher detail pages show:
+
+- Teacher banner or professional fallback banner.
+- Avatar connected visually to the banner.
+- Name, headline, location and verification signal when available.
+- Teaching bio and experience summary.
+- Teaching languages.
+- Preferred teaching mode.
+- Default duration.
+- Active free offers.
+- Open public classes when available.
+- Availability summary or professional fallback.
+- CTAs to view free classes and apply through active offers.
+
+Private information is not exposed publicly:
+
+- Public teacher pages do not show email addresses.
+- Inactive teacher profiles return 404.
+- Unpublished or inactive offers are not shown publicly.
+
+Teacher banner image support
+----------------------------
+
+Teacher profiles now support an optional public banner image.
+
+Database change:
+
+- teacher_profiles.banner_path
+
+Teacher banner routes:
+
+- POST /profile/teacher/banner
+- DELETE /profile/teacher/banner
+
+Upload rules:
+
+- Image file only.
+- Accepted formats: jpg, jpeg, png, webp.
+- Maximum size: 4 MB.
+- Wide banner aspect ratio is recommended but not enforced.
+
+Storage:
+
+- Banners are stored on the public disk under banners/teachers.
+- Environments that serve uploaded banners need:
+
+- php artisan storage:link
+
+Display priority:
+
+1. Uploaded teacher banner.
+2. CSS abstract fallback banner on the public teacher profile.
+3. Generic Teach4Free gradient identity styling.
+
+Home page cleanup
+-----------------
+
+The home page remains a public marketing and discovery page focused on:
+
+- What Teach4Free is.
+- Learning for free.
+- Teaching for free.
+- Featured teachers.
+- Featured free classes.
+- Language-aware discovery.
+- Open public classes.
+- How it works.
+- Community stats.
+- Clear CTAs.
+
+The contextual help panel was removed from the home page.
+
+About page cleanup
+------------------
+
+The About page copy was updated to avoid roadmap language and unfinished wording.
+
+The multilingual section now explains what exists:
+
+- Interface available in English, Spanish and French.
+- Classes can be discovered by teaching language.
+- Learners and teachers can communicate more clearly.
+
+Public footer
+-------------
+
+A responsive public footer was added to the public layout.
+
+Footer sections:
+
+- Brand mission and no-money reminder.
+- Learn: free classes, teachers, open public classes and About.
+- Teach: start teaching, teacher guidelines and free learning rules.
+- Community and safety: report issue, terms, privacy and community guidelines.
+- Language selector.
+
+The footer reinforces:
+
+- Free learning.
+- Free teaching.
+- No payments.
+- Community trust.
+
+Public legal and content pages
+------------------------------
+
+Static translated public content pages were added:
+
+- GET /terms
+- GET /privacy
+- GET /community-guidelines
+- GET /teacher-guidelines
+- GET /free-learning-rules
+
+These pages are rendered through:
+
+- app/Http/Controllers/ContentPageController.php
+- resources/js/pages/content/show.tsx
+
+The pages are static translated content for now, not a CMS.
+
+Terms and no-money rule
+-----------------------
+
+The terms page explains:
+
+- Teach4Free is free.
+- Teachers cannot require payment.
+- Students cannot be charged.
+- Paid classes are forbidden.
+- Selling private paid services through the platform is forbidden.
+- Capturing students for paid services is forbidden.
+- Advertising paid courses inside offers is forbidden.
+- Teach4Free does not process payments or take commissions.
+- External voluntary tips are outside the platform and must never be required, pressured or requested as a condition.
+- Users can report violations.
+- Offers or accounts may be restricted for violating the no-money rule.
+- Users are responsible for external meeting tool safety.
+- Respectful conduct is required.
+
+Teacher and community guidelines
+--------------------------------
+
+Teacher guidelines cover:
+
+- Classes must be free.
+- Topic, level, language and availability should be clear.
+- Teachers must not request payment or pressure students into paid services.
+- External meeting links should be used safely.
+- Student privacy should be respected.
+- Cancellations should happen with notice when possible.
+
+Community guidelines cover:
+
+- Respectful behavior.
+- No harassment.
+- No spam.
+- No scams.
+- No commercial pressure.
+- Reporting abuse and violations.
+
+Privacy page
+------------
+
+The privacy page explains practical platform data:
+
+- Account data.
+- Profile data.
+- Teaching offers.
+- Applications.
+- Notifications.
+- External meeting links.
+- Reports/moderation data.
+- No payment data because Teach4Free does not process payments.
+
+Public offers teacher links
+---------------------------
+
+Public offer cards and offer detail now link to public teacher profiles when the teacher has an active profile.
+
+Offer detail shows safe public teacher information:
+
+- Avatar.
+- Teacher name.
+- Headline.
+- Location when available.
+- Teaching languages.
+- Public teacher profile link.
+
+Teacher email addresses are not exposed.
+
+Language-aware discovery
+------------------------
+
+Public teacher discovery supports language filtering.
+
+The home page and offers discovery continue to prioritize current-locale content where possible while always allowing users to view all languages.
+
+Users are never locked into a single language.
+
+Public wording review
+---------------------
+
+Public pages touched by this task were reviewed for unfinished or developer-style wording:
+
+- Home.
+- About.
+- Offers search.
+- Offer detail.
+- Teachers index.
+- Teacher detail.
+- Login.
+- Register.
+- Public report page.
+- Terms.
+- Privacy.
+- Community guidelines.
+- Teacher guidelines.
+- Free learning rules.
+
+Admin-only placeholder language remains in admin areas where it intentionally describes internal modules.
+
+Demo data
+---------
+
+The existing rich seeder already supports public discovery and teacher profiles.
+
+Seeder data includes enough active teachers, students, public offers, languages and countries for a meaningful public demo after:
+
+- php artisan migrate:fresh --seed
+
+No missing image paths were added for seeded banners. Public teacher pages rely on uploaded banners or CSS fallback banners.
+
+Translations
+------------
+
+All new visible public strings were added to:
+
+- lang/en/ui.php
+- lang/es/ui.php
+- lang/fr/ui.php
+
+No duplicate translation system was introduced.
+
+New routes
+----------
+
+Public routes:
+
+- GET /teachers
+- GET /teachers/{user}
+- GET /terms
+- GET /privacy
+- GET /community-guidelines
+- GET /teacher-guidelines
+- GET /free-learning-rules
+
+Teacher profile banner routes:
+
+- POST /profile/teacher/banner
+- DELETE /profile/teacher/banner
+
+Pending after this public polish task
+-------------------------------------
+
+- Admin-editable CMS for legal/content pages.
+- Advanced teacher profile customization.
+- Teacher reviews display.
+- Reputation and badges on teacher profiles.
+- SEO metadata for teacher profiles and content pages.
+- Better teacher recommendations.
+- Optional custom hero artwork.
+- Public open-session calendar.

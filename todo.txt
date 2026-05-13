@@ -62,11 +62,26 @@ Future platform work
 - Rich internal messaging/chat.
 - Advanced open session handling.
 - Optional Jitsi integration.
-- Public teacher and class pages.
+- Advanced public class/event pages beyond current offer detail pages.
 - Full admin CRUD screens beyond the newly implemented users, languages, incidents, categories, subjects, teaching offer visibility and application visibility.
 - Teacher verification workflow.
 
-Local avatar storage setup
+Local public storage setup
 --------------------------
 
-- Run php artisan storage:link in each local or deployed environment that serves uploaded profile photos from the public disk.
+- Run php artisan storage:link in each local or deployed environment that serves uploaded profile photos and teacher banners from the public disk.
+
+Public identity and discovery pending items
+-------------------------------------------
+
+- Add admin-editable CMS support for legal/content pages if static translated pages become limiting.
+- Add advanced teacher profile customization beyond the current banner, avatar and profile text.
+- Add teacher reviews display on public teacher profiles once reviews exist.
+- Add reputation and badges to public teacher profiles once rules exist.
+- Add SEO metadata for public teacher profiles and legal/content pages.
+- Add better teacher recommendations beyond the current filters and language-aware discovery.
+- Add custom brand artwork or a refined hero illustration if a stronger visual asset is needed later.
+- Add SEO metadata for public home and offers pages.
+- Add an advanced recommendation/ranking engine beyond the current filters and language-first fallback.
+- Build a real public session calendar for open sessions.
+- Add richer browser-language detection only if the current Accept-Language fallback proves insufficient.

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 #[Fillable([
     'user_id',
@@ -17,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'default_session_duration_minutes',
     'meeting_tool',
     'meeting_url',
+    'banner_path',
     'is_active',
     'is_accepting_requests',
     'is_verified',
@@ -25,6 +27,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 class TeacherProfile extends Model
 {
+    /**
+     * @var list<string>
+     */
+    protected $appends = ['banner'];
+
     public const MODE_ONE_TO_ONE = 'one_to_one';
 
     public const MODE_SMALL_GROUP = 'small_group';
@@ -89,6 +96,15 @@ class TeacherProfile extends Model
     public function availabilityExceptions(): HasMany
     {
         return $this->hasMany(TeacherAvailabilityException::class);
+    }
+
+    public function getBannerAttribute(): ?string
+    {
+        if (! $this->banner_path) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($this->banner_path);
     }
 
     /**

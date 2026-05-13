@@ -46,6 +46,64 @@ class TeachingOffersTest extends TestCase
             );
     }
 
+    public function test_guest_can_clear_language_filter_and_view_all_offers(): void
+    {
+        [$category, $subject, $english] = $this->catalog();
+        $french = Language::create([
+            'code' => 'fr',
+            'name' => 'French',
+            'native_name' => 'Francais',
+            'is_active' => true,
+            'sort_order' => 2,
+        ]);
+        $englishTeacher = $this->teacherWithLanguage($english);
+        $frenchTeacher = $this->teacherWithLanguage($french);
+
+        $englishOffer = $this->publishedOffer($englishTeacher, $category, $subject, $english, [
+            'published_at' => now()->subDay(),
+        ]);
+        $frenchOffer = $this->publishedOffer($frenchTeacher, $category, $subject, $french, [
+            'slug' => '-french',
+            'title' => 'Free French basics',
+        ]);
+
+        $this->get(route('offers.index', ['language' => $english->code]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('offers', 1)
+                ->where('offers.0.slug', $englishOffer->slug)
+            );
+
+        $this->get(route('offers.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('offers', 2)
+                ->where('offers.0.slug', $frenchOffer->slug)
+                ->where('offers.1.slug', $englishOffer->slug)
+            );
+    }
+
+    public function test_guest_can_filter_offers_by_teacher(): void
+    {
+        [$category, $subject, $language] = $this->catalog();
+        $teacher = $this->teacherWithLanguage($language);
+        $otherTeacher = $this->teacherWithLanguage($language);
+
+        $offer = $this->publishedOffer($teacher, $category, $subject, $language);
+        $this->publishedOffer($otherTeacher, $category, $subject, $language, [
+            'slug' => '-other-teacher',
+            'title' => 'Another free Laravel offer',
+        ]);
+
+        $this->get(route('offers.index', ['teacher' => $teacher->id]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('offers', 1)
+                ->where('offers.0.slug', $offer->slug)
+                ->where('filteredTeacher.id', $teacher->id)
+            );
+    }
+
     public function test_guest_can_view_published_offer_but_not_unpublished_offer(): void
     {
         [$category, $subject, $language] = $this->catalog();

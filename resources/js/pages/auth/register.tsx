@@ -1,5 +1,4 @@
 import { Form, Head } from '@inertiajs/react';
-import { ContextualHelp } from '@/components/contextual-help';
 import { GoogleLoginButton } from '@/components/google-login-button';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
@@ -116,9 +115,6 @@ export default function Register() {
 
             <GoogleLoginButton />
 
-            <ContextualHelp title={t('auth.register.help_title')}>
-                {t('auth.register.help_body')}
-            </ContextualHelp>
         </>
     );
 }

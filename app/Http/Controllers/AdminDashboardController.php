@@ -38,6 +38,10 @@ class AdminDashboardController extends Controller
                 'total_users' => User::query()->count(),
                 'active_students' => StudentProfile::query()->where('is_active', true)->count(),
                 'active_teachers' => TeacherProfile::query()->where('is_active', true)->count(),
+                'pending_teacher_verifications' => TeacherProfile::query()
+                    ->where('is_active', true)
+                    ->where('is_verified', false)
+                    ->count(),
                 'mixed_users' => User::query()
                     ->whereHas('studentProfile', fn ($query) => $query->where('is_active', true))
                     ->whereHas('teacherProfile', fn ($query) => $query->where('is_active', true))

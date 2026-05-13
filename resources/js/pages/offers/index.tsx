@@ -1,16 +1,14 @@
-import { Head, Link, router } from '@inertiajs/react';
-import { Clock, Search, Users } from 'lucide-react';
+import { Head, router } from '@inertiajs/react';
+import { FilterX, Search, Sparkles } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useState } from 'react';
-import { ContextualHelp } from '@/components/contextual-help';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
+import { EmptyState, OfferCard } from '@/components/public/public-identity';
+import type { PublicOffer } from '@/components/public/public-identity';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useInitials } from '@/hooks/use-initials';
 import { useTranslation } from '@/hooks/use-translation';
 
 type Category = {
@@ -45,7 +43,14 @@ type Offer = {
     duration_minutes: number;
     availability_summary: string | null;
     is_accepting_applications: boolean;
-    user: { name: string; avatar?: string | null };
+    user: {
+        id: number;
+        name: string;
+        avatar?: string | null;
+        city?: string | null;
+        country_code?: string | null;
+        profile_url?: string | null;
+    };
     category: Category;
     subject: { name: string; slug: string } | null;
     languages: Language[];
@@ -60,6 +65,7 @@ type Filters = {
     teaching_mode: string;
     session_type: string;
     availability: string;
+    teacher: string;
     accepting: boolean;
 };
 
@@ -72,6 +78,7 @@ type Props = {
     levels: string[];
     teachingModes: string[];
     sessionTypes: string[];
+    filteredTeacher: { id: number; name: string } | null;
 };
 
 export default function PublicOffers({
@@ -83,9 +90,9 @@ export default function PublicOffers({
     levels,
     teachingModes,
     sessionTypes,
+    filteredTeacher,
 }: Props) {
     const { t } = useTranslation();
-    const getInitials = useInitials();
     const [data, setData] = useState<Filters>(filters);
 
     const submit = (event: FormEvent) => {
@@ -103,18 +110,51 @@ export default function PublicOffers({
     return (
         <>
             <Head title={t('offers.meta_title')} />
-            <div className="mx-auto max-w-7xl space-y-8 px-4 py-10 sm:px-6 lg:px-8">
-                <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-                    <div className="flex items-start gap-4">
-                        <Search className="mt-1 size-6 text-emerald-700 dark:text-emerald-300" />
-                        <div>
-                            <h1 className="text-3xl font-semibold tracking-normal">{t('offers.title')}</h1>
-                            <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">{t('offers.intro')}</p>
+            <div className="bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.16),transparent_30rem),linear-gradient(180deg,#fffaf3_0%,#ffffff_42%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.18),transparent_28rem),linear-gradient(180deg,#07140f_0%,#020617_55%)]">
+                <div className="mx-auto max-w-7xl space-y-8 px-4 py-10 sm:px-6 lg:px-8">
+                    <section className="rounded-lg border border-white/80 bg-white/75 p-6 shadow-xl shadow-emerald-950/5 backdrop-blur dark:border-white/10 dark:bg-white/10">
+                        <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+                            <div className="flex items-start gap-4">
+                                <div className="flex size-12 items-center justify-center rounded-lg bg-emerald-700 text-white shadow-lg shadow-emerald-900/20">
+                                    <Search className="size-6" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">{t('offers.eyebrow')}</p>
+                                    <h1 className="mt-2 text-3xl font-semibold tracking-normal">{t('offers.title')}</h1>
+                                    <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">{t('offers.intro')}</p>
+                                </div>
+                            </div>
+                            <div className="rounded-lg bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100">
+                                {t('offers.result_count', { count: offers.length })}
+                            </div>
                         </div>
-                    </div>
-                </section>
+                    </section>
 
                 <form onSubmit={submit} className="grid gap-4 rounded-lg border border-slate-200 bg-white p-5 shadow-xs md:grid-cols-4 dark:border-slate-800 dark:bg-slate-900">
+                    {filteredTeacher && (
+                        <div className="md:col-span-4">
+                            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100">
+                                {t('offers.teacher_filter_active', { teacher: filteredTeacher.name })}
+                                <button
+                                    type="button"
+                                    className="rounded-full p-1 hover:bg-emerald-100 dark:hover:bg-emerald-900"
+                                    onClick={() => {
+                                        const nextFilters = { ...data, teacher: '' };
+
+                                        setData(nextFilters);
+                                        router.get('/offers', nextFilters, {
+                                            preserveScroll: true,
+                                            preserveState: true,
+                                            replace: true,
+                                        });
+                                    }}
+                                    aria-label={t('offers.clear_teacher_filter')}
+                                >
+                                    <FilterX className="size-4" />
+                                </button>
+                            </div>
+                        </div>
+                    )}
                     <div className="space-y-2 md:col-span-2">
                         <Label htmlFor="search">{t('offers.search')}</Label>
                         <Input id="search" value={data.search} onChange={(event) => setData({ ...data, search: event.target.value })} />
@@ -139,6 +179,7 @@ export default function PublicOffers({
                             {t('offers.apply_filters')}
                         </Button>
                         <Button type="button" variant="outline" onClick={reset}>
+                            <FilterX />
                             {t('offers.reset_filters')}
                         </Button>
                     </div>
@@ -146,57 +187,36 @@ export default function PublicOffers({
 
                 <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {offers.length === 0 && (
-                        <div className="rounded-lg border border-slate-200 bg-white p-6 text-sm text-muted-foreground dark:border-slate-800 dark:bg-slate-900 md:col-span-2 xl:col-span-3">
-                            {t('offers.no_results')}
+                        <div className="md:col-span-2 xl:col-span-3">
+                            <EmptyState title={t('offers.no_results_title')} icon={Sparkles}>
+                                {t('offers.no_results')}
+                            </EmptyState>
                         </div>
                     )}
                     {offers.map((offer) => (
-                        <article key={offer.id} className="flex min-h-80 flex-col rounded-lg border border-slate-200 bg-white p-5 shadow-xs transition hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
-                            <div className="mb-4 flex items-center gap-3">
-                                <Avatar className="size-10">
-                                    <AvatarImage src={offer.user.avatar ?? undefined} alt={offer.user.name} />
-                                    <AvatarFallback>{getInitials(offer.user.name)}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <p className="text-sm font-medium">{offer.user.name}</p>
-                                    <p className="text-xs text-muted-foreground">{offer.category.name}</p>
-                                </div>
-                            </div>
-                            <h2 className="text-lg font-semibold">{offer.title}</h2>
-                            <p className="mt-2 flex-1 text-sm leading-6 text-muted-foreground">{offer.summary}</p>
-                            <div className="mt-4 flex flex-wrap gap-2">
-                                <Badge variant="outline">{t(`offer_levels.${offer.level}`)}</Badge>
-                                <Badge variant="outline">{t(`learning_modes.${offer.teaching_mode}`)}</Badge>
-                                <Badge variant="outline">{t(`session_types.${offer.session_type}`)}</Badge>
-                                {offer.languages.map((language) => (
-                                    <Badge key={language.code} variant="secondary">{language.name}</Badge>
-                                ))}
-                            </div>
-                            <div className="mt-4 grid gap-2 text-xs text-muted-foreground">
-                                <span className="flex items-center gap-2">
-                                    <Clock className="size-4" />
-                                    {t('offers.duration_value', { minutes: offer.duration_minutes })}
-                                </span>
-                                {offer.availability_summary && (
-                                    <span className="flex items-center gap-2">
-                                        <Users className="size-4" />
-                                        {offer.availability_summary}
-                                    </span>
-                                )}
-                            </div>
-                            <Button className="mt-5 w-fit" asChild>
-                                <Link href={`/offers/${offer.slug}`}>{t('offers.view_details')}</Link>
-                            </Button>
-                        </article>
+                        <OfferCard key={offer.id} offer={toPublicOffer(offer)} />
                     ))}
                 </section>
 
-                <ContextualHelp title={t('offers.help_title')}>
-                    {t('offers.help_body')}
-                </ContextualHelp>
+                </div>
             </div>
         </>
     );
+}
+
+function toPublicOffer(offer: Offer): PublicOffer {
+    return {
+        ...offer,
+        teacher: {
+            id: offer.user.id,
+            name: offer.user.name,
+            avatar: offer.user.avatar ?? null,
+            city: offer.user.city ?? null,
+            country_code: offer.user.country_code ?? null,
+            profile_url: offer.user.profile_url,
+        },
+        url: `/offers/${offer.slug}`,
+    };
 }
 
 function FilterSelect({

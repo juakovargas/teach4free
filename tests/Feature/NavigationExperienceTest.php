@@ -40,11 +40,13 @@ class NavigationExperienceTest extends TestCase
     {
         $appSidebar = $this->source('resources/js/components/app-sidebar.tsx');
         $adminLayout = $this->source('resources/js/layouts/admin-layout.tsx');
+        $adminSidebar = substr($adminLayout, strpos($adminLayout, 'function AdminSidebar')) ?: '';
 
         $this->assertStringNotContainsString('LanguageSelector', $appSidebar);
-        $this->assertStringNotContainsString('LanguageSelector', $adminLayout);
-        $this->assertStringContainsString("t('admin_sections.dashboard')", $adminLayout);
-        $this->assertStringContainsString("t('admin_sections.platform_settings')", $adminLayout);
+        $this->assertStringNotContainsString('LanguageSelector', $adminSidebar);
+        $this->assertStringContainsString('LanguageSelector', $adminLayout);
+        $this->assertStringContainsString("'admin_sections.dashboard'", $adminLayout);
+        $this->assertStringContainsString("'admin_sections.platform_settings'", $adminLayout);
     }
 
     public function test_user_dropdown_contains_requested_items_and_logout(): void

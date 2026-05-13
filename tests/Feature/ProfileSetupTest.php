@@ -8,6 +8,8 @@ use App\Models\TeacherProfile;
 use App\Models\User;
 use App\Models\UserLanguage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ProfileSetupTest extends TestCase
@@ -188,5 +190,35 @@ class ProfileSetupTest extends TestCase
             'meeting_url' => 'https://example.com/free-meeting',
             'is_accepting_requests' => true,
         ]);
+    }
+
+    public function test_authenticated_user_can_upload_and_remove_teacher_banner(): void
+    {
+        Storage::fake('public');
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post(route('profile.teacher.banner.update'), [
+                'banner' => UploadedFile::fake()->image('teacher-banner.jpg', 1600, 500),
+            ])
+            ->assertRedirect();
+
+        $profile = TeacherProfile::firstWhere('user_id', $user->id);
+
+        $this->assertNotNull($profile?->banner_path);
+        Storage::disk('public')->assertExists($profile->banner_path);
+
+        $path = $profile->banner_path;
+
+        $this->actingAs($user)
+            ->delete(route('profile.teacher.banner.destroy'))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('teacher_profiles', [
+            'user_id' => $user->id,
+            'banner_path' => null,
+        ]);
+        Storage::disk('public')->assertMissing($path);
     }
 }

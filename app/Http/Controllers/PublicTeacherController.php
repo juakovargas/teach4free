@@ -1,0 +1,242 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Language;
+use App\Models\TeachingCategory;
+use App\Models\TeachingOffer;
+use App\Models\TeachingSubject;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
+
+class PublicTeacherController extends Controller
+{
+    public function index(Request $request): Response
+    {
+        $filters = [
+            'search' => $request->string('search')->toString(),
+            'language' => $request->string('language')->toString(),
+            'category' => $request->string('category')->toString(),
+            'subject' => $request->string('subject')->toString(),
+            'country' => $request->string('country')->toString(),
+            'availability' => $request->string('availability')->toString(),
+        ];
+
+        $teachers = User::query()
+            ->whereHas('teacherProfile', fn (Builder $query) => $query->where('is_active', true))
+            ->with([
+                'teacherProfile:id,user_id,headline,teaching_bio,experience_summary,preferred_teaching_mode,is_verified,is_accepting_requests,banner_path',
+                'userLanguages' => fn ($query) => $query
+                    ->where('teaches', true)
+                    ->with('language:id,code,name,native_name'),
+                'teachingOffers' => fn ($query) => $query
+                    ->publiclyVisible()
+                    ->with(['category:id,name,slug,color', 'subject:id,name,slug'])
+                    ->latest('published_at'),
+            ])
+            ->withCount(['teachingOffers as active_offers_count' => fn ($query) => $query->publiclyVisible()])
+            ->when($filters['search'], function (Builder $query, string $search): void {
+                $query->where(function (Builder $query) use ($search): void {
+                    $query
+                        ->where('name', 'like', "%{$search}%")
+                        ->orWhereHas('teacherProfile', function (Builder $query) use ($search): void {
+                            $query
+                                ->where('headline', 'like', "%{$search}%")
+                                ->orWhere('teaching_bio', 'like', "%{$search}%")
+                                ->orWhere('experience_summary', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('teachingOffers', function (Builder $query) use ($search): void {
+                            $query->publiclyVisible()
+                                ->where(function (Builder $query) use ($search): void {
+                                    $query
+                                        ->where('title', 'like', "%{$search}%")
+                                        ->orWhere('summary', 'like', "%{$search}%")
+                                        ->orWhereHas('category', fn (Builder $query) => $query->where('name', 'like', "%{$search}%"))
+                                        ->orWhereHas('subject', fn (Builder $query) => $query->where('name', 'like', "%{$search}%"));
+                                });
+                        });
+                });
+            })
+            ->when($filters['language'], function (Builder $query, string $code): void {
+                $query->where(function (Builder $query) use ($code): void {
+                    $query
+                        ->whereHas('userLanguages', fn (Builder $query) => $query
+                            ->where('teaches', true)
+                            ->whereHas('language', fn (Builder $query) => $query->where('code', $code)))
+                        ->orWhereHas('teachingOffers.languages', fn (Builder $query) => $query->where('code', $code));
+                });
+            })
+            ->when($filters['category'], fn (Builder $query, string $slug) => $query->whereHas('teachingOffers', fn (Builder $query) => $query->publiclyVisible()->whereHas('category', fn (Builder $query) => $query->where('slug', $slug))))
+            ->when($filters['subject'], fn (Builder $query, string $slug) => $query->whereHas('teachingOffers', fn (Builder $query) => $query->publiclyVisible()->whereHas('subject', fn (Builder $query) => $query->where('slug', $slug))))
+            ->when($filters['country'], fn (Builder $query, string $country) => $query->where('country_code', $country))
+            ->when($filters['availability'], function (Builder $query, string $availability): void {
+                $query->where(function (Builder $query) use ($availability): void {
+                    $query
+                        ->whereHas('teacherAvailabilities', fn (Builder $query) => $query->where('notes', 'like', "%{$availability}%"))
+                        ->orWhereHas('teachingOffers', fn (Builder $query) => $query->publiclyVisible()->where('availability_summary', 'like', "%{$availability}%"));
+                });
+            })
+            ->orderByDesc('active_offers_count')
+            ->orderBy('name')
+            ->get(['id', 'name', 'avatar_path', 'avatar_url', 'city', 'country_code']);
+
+        return Inertia::render('teachers/index', [
+            'teachers' => $teachers->map(fn (User $teacher): array => $this->teacherCardPayload($teacher))->values(),
+            'filters' => $filters,
+            'categories' => TeachingCategory::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['id', 'name', 'slug', 'color']),
+            'subjects' => TeachingSubject::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['id', 'teaching_category_id', 'name', 'slug']),
+            'languages' => Language::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['id', 'code', 'name', 'native_name']),
+            'countries' => User::query()
+                ->whereHas('teacherProfile', fn (Builder $query) => $query->where('is_active', true))
+                ->whereNotNull('country_code')
+                ->distinct()
+                ->orderBy('country_code')
+                ->pluck('country_code')
+                ->values(),
+        ]);
+    }
+
+    public function show(User $user): Response
+    {
+        abort_unless($user->teacherProfile?->is_active, 404);
+
+        $user->load([
+            'teacherProfile:id,user_id,headline,teaching_bio,experience_summary,preferred_teaching_mode,max_students_per_session,default_session_duration_minutes,is_verified,is_accepting_requests,banner_path',
+            'userLanguages' => fn ($query) => $query
+                ->where('teaches', true)
+                ->with('language:id,code,name,native_name'),
+            'teacherAvailabilities' => fn ($query) => $query
+                ->where('is_active', true)
+                ->orderBy('day_of_week')
+                ->orderBy('starts_at'),
+            'teachingOffers' => fn ($query) => $query
+                ->publiclyVisible()
+                ->with(['category:id,name,slug,color', 'subject:id,name,slug', 'languages:id,code,name,native_name'])
+                ->latest('published_at'),
+        ]);
+
+        return Inertia::render('teachers/show', [
+            'teacher' => [
+                ...$this->teacherCardPayload($user),
+                'banner' => $user->teacherProfile?->banner,
+                'teaching_bio' => $user->teacherProfile?->teaching_bio,
+                'experience_summary' => $user->teacherProfile?->experience_summary,
+                'preferred_teaching_mode' => $user->teacherProfile?->preferred_teaching_mode,
+                'max_students_per_session' => $user->teacherProfile?->max_students_per_session,
+                'default_session_duration_minutes' => $user->teacherProfile?->default_session_duration_minutes,
+                'is_accepting_requests' => (bool) $user->teacherProfile?->is_accepting_requests,
+                'availability' => $user->teacherAvailabilities->map(fn ($availability): array => [
+                    'day_of_week' => $availability->day_of_week,
+                    'starts_at' => substr((string) $availability->starts_at, 0, 5),
+                    'ends_at' => substr((string) $availability->ends_at, 0, 5),
+                    'timezone' => $availability->timezone,
+                    'notes' => $availability->notes,
+                ])->values(),
+            ],
+            'offers' => $user->teachingOffers
+                ->map(fn (TeachingOffer $offer): array => $this->offerPayload($offer))
+                ->values(),
+            'openOffers' => $user->teachingOffers
+                ->where('session_type', TeachingOffer::SESSION_OPEN_PUBLIC)
+                ->map(fn (TeachingOffer $offer): array => $this->offerPayload($offer))
+                ->values(),
+        ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function teacherCardPayload(User $teacher): array
+    {
+        $offers = $teacher->teachingOffers;
+
+        return [
+            'id' => $teacher->id,
+            'name' => $teacher->name,
+            'avatar' => $teacher->avatar,
+            'initials' => $teacher->initials,
+            'headline' => $teacher->teacherProfile?->headline,
+            'teaching_bio_excerpt' => str($teacher->teacherProfile?->teaching_bio ?? '')->limit(180)->toString(),
+            'city' => $teacher->city,
+            'country_code' => $teacher->country_code,
+            'is_verified' => (bool) $teacher->teacherProfile?->is_verified,
+            'active_offers_count' => (int) ($teacher->active_offers_count ?? $offers->count()),
+            'languages' => $teacher->userLanguages
+                ->map(fn ($userLanguage): array => [
+                    'code' => $userLanguage->language->code,
+                    'name' => $userLanguage->language->name,
+                    'native_name' => $userLanguage->language->native_name,
+                ])
+                ->take(4)
+                ->values(),
+            'categories' => $offers
+                ->pluck('category')
+                ->filter()
+                ->unique('id')
+                ->take(3)
+                ->map(fn ($category): array => [
+                    'name' => $category->name,
+                    'slug' => $category->slug,
+                    'color' => $category->color,
+                ])
+                ->values(),
+            'subjects' => $offers
+                ->pluck('subject')
+                ->filter()
+                ->unique('id')
+                ->take(3)
+                ->map(fn ($subject): array => [
+                    'name' => $subject->name,
+                    'slug' => $subject->slug,
+                ])
+                ->values(),
+            'profile_url' => route('teachers.show', $teacher),
+            'offers_url' => route('offers.index', ['teacher' => $teacher->id]),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function offerPayload(TeachingOffer $offer): array
+    {
+        return [
+            'id' => $offer->id,
+            'slug' => $offer->slug,
+            'title' => $offer->title,
+            'summary' => $offer->summary,
+            'level' => $offer->level,
+            'teaching_mode' => $offer->teaching_mode,
+            'session_type' => $offer->session_type,
+            'duration_minutes' => $offer->duration_minutes,
+            'availability_summary' => $offer->availability_summary,
+            'teacher' => [
+                'id' => $offer->user_id,
+                'name' => $offer->user->name,
+                'avatar' => $offer->user->avatar,
+                'city' => $offer->user->city,
+                'country_code' => $offer->user->country_code,
+                'profile_url' => route('teachers.show', $offer->user),
+            ],
+            'category' => $offer->category,
+            'subject' => $offer->subject,
+            'languages' => $offer->languages,
+            'url' => route('offers.show', $offer),
+        ];
+    }
+}

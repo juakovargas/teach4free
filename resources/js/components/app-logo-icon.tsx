@@ -3,15 +3,8 @@ import type { SVGAttributes } from 'react';
 export default function AppLogoIcon(props: SVGAttributes<SVGElement>) {
     return (
         <svg {...props} viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-            <path
-                d="M7 9.5C7 7.6 8.6 6 10.5 6H33v24H10.5A3.5 3.5 0 0 0 7 33.5v-24Zm3.5 0a1 1 0 0 0-1 1v17.2c.3-.1.6-.2 1-.2H30.5v-18h-20Z"
-            />
-            <path
-                d="M9.5 31.5A1.5 1.5 0 0 1 11 30h22v4H11a1.5 1.5 0 0 1-1.5-1.5v-1Z"
-            />
-            <path
-                d="M15 14h10v3H15v-3Zm0 6h8v3h-8v-3Z"
-            />
+            <path d="M20 4.5a4 4 0 0 1 4 4c0 .6-.1 1.1-.3 1.6l5.2 4.1a4 4 0 1 1-1.9 2.5l-5.2-4.1a4 4 0 0 1-3.6 0L13 16.7a4 4 0 1 1-1.9-2.5l5.2-4.1a4 4 0 0 1-.3-1.6 4 4 0 0 1 4-4Z" />
+            <path d="M12.1 24.1a4 4 0 0 1 2.4 1.2l4.1-2.4a4 4 0 0 1 2.8 0l4.1 2.4a4 4 0 1 1-1.6 2.8l-4.1-2.4-4.1 2.4a4 4 0 1 1-3.6-4Z" />
         </svg>
     );
 }

@@ -999,3 +999,163 @@ Manual verification checklist:
 16. Schedule another session and confirm internal notifications still exist.
 17. Re-enable the email preference and repeat the scheduling flow if mail logging is configured.
 18. Confirm verification and password reset emails are not controlled by these preferences.
+
+Public identity and discovery refresh - 2026-05-13
+--------------------------------------------------
+
+Commands executed:
+
+- php -l app\Http\Controllers\HomeController.php; php -l app\Http\Controllers\PublicOfferController.php; php -l app\Http\Middleware\SetLocale.php; php -l tests\Feature\PublicPagesTest.php; php -l tests\Feature\TeachingOffersTest.php
+- Result: Passed. No PHP syntax errors.
+
+- npm run types:check
+- Result: Passed. TypeScript reported no errors.
+
+- php artisan test tests\Feature\PublicPagesTest.php tests\Feature\TeachingOffersTest.php --no-interaction
+- Result: Failed before running tests.
+- Error: PHPUnit does not support the --no-interaction option in this project.
+
+- php artisan test tests\Feature\PublicPagesTest.php tests\Feature\TeachingOffersTest.php
+- Result: Passed.
+- 13 tests executed.
+- 13 passed.
+- 109 assertions.
+
+- npm run lint:check
+- Initial result: Failed.
+- Error: ESLint reported an unused Sparkles import in resources/js/components/public/public-identity.tsx.
+- Fix applied: removed the unused import.
+
+- npm run lint:check
+- Result: Passed. ESLint reported no errors.
+
+- composer run lint:check
+- Result: Passed. Pint reported no required changes.
+
+- php artisan tinker --execute="echo 'users=' . \App\Models\User::count() . ' teachers=' . \App\Models\TeacherProfile::where('is_active', true)->count() . ' students=' . \App\Models\StudentProfile::where('is_active', true)->count() . ' offers=' . \App\Models\TeachingOffer::query()->publiclyVisible()->count() . ' languages=' . \App\Models\Language::where('is_active', true)->count() . ' countries=' . \App\Models\User::whereNotNull('country_code')->distinct()->count('country_code') . ' open_public=' . \App\Models\TeachingOffer::query()->publiclyVisible()->where('session_type', \App\Models\TeachingOffer::SESSION_OPEN_PUBLIC)->count();"
+- Result: Passed.
+- Output: users=59 teachers=32 students=37 offers=46 languages=3 countries=12 open_public=15.
+
+- npm run build
+- Result: Passed.
+- Vite production build completed.
+- Note: Vite printed plugin timing warnings, but the build succeeded.
+
+- php artisan route:list --path=offers
+- Result: Passed. Public offers, offer detail and teacher offer routes were registered.
+
+- php artisan route:list --path=/
+- Result: Passed. The home route is registered through HomeController.
+
+- php artisan test
+- Initial result: Failed.
+- 96 tests executed.
+- 94 passed.
+- 2 failed.
+- Failures:
+- Tests\Feature\AdminProfileCountsTest::test_admin_dashboard_shows_profile_counts expected stats.pending_teacher_verifications.
+- Tests\Feature\NavigationExperienceTest::test_language_selector_is_not_rendered_in_sidebars treated the admin header language selector as if it were inside the admin sidebar.
+- Fixes applied:
+- Restored stats.pending_teacher_verifications in AdminDashboardController.
+- Updated the navigation test to inspect the actual AdminSidebar portion while still confirming the admin header keeps LanguageSelector.
+
+- php artisan test
+- Intermediate result: Failed.
+- 96 tests executed.
+- 95 passed.
+- 1 failed.
+- Failure:
+- Tests\Feature\NavigationExperienceTest::test_language_selector_is_not_rendered_in_sidebars expected literal t('admin_sections.dashboard') text even though admin sidebar items are stored as labelKey values.
+- Fix applied:
+- Updated the test assertions to look for the admin section translation keys in the layout source.
+
+- php artisan test
+- Result: Passed.
+- 96 tests executed.
+- 96 passed.
+- 510 assertions.
+
+- composer run lint:check
+- Result: Passed. Pint reported no required changes.
+
+- npm run types:check
+- Result: Passed. TypeScript reported no errors.
+
+- npm run lint:check
+- Result: Passed. ESLint reported no errors.
+
+Automated coverage added:
+
+- Guest home page can render with database-backed discovery.
+- Home page shows featured teachers.
+- Home page prioritizes offers matching the current browser/interface language and falls back to other offers.
+- Public offers can be filtered by language.
+- Public offers language filter can be cleared by viewing all offers.
+- Public offers can be filtered by teacher, supporting featured teacher card links.
+
+Public profile, legal and trust polish - 2026-05-13
+---------------------------------------------------
+
+Commands executed:
+
+- php -l app\Http\Controllers\PublicTeacherController.php; php -l app\Http\Controllers\ContentPageController.php; php -l app\Http\Controllers\PublicOfferController.php; php -l app\Http\Controllers\TeacherProfileController.php; php -l database\migrations\2026_05_13_100000_add_banner_path_to_teacher_profiles_table.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l lang\es\ui.php; php -l lang\fr\ui.php; php -l lang\en\ui.php
+- Result: Passed. Translation files have no PHP syntax errors.
+
+- Inline PHP translation key check for new navigation, footer, teacher, banner and content-page keys across en/es/fr
+- Result: Passed. Required keys were present in all three locales.
+
+- php artisan test --filter=PublicPagesTest
+- Result: Passed.
+- 8 tests executed.
+- 8 passed.
+- 107 assertions.
+
+- php -l tests\Feature\ProfileSetupTest.php
+- Result: Passed. No PHP syntax errors.
+
+- php artisan test --filter=ProfileSetupTest
+- Result: Passed.
+- 10 tests executed.
+- 10 passed.
+- 31 assertions.
+
+- npm run types:check
+- Initial result: Failed.
+- Error: resources/js/layouts/public-layout.tsx passed a Wayfinder route object to a prop typed as string.
+- Fix applied: the public layout now uses an explicit string start-teaching href for the footer and public nav.
+
+- npm run types:check
+- Result: Passed. TypeScript reported no errors.
+
+- composer run lint:check
+- Result: Passed. Pint reported no required changes.
+
+- npm run lint:check
+- Result: Passed. ESLint reported no errors.
+
+- php artisan test
+- Result: Passed.
+- 102 tests executed.
+- 102 passed.
+- 601 assertions.
+
+- npm run build
+- Result: Passed.
+- Vite production build completed.
+- Note: Vite printed plugin timing warnings, but the build succeeded.
+
+- php artisan route:list | Select-String -Pattern "teachers|terms|privacy|community-guidelines|teacher-guidelines|free-learning-rules|profile/teacher/banner"
+- Result: Passed. Public teacher, legal/content and teacher banner routes are registered.
+
+Automated coverage added:
+
+- Guest can view legal/content pages.
+- Guest can browse the public teachers directory.
+- Guest can view an active public teacher profile with offers.
+- Guest cannot view an inactive teacher profile.
+- Public offer detail exposes a public teacher profile link without exposing teacher email.
+- Authenticated users can upload and remove a teacher banner on the public disk.
+- Existing home, About, public offer search, language-filter and teacher-filter coverage remains passing.

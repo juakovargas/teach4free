@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'reported_user_id',
     'teaching_offer_id',
     'application_id',
+    'class_session_id',
     'type',
     'status',
     'priority',
@@ -36,6 +37,10 @@ class Incident extends Model
 
     public const TYPE_SPAM = 'spam';
 
+    public const TYPE_PAYMENT_REQUEST = 'payment_request';
+
+    public const TYPE_COMMERCIAL_PRESSURE = 'commercial_pressure';
+
     public const TYPE_OTHER = 'other';
 
     public const TYPES = [
@@ -46,6 +51,8 @@ class Incident extends Model
         self::TYPE_TECHNICAL,
         self::TYPE_ABUSE,
         self::TYPE_SPAM,
+        self::TYPE_PAYMENT_REQUEST,
+        self::TYPE_COMMERCIAL_PRESSURE,
         self::TYPE_OTHER,
     ];
 
@@ -109,6 +116,14 @@ class Incident extends Model
     public function application(): BelongsTo
     {
         return $this->belongsTo(TeachingOfferApplication::class, 'application_id');
+    }
+
+    /**
+     * @return BelongsTo<ClassSession, $this>
+     */
+    public function classSession(): BelongsTo
+    {
+        return $this->belongsTo(ClassSession::class);
     }
 
     /**
