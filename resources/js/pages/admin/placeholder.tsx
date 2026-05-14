@@ -27,7 +27,7 @@ export default function AdminPlaceholder({ section, titleKey, descriptionKey }: 
                 </section>
                 <section className="grid gap-4 md:grid-cols-3">
                     <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-                        <h2 className="text-sm font-semibold">{t('admin_placeholder.managed_here')}</h2>
+                        <h2 className="text-sm font-semibold">{t('admin_placeholder.scope')}</h2>
                         <p className="mt-3 text-sm leading-6 text-muted-foreground">
                             {t(`admin_placeholder_details.${section}.managed`)}
                         </p>
@@ -39,7 +39,7 @@ export default function AdminPlaceholder({ section, titleKey, descriptionKey }: 
                         </p>
                     </article>
                     <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-                        <h2 className="text-sm font-semibold">{t('admin_placeholder.future_tasks')}</h2>
+                        <h2 className="text-sm font-semibold">{t('admin_placeholder.next_useful_work')}</h2>
                         <p className="mt-3 text-sm leading-6 text-muted-foreground">
                             {t(`admin_placeholder_details.${section}.future`)}
                         </p>

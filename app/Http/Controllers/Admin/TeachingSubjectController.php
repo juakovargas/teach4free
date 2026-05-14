@@ -14,15 +14,35 @@ use Inertia\Response;
 
 class TeachingSubjectController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:255'],
+            'category' => ['nullable', 'integer', Rule::exists('teaching_categories', 'id')],
+            'status' => ['nullable', 'string', Rule::in(['all', 'active', 'inactive'])],
+        ]);
+
         return Inertia::render('admin/subjects/index', [
             'subjects' => TeachingSubject::query()
                 ->with('category:id,name,slug,color')
                 ->withCount('offers')
+                ->when($filters['search'] ?? null, fn ($query, string $search) => $query
+                    ->where(fn ($query) => $query
+                        ->where('name', 'like', "%{$search}%")
+                        ->orWhere('slug', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%")))
+                ->when($filters['category'] ?? null, fn ($query, int $categoryId) => $query->where('teaching_category_id', $categoryId))
+                ->when(($filters['status'] ?? 'all') !== 'all', fn ($query) => $query
+                    ->where('is_active', $filters['status'] === 'active'))
                 ->orderBy('sort_order')
                 ->orderBy('name')
                 ->get(),
+            'categories' => $this->categories(),
+            'filters' => [
+                'search' => $filters['search'] ?? '',
+                'category' => $filters['category'] ?? '',
+                'status' => $filters['status'] ?? 'all',
+            ],
         ]);
     }
 

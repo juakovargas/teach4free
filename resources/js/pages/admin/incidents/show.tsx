@@ -17,10 +17,12 @@ type Incident = {
     description: string;
     admin_notes?: string | null;
     created_at: string;
+    updated_at: string;
     reporter?: { id: number; name: string; email: string } | null;
     reported_user?: { id: number; name: string; email: string } | null;
     teaching_offer?: { title: string; slug: string } | null;
-    application?: { id: number; status: string; message?: string | null } | null;
+    application?: { id: number; status: string; message?: string | null; student?: { name: string; email: string } | null; teacher?: { name: string; email: string } | null } | null;
+    class_session?: { id: number; title: string; status: string; starts_at?: string | null; ends_at?: string | null; timezone?: string | null } | null;
     resolver?: { name: string; email: string } | null;
     resolved_at?: string | null;
 };
@@ -80,7 +82,12 @@ export default function AdminIncidentShow({ incident, statuses, priorities }: Pr
                             <Info label={t('admin_incidents.reporter')} value={incident.reporter?.name ?? incident.reporter?.email ?? t('common.none')} href={incident.reporter ? `/admin/users/${incident.reporter.id}` : undefined} />
                             <Info label={t('admin_incidents.reported_user')} value={incident.reported_user?.name ?? incident.reported_user?.email ?? t('common.none')} href={incident.reported_user ? `/admin/users/${incident.reported_user.id}` : undefined} />
                             <Info label={t('admin_incidents.teaching_offer')} value={incident.teaching_offer?.title ?? t('common.none')} href={incident.teaching_offer ? `/admin/teaching-offers/${incident.teaching_offer.slug}` : undefined} />
+                            <Info label={t('admin_incidents.application')} value={incident.application ? `#${incident.application.id} - ${t(`application_statuses.${incident.application.status}`)}` : t('common.none')} />
+                            <Info label={t('admin_incidents.session')} value={incident.class_session ? `${incident.class_session.title} - ${t(`session_statuses.${incident.class_session.status}`)}` : t('common.none')} />
                             <Info label={t('admin_incidents.created')} value={new Date(incident.created_at).toLocaleString()} />
+                            <Info label={t('admin_incidents.updated_at')} value={new Date(incident.updated_at).toLocaleString()} />
+                            <Info label={t('admin_incidents.resolved_by')} value={incident.resolver?.name ?? t('common.none')} />
+                            <Info label={t('admin_incidents.resolved_at')} value={incident.resolved_at ? new Date(incident.resolved_at).toLocaleString() : t('common.none')} />
                         </div>
                     </article>
 
@@ -96,6 +103,13 @@ export default function AdminIncidentShow({ incident, statuses, priorities }: Pr
                                     <option key={status} value={status}>{t(`incident_statuses.${status}`)}</option>
                                 ))}
                             </select>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            {statuses.map((status) => (
+                                <Button key={status} type="button" size="sm" variant={form.data.status === status ? 'default' : 'outline'} onClick={() => form.setData('status', status)}>
+                                    {t(`incident_statuses.${status}`)}
+                                </Button>
+                            ))}
                         </div>
                         <div className="grid gap-2">
                             <Label>{t('admin_incidents.priority')}</Label>

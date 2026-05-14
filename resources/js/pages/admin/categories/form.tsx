@@ -35,6 +35,8 @@ type CategoryForm = {
     sort_order: number;
 };
 
+const colorPresets = ['#3B82F6', '#10B981', '#8B5CF6', '#F97316', '#EC4899', '#14B8A6', '#EF4444', '#EAB308', '#64748B', '#6366F1'];
+
 export default function AdminCategoryForm({ category }: Props) {
     const { t } = useTranslation();
     const isEditing = category !== null;
@@ -91,7 +93,30 @@ export default function AdminCategoryForm({ category }: Props) {
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="color">{t('admin_categories.color')}</Label>
-                        <Input id="color" value={data.color} onChange={(event) => setData('color', event.target.value)} />
+                        <div className="flex items-center gap-3">
+                            <Input
+                                id="color-picker"
+                                type="color"
+                                value={/^#[0-9a-fA-F]{6}$/.test(data.color) ? data.color : '#3B82F6'}
+                                onChange={(event) => setData('color', event.target.value.toUpperCase())}
+                                className="h-10 w-14 p-1"
+                                aria-label={t('admin_categories.color_picker')}
+                            />
+                            <Input id="color" value={data.color} onChange={(event) => setData('color', event.target.value.toUpperCase())} placeholder="#3B82F6" />
+                            <span className="size-10 rounded-md border border-slate-200 dark:border-slate-800" style={{ backgroundColor: /^#[0-9a-fA-F]{6}$/.test(data.color) ? data.color : '#FFFFFF' }} />
+                        </div>
+                        <div className="flex flex-wrap gap-2" aria-label={t('admin_categories.preset_palette')}>
+                            {colorPresets.map((color) => (
+                                <button
+                                    key={color}
+                                    type="button"
+                                    onClick={() => setData('color', color)}
+                                    className="size-8 rounded-full border border-slate-200 shadow-xs transition hover:scale-105 dark:border-slate-800"
+                                    style={{ backgroundColor: color }}
+                                    aria-label={color}
+                                />
+                            ))}
+                        </div>
                         <InputError message={errors.color} />
                     </div>
                     <div className="space-y-2">

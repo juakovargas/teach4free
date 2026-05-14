@@ -2,11 +2,15 @@
 
 namespace Database\Seeders;
 
+use App\Models\CategoryProposal;
 use App\Models\ClassSession;
 use App\Models\ClassSessionAttendee;
 use App\Models\Incident;
 use App\Models\Language;
+use App\Models\PlatformSetting;
+use App\Models\PlatformTrackingSetting;
 use App\Models\StudentProfile;
+use App\Models\SubjectProposal;
 use App\Models\TeacherAvailability;
 use App\Models\TeacherAvailabilityException;
 use App\Models\TeacherProfile;
@@ -102,6 +106,26 @@ class DatabaseSeeder extends Seeder
             'learning_interests' => null,
             'teaching_interests' => null,
         ]);
+
+        PlatformSetting::current()->forceFill([
+            'platform_name' => 'Teach4Free',
+            'support_email' => 'support@example.com',
+            'default_locale' => 'en',
+            'allow_teacher_category_proposals' => true,
+            'allow_teacher_subject_proposals' => true,
+            'require_email_verification' => true,
+            'allow_public_teacher_profiles' => true,
+            'allow_open_public_sessions' => true,
+            'maintenance_notice' => null,
+            'updated_by' => $admin->id,
+        ])->save();
+
+        PlatformTrackingSetting::current()->forceFill([
+            'tracking_enabled' => false,
+            'cookie_consent_required' => true,
+            'plausible_domain' => 'teach4free.local',
+            'updated_by' => $admin->id,
+        ])->save();
 
         $devUser = $createUser('user@example.com', 'Teach4Free User', 1, [
             'bio' => 'Local development learner and teacher.',
@@ -355,6 +379,86 @@ class DatabaseSeeder extends Seeder
             return [$model->slug => $model];
         });
 
+        $proposalStatuses = [
+            CategoryProposal::STATUS_PENDING,
+            CategoryProposal::STATUS_APPROVED,
+            CategoryProposal::STATUS_REJECTED,
+            CategoryProposal::STATUS_MERGED,
+        ];
+
+        $categoryProposalSeeds = [
+            ['Data literacy', 'Help learners understand datasets and charts.', '#3B82F6', 'bar-chart', 'programming'],
+            ['Digital wellbeing', 'Free support around healthy technology habits.', '#10B981', 'heart-handshake', 'personal-development'],
+            ['Public speaking', 'Practice clear talks, interviews and presentations.', '#8B5CF6', 'mic', 'business'],
+            ['Open source contribution', 'Mentoring for first open source contributions.', '#F97316', 'git-pull-request', 'programming'],
+            ['Study coaching', 'Support for planning learning routines.', '#EC4899', 'calendar-check', 'personal-development'],
+            ['Community art', 'Creative peer feedback without paid promotion.', '#14B8A6', 'palette', 'design'],
+            ['Climate basics', 'Accessible science discussions for beginners.', '#EF4444', 'leaf', 'science'],
+            ['Accessibility', 'Inclusive design and assistive technology basics.', '#6366F1', 'accessibility', 'design'],
+        ];
+
+        $categoryProposals = collect();
+        foreach ($categoryProposalSeeds as $index => [$name, $description, $color, $icon, $linkedSlug]) {
+            $status = $proposalStatuses[$index % count($proposalStatuses)];
+            $linkedCategory = in_array($status, [CategoryProposal::STATUS_APPROVED, CategoryProposal::STATUS_MERGED], true)
+                ? $categories[$linkedSlug]
+                : null;
+
+            $categoryProposals->push(CategoryProposal::updateOrCreate(
+                ['name' => $name, 'proposed_by_user_id' => $allTeachers[$index % $allTeachers->count()]->id],
+                [
+                    'description' => $description,
+                    'suggested_color' => $color,
+                    'suggested_icon' => $icon,
+                    'status' => $status,
+                    'admin_notes' => $status === CategoryProposal::STATUS_REJECTED
+                        ? 'Demo proposal rejected because it overlaps an existing topic.'
+                        : ($status === CategoryProposal::STATUS_PENDING ? null : 'Demo proposal reviewed.'),
+                    'reviewed_by' => $status === CategoryProposal::STATUS_PENDING ? null : $admin->id,
+                    'reviewed_at' => $status === CategoryProposal::STATUS_PENDING ? null : now()->subDays($index + 1),
+                    'approved_category_id' => $linkedCategory?->id,
+                ],
+            ));
+        }
+
+        $subjectProposalSeeds = [
+            ['Beginner data charts', 'Charts for people new to data.', 'programming', 'sql'],
+            ['Accessible forms', 'Form design and validation accessibility.', 'design', 'ui-design'],
+            ['Interview storytelling', 'Practice telling project stories clearly.', 'career-mentoring', 'portfolio-review'],
+            ['Open source first issue', 'How to find and prepare a first issue.', 'programming', 'git'],
+            ['French small talk', 'Everyday friendly conversation practice.', 'languages', 'french-conversation'],
+            ['Spanish pronunciation drills', 'Gentle speaking drills.', 'languages', 'spanish-conversation'],
+            ['Study planning for adults', 'Build realistic weekly study habits.', 'personal-development', 'study-habits'],
+            ['Math for budgeting', 'Practical arithmetic and percentages.', 'mathematics', 'basic-mathematics'],
+            ['Portfolio accessibility review', 'Review portfolios with accessibility basics.', 'career-mentoring', 'portfolio-review'],
+            ['Creative editing circle', 'Peer feedback for short writing.', 'writing', 'creative-writing'],
+            ['Meeting link safety', 'Help new users use external tools safely.', 'business', 'business-planning'],
+            ['Climate discussion basics', 'Simple climate science vocabulary.', 'science', 'biology-basics'],
+        ];
+
+        foreach ($subjectProposalSeeds as $index => [$name, $description, $categorySlug, $subjectSlug]) {
+            $status = $proposalStatuses[$index % count($proposalStatuses)];
+            $linkedSubject = in_array($status, [SubjectProposal::STATUS_APPROVED, SubjectProposal::STATUS_MERGED], true)
+                ? $subjects[$subjectSlug]
+                : null;
+
+            SubjectProposal::updateOrCreate(
+                ['name' => $name, 'proposed_by_user_id' => $allTeachers[($index + 3) % $allTeachers->count()]->id],
+                [
+                    'teaching_category_id' => $index % 3 === 0 ? null : $categories[$categorySlug]->id,
+                    'category_proposal_id' => $index % 3 === 0 ? $categoryProposals[$index % $categoryProposals->count()]->id : null,
+                    'description' => $description,
+                    'status' => $status,
+                    'admin_notes' => $status === SubjectProposal::STATUS_REJECTED
+                        ? 'Demo proposal rejected because it was too broad for a subject.'
+                        : ($status === SubjectProposal::STATUS_PENDING ? null : 'Demo proposal reviewed.'),
+                    'reviewed_by' => $status === SubjectProposal::STATUS_PENDING ? null : $admin->id,
+                    'reviewed_at' => $status === SubjectProposal::STATUS_PENDING ? null : now()->subDays($index + 1),
+                    'approved_subject_id' => $linkedSubject?->id,
+                ],
+            );
+        }
+
         $offerTopics = [
             ['Laravel routing for beginners', 'laravel'], ['Build your first React component', 'react'], ['JavaScript practice hour', 'javascript'], ['Python problem solving', 'python'],
             ['Git confidence clinic', 'git'], ['PHP fundamentals Q and A', 'php'], ['English speaking circle', 'english-conversation'], ['Spanish conversation for travelers', 'spanish-conversation'],
@@ -563,18 +667,39 @@ class DatabaseSeeder extends Seeder
         }
 
         $incidentSubjects = [
-            'Possible spam profile', 'Offer needs review', 'Application support request', 'Technical issue on profile page',
-            'Abusive message report', 'Duplicate teaching offer', 'Open session link problem', 'Student safety concern',
-            'Teacher verification question', 'Blocked content review', 'General support issue', 'Suspicious account activity',
-            'Language mismatch in offer', 'Repeated no-show concern', 'Accessibility help request',
+            ['Teacher asked for payment outside the platform', Incident::TYPE_PAYMENT_REQUEST, Incident::PRIORITY_URGENT],
+            ['Offer appears to promote a paid course', Incident::TYPE_COMMERCIAL_PRESSURE, Incident::PRIORITY_HIGH],
+            ['User shared spam link', Incident::TYPE_SPAM, Incident::PRIORITY_NORMAL],
+            ['Student did not attend several sessions', Incident::TYPE_SESSION, Incident::PRIORITY_NORMAL],
+            ['Technical issue with meeting link', Incident::TYPE_TECHNICAL, Incident::PRIORITY_LOW],
+            ['Abusive message report', Incident::TYPE_ABUSE, Incident::PRIORITY_HIGH],
+            ['Suspicious commercial pressure', Incident::TYPE_COMMERCIAL_PRESSURE, Incident::PRIORITY_HIGH],
+            ['Duplicate fake profile', Incident::TYPE_USER, Incident::PRIORITY_NORMAL],
+            ['Possible spam profile', Incident::TYPE_SPAM, Incident::PRIORITY_NORMAL],
+            ['Application support request', Incident::TYPE_APPLICATION, Incident::PRIORITY_LOW],
+            ['Open session link problem', Incident::TYPE_SESSION, Incident::PRIORITY_NORMAL],
+            ['Student safety concern', Incident::TYPE_ABUSE, Incident::PRIORITY_URGENT],
+            ['Teacher verification question', Incident::TYPE_USER, Incident::PRIORITY_LOW],
+            ['Blocked content review', Incident::TYPE_TEACHING_OFFER, Incident::PRIORITY_NORMAL],
+            ['General support issue', Incident::TYPE_OTHER, Incident::PRIORITY_LOW],
+            ['Suspicious account activity', Incident::TYPE_USER, Incident::PRIORITY_HIGH],
+            ['Language mismatch in offer', Incident::TYPE_TEACHING_OFFER, Incident::PRIORITY_LOW],
+            ['Repeated no-show concern', Incident::TYPE_SESSION, Incident::PRIORITY_NORMAL],
+            ['Accessibility help request', Incident::TYPE_TECHNICAL, Incident::PRIORITY_LOW],
+            ['Teacher demanded a tip before sharing link', Incident::TYPE_PAYMENT_REQUEST, Incident::PRIORITY_URGENT],
         ];
 
-        foreach ($incidentSubjects as $index => $subject) {
+        $sessionIds = ClassSession::query()->pluck('id')->values();
+
+        foreach ($incidentSubjects as $index => [$subject, $type, $priority]) {
             $status = Incident::STATUSES[$index % count(Incident::STATUSES)];
             $resolved = in_array($status, [Incident::STATUS_RESOLVED, Incident::STATUS_DISMISSED], true);
             $reporter = $allLearners[$index % $allLearners->count()];
             $reported = $allTeachers[$index % $allTeachers->count()];
             $offer = $offers[$index % $offers->count()];
+            $application = TeachingOfferApplication::query()
+                ->where('teaching_offer_id', $offer->id)
+                ->first();
 
             Incident::updateOrCreate(
                 ['subject' => $subject],
@@ -582,11 +707,12 @@ class DatabaseSeeder extends Seeder
                     'reporter_user_id' => $reporter->id,
                     'reported_user_id' => $reported->id,
                     'teaching_offer_id' => $index % 2 === 0 ? $offer->id : null,
-                    'application_id' => null,
-                    'type' => Incident::TYPES[$index % count(Incident::TYPES)],
+                    'application_id' => in_array($type, [Incident::TYPE_APPLICATION, Incident::TYPE_SESSION], true) ? $application?->id : null,
+                    'class_session_id' => $type === Incident::TYPE_SESSION && $sessionIds->isNotEmpty() ? $sessionIds[$index % $sessionIds->count()] : null,
+                    'type' => $type,
                     'status' => $status,
-                    'priority' => Incident::PRIORITIES[$index % count(Incident::PRIORITIES)],
-                    'description' => 'Demo incident created for admin moderation workflows.',
+                    'priority' => $priority,
+                    'description' => 'Demo incident created for admin moderation workflows. Teach4Free remains free and commercial pressure is forbidden.',
                     'admin_notes' => $resolved ? 'Resolved in demo data.' : null,
                     'resolved_by' => $resolved ? $admin->id : null,
                     'resolved_at' => $resolved ? now()->subDays(1) : null,

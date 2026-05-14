@@ -6,6 +6,7 @@ import { AdminPagination } from '@/components/admin-pagination';
 import { ContextualHelp } from '@/components/contextual-help';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useTranslation } from '@/hooks/use-translation';
 
@@ -19,6 +20,8 @@ type Incident = {
     reporter?: { name: string; email: string } | null;
     reported_user?: { name: string; email: string } | null;
     teaching_offer?: { title: string; slug: string } | null;
+    application?: { id: number; status: string } | null;
+    class_session?: { id: number; title: string; status: string; starts_at?: string | null } | null;
 };
 
 type Paginator<T> = {
@@ -29,18 +32,32 @@ type Paginator<T> = {
 type Props = {
     incidents: Paginator<Incident>;
     filters: {
+        search: string;
         status: string;
         type: string;
         priority: string;
+        reporter_user_id: number | string;
+        reported_user_id: number | string;
+        teaching_offer_id: number | string;
     };
     statuses: string[];
     types: string[];
     priorities: string[];
+    filterOptions: {
+        reporters: Array<{ id: number; name: string; email: string }>;
+        reportedUsers: Array<{ id: number; name: string; email: string }>;
+        teachingOffers: Array<{ id: number; title: string; slug: string }>;
+    };
 };
 
-export default function AdminIncidentsIndex({ incidents, filters, statuses, types, priorities }: Props) {
+export default function AdminIncidentsIndex({ incidents, filters, statuses, types, priorities, filterOptions }: Props) {
     const { t } = useTranslation();
-    const [form, setForm] = useState(filters);
+    const [form, setForm] = useState({
+        ...filters,
+        reporter_user_id: filters.reporter_user_id ? String(filters.reporter_user_id) : '',
+        reported_user_id: filters.reported_user_id ? String(filters.reported_user_id) : '',
+        teaching_offer_id: filters.teaching_offer_id ? String(filters.teaching_offer_id) : '',
+    });
 
     const submit = (event: FormEvent) => {
         event.preventDefault();
@@ -61,7 +78,11 @@ export default function AdminIncidentsIndex({ incidents, filters, statuses, type
                     </div>
                 </section>
 
-                <form onSubmit={submit} className="grid gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 sm:grid-cols-[repeat(3,1fr)_auto]">
+                <form onSubmit={submit} className="grid gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 lg:grid-cols-[1fr_repeat(3,12rem)_auto]">
+                    <div className="grid gap-2">
+                        <Label htmlFor="search">{t('admin_incidents.search')}</Label>
+                        <Input id="search" value={form.search} onChange={(event) => setForm({ ...form, search: event.target.value })} />
+                    </div>
                     <IncidentSelect label={t('admin_incidents.status')} value={form.status} values={['all', ...statuses]} prefix="incident_statuses" onChange={(value) => setForm({ ...form, status: value })} />
                     <IncidentSelect label={t('admin_incidents.type')} value={form.type} values={['all', ...types]} prefix="incident_types" onChange={(value) => setForm({ ...form, type: value })} />
                     <IncidentSelect label={t('admin_incidents.priority')} value={form.priority} values={['all', ...priorities]} prefix="incident_priorities" onChange={(value) => setForm({ ...form, priority: value })} />
@@ -71,6 +92,9 @@ export default function AdminIncidentsIndex({ incidents, filters, statuses, type
                             {t('admin_incidents.apply_filters')}
                         </Button>
                     </div>
+                    <UserSelect label={t('admin_incidents.reporter')} value={form.reporter_user_id} options={filterOptions.reporters} onChange={(value) => setForm({ ...form, reporter_user_id: value })} />
+                    <UserSelect label={t('admin_incidents.reported_user')} value={form.reported_user_id} options={filterOptions.reportedUsers} onChange={(value) => setForm({ ...form, reported_user_id: value })} />
+                    <OfferSelect label={t('admin_incidents.related_offer')} value={form.teaching_offer_id} options={filterOptions.teachingOffers} onChange={(value) => setForm({ ...form, teaching_offer_id: value })} />
                 </form>
 
                 <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900">
@@ -83,6 +107,8 @@ export default function AdminIncidentsIndex({ incidents, filters, statuses, type
                                     <th className="px-4 py-3">{t('admin_incidents.priority')}</th>
                                     <th className="px-4 py-3">{t('admin_incidents.status')}</th>
                                     <th className="px-4 py-3">{t('admin_incidents.reporter')}</th>
+                                    <th className="px-4 py-3">{t('admin_incidents.reported_user')}</th>
+                                    <th className="px-4 py-3">{t('admin_incidents.related')}</th>
                                     <th className="px-4 py-3">{t('admin_incidents.created')}</th>
                                     <th className="px-4 py-3 text-right">{t('admin_incidents.actions')}</th>
                                 </tr>
@@ -90,7 +116,7 @@ export default function AdminIncidentsIndex({ incidents, filters, statuses, type
                             <tbody>
                                 {incidents.data.length === 0 && (
                                     <tr>
-                                        <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                                        <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">
                                             {t('admin_incidents.empty')}
                                         </td>
                                     </tr>
@@ -115,6 +141,8 @@ export default function AdminIncidentsIndex({ incidents, filters, statuses, type
                                             </Badge>
                                         </td>
                                         <td className="px-4 py-4">{incident.reporter?.name ?? incident.reporter?.email ?? t('common.none')}</td>
+                                        <td className="px-4 py-4">{incident.reported_user?.name ?? incident.reported_user?.email ?? t('common.none')}</td>
+                                        <td className="px-4 py-4 text-muted-foreground">{relatedLabel(incident, t)}</td>
                                         <td className="px-4 py-4 text-muted-foreground">{new Date(incident.created_at).toLocaleDateString()}</td>
                                         <td className="px-4 py-4 text-right">
                                             <Button variant="outline" size="sm" asChild>
@@ -138,6 +166,78 @@ export default function AdminIncidentsIndex({ incidents, filters, statuses, type
                 </ContextualHelp>
             </div>
         </>
+    );
+}
+
+function relatedLabel(incident: Incident, t: (key: string) => string): string {
+    if (incident.teaching_offer) {
+        return incident.teaching_offer.title;
+    }
+
+    if (incident.application) {
+        return `${t('admin_incidents.application')} #${incident.application.id}`;
+    }
+
+    if (incident.class_session) {
+        return incident.class_session.title;
+    }
+
+    return t('common.none');
+}
+
+function UserSelect({
+    label,
+    value,
+    options,
+    onChange,
+}: {
+    label: string;
+    value: string;
+    options: Array<{ id: number; name: string; email: string }>;
+    onChange: (value: string) => void;
+}) {
+    const { t } = useTranslation();
+
+    return (
+        <div className="grid gap-2">
+            <Label>{label}</Label>
+            <select value={value} onChange={(event) => onChange(event.target.value)} className="h-10 rounded-md border border-input bg-background px-3 text-sm">
+                <option value="">{t('common.all')}</option>
+                {options.map((user) => (
+                    <option key={user.id} value={String(user.id)}>
+                        {user.name}
+                    </option>
+                ))}
+            </select>
+        </div>
+    );
+}
+
+function OfferSelect({
+    label,
+    value,
+    options,
+    onChange,
+}: {
+    label: string;
+    value: string;
+    options: Array<{ id: number; title: string; slug: string }>;
+    onChange: (value: string) => void;
+}) {
+    const { t } = useTranslation();
+
+    return (
+        <div className="grid gap-2">
+            <Label>{label}</Label>
+            <select value={value} onChange={(event) => onChange(event.target.value)} className="h-10 rounded-md border border-input bg-background px-3 text-sm">
+                <option value="">{t('common.all')}</option>
+                {options.map((offer) => (
+                    <option key={offer.id} value={String(offer.id)}>
+                        {offer.title}
+                    </option>
+                ))}
+            </select>
+        </div>
     );
 }
 

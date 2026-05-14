@@ -1,21 +1,21 @@
 <?php
 
-use App\Http\Controllers\Admin\ImpersonationController as AdminImpersonationController;
-use App\Http\Controllers\Admin\IncidentController as AdminIncidentController;
 use App\Http\Controllers\Admin\AnalyticsController as AdminAnalyticsController;
 use App\Http\Controllers\Admin\CalendarOverviewController as AdminCalendarOverviewController;
 use App\Http\Controllers\Admin\CategoryProposalController as AdminCategoryProposalController;
+use App\Http\Controllers\Admin\ImpersonationController as AdminImpersonationController;
+use App\Http\Controllers\Admin\IncidentController as AdminIncidentController;
 use App\Http\Controllers\Admin\LanguageController as AdminLanguageController;
 use App\Http\Controllers\Admin\PlaceholderController as AdminPlaceholderController;
 use App\Http\Controllers\Admin\PlatformSettingsController as AdminPlatformSettingsController;
 use App\Http\Controllers\Admin\SessionController as AdminSessionController;
 use App\Http\Controllers\Admin\StudentController as AdminStudentController;
 use App\Http\Controllers\Admin\SubjectProposalController as AdminSubjectProposalController;
+use App\Http\Controllers\Admin\TeacherController as AdminTeacherController;
 use App\Http\Controllers\Admin\TeachingCategoryController as AdminTeachingCategoryController;
 use App\Http\Controllers\Admin\TeachingOfferApplicationController as AdminTeachingOfferApplicationController;
 use App\Http\Controllers\Admin\TeachingOfferController as AdminTeachingOfferController;
 use App\Http\Controllers\Admin\TeachingSubjectController as AdminTeachingSubjectController;
-use App\Http\Controllers\Admin\TeacherController as AdminTeacherController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\WorldMapController as AdminWorldMapController;
 use App\Http\Controllers\AdminDashboardController;
@@ -37,8 +37,8 @@ use App\Http\Controllers\TeacherApplicationController;
 use App\Http\Controllers\TeacherApplicationSessionController;
 use App\Http\Controllers\TeacherAvailabilityController;
 use App\Http\Controllers\TeacherOfferController;
-use App\Http\Controllers\TeacherProposalController;
 use App\Http\Controllers\TeacherProfileController;
+use App\Http\Controllers\TeacherProposalController;
 use App\Http\Controllers\TeacherSessionController;
 use Illuminate\Support\Facades\Route;
 

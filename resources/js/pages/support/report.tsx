@@ -11,10 +11,11 @@ type Props = {
     type: string;
     teachingOfferId?: number | string | null;
     reportedUserId?: number | string | null;
+    classSessionId?: number | string | null;
     types: string[];
 };
 
-export default function SupportReport({ type, teachingOfferId, reportedUserId, types }: Props) {
+export default function SupportReport({ type, teachingOfferId, reportedUserId, classSessionId, types }: Props) {
     const { t } = useTranslation();
     const { flash } = usePage().props as { flash: { status?: string } };
     const form = useForm({
@@ -23,6 +24,7 @@ export default function SupportReport({ type, teachingOfferId, reportedUserId, t
         description: '',
         teaching_offer_id: teachingOfferId ?? '',
         reported_user_id: reportedUserId ?? '',
+        class_session_id: classSessionId ?? '',
     });
 
     const submit = (event: FormEvent) => {

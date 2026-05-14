@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CategoryProposal;
 use App\Models\Language;
+use App\Models\PlatformSetting;
 use App\Models\TeacherProfile;
 use App\Models\TeachingCategory;
 use App\Models\TeachingOffer;
@@ -196,6 +198,15 @@ class TeacherOfferController extends Controller
             'teachingModes' => TeachingOffer::MODES,
             'sessionTypes' => TeachingOffer::SESSION_TYPES,
             'meetingTools' => TeachingOffer::MEETING_TOOLS,
+            'proposalSettings' => [
+                'allow_category_proposals' => PlatformSetting::current()->allow_teacher_category_proposals,
+                'allow_subject_proposals' => PlatformSetting::current()->allow_teacher_subject_proposals,
+            ],
+            'categoryProposals' => CategoryProposal::query()
+                ->where('proposed_by_user_id', $request->user()->id)
+                ->where('status', CategoryProposal::STATUS_PENDING)
+                ->orderBy('name')
+                ->get(['id', 'name', 'status']),
         ];
     }
 

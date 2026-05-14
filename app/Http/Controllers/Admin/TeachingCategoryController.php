@@ -13,14 +13,30 @@ use Inertia\Response;
 
 class TeachingCategoryController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:255'],
+            'status' => ['nullable', 'string', Rule::in(['all', 'active', 'inactive'])],
+        ]);
+
         return Inertia::render('admin/categories/index', [
             'categories' => TeachingCategory::query()
                 ->withCount(['subjects', 'offers'])
+                ->when($filters['search'] ?? null, fn ($query, string $search) => $query
+                    ->where(fn ($query) => $query
+                        ->where('name', 'like', "%{$search}%")
+                        ->orWhere('slug', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%")))
+                ->when(($filters['status'] ?? 'all') !== 'all', fn ($query) => $query
+                    ->where('is_active', $filters['status'] === 'active'))
                 ->orderBy('sort_order')
                 ->orderBy('name')
                 ->get(),
+            'filters' => [
+                'search' => $filters['search'] ?? '',
+                'status' => $filters['status'] ?? 'all',
+            ],
         ]);
     }
 
@@ -80,7 +96,7 @@ class TeachingCategoryController extends Controller
                 Rule::unique('teaching_categories', 'slug')->ignore($category),
             ],
             'description' => ['nullable', 'string', 'max:2000'],
-            'color' => ['nullable', 'string', 'max:20', 'regex:/^#(?:[0-9a-fA-F]{3}){1,2}$/'],
+            'color' => ['nullable', 'string', 'max:20', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'icon' => ['nullable', 'string', 'max:80'],
             'is_active' => ['required', 'boolean'],
             'sort_order' => ['required', 'integer', 'min:0', 'max:100000'],

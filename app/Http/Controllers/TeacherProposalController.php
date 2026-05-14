@@ -18,7 +18,7 @@ class TeacherProposalController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'description' => ['nullable', 'string', 'max:1000'],
-            'suggested_color' => ['nullable', 'string', 'max:20', 'regex:/^#(?:[0-9a-fA-F]{3}){1,2}$/'],
+            'suggested_color' => ['nullable', 'string', 'max:20', 'regex:/^#[0-9a-fA-F]{6}$/'],
         ]);
 
         CategoryProposal::create([
@@ -37,8 +37,10 @@ class TeacherProposalController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'description' => ['nullable', 'string', 'max:1000'],
-            'teaching_category_id' => ['nullable', 'integer', Rule::exists('teaching_categories', 'id')],
-            'category_proposal_id' => ['nullable', 'integer', Rule::exists('category_proposals', 'id')->where('proposed_by_user_id', $request->user()->id)],
+            'teaching_category_id' => ['nullable', 'required_without:category_proposal_id', 'integer', Rule::exists('teaching_categories', 'id')->where('is_active', true)],
+            'category_proposal_id' => ['nullable', 'required_without:teaching_category_id', 'integer', Rule::exists('category_proposals', 'id')
+                ->where('proposed_by_user_id', $request->user()->id)
+                ->where('status', CategoryProposal::STATUS_PENDING)],
         ]);
 
         SubjectProposal::create([

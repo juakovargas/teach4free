@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\CategoryProposal;
 use App\Models\SubjectProposal;
 use App\Models\TeachingCategory;
 use App\Models\TeachingSubject;
@@ -11,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -62,7 +62,7 @@ class SubjectProposalController extends Controller
             'action' => ['required', 'string', Rule::in(['approve', 'reject', 'merge'])],
             'admin_notes' => ['nullable', 'string', 'max:4000'],
             'teaching_category_id' => ['nullable', 'integer', Rule::exists('teaching_categories', 'id')],
-            'existing_subject_id' => ['nullable', 'integer', Rule::exists('teaching_subjects', 'id')],
+            'existing_subject_id' => ['nullable', 'required_if:action,merge', 'integer', Rule::exists('teaching_subjects', 'id')],
         ]);
 
         $subject = null;
@@ -72,9 +72,13 @@ class SubjectProposalController extends Controller
                 ?? $proposal->teaching_category_id
                 ?? $proposal->categoryProposal?->approved_category_id;
 
-            abort_unless($categoryId, 422);
+            if (! $categoryId && ! $proposal->approvedSubject) {
+                throw ValidationException::withMessages([
+                    'teaching_category_id' => __('ui.admin_subject_proposals.category_required'),
+                ]);
+            }
 
-            $subject = TeachingSubject::create([
+            $subject = $proposal->approvedSubject ?? TeachingSubject::create([
                 'teaching_category_id' => $categoryId,
                 'name' => $proposal->name,
                 'slug' => $this->uniqueSlug($proposal->name),

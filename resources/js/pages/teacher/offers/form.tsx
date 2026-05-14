@@ -34,6 +34,12 @@ type Category = {
     subjects: Subject[];
 };
 
+type CategoryProposal = {
+    id: number;
+    name: string;
+    status: string;
+};
+
 type Offer = {
     id: number;
     slug: string;
@@ -69,6 +75,11 @@ type Props = {
     teachingModes: string[];
     sessionTypes: string[];
     meetingTools: string[];
+    proposalSettings: {
+        allow_category_proposals: boolean;
+        allow_subject_proposals: boolean;
+    };
+    categoryProposals: CategoryProposal[];
 };
 
 type OfferForm = {
@@ -104,6 +115,8 @@ export default function TeacherOfferForm({
     teachingModes,
     sessionTypes,
     meetingTools,
+    proposalSettings,
+    categoryProposals,
 }: Props) {
     const { t } = useTranslation();
     const isEditing = offer !== null;
@@ -132,6 +145,17 @@ export default function TeacherOfferForm({
         waiting_list_limit: offer?.waiting_list_limit ?? null,
         language_ids: offer?.languages.map((language) => language.id) ?? languages.map((language) => language.id).slice(0, 1),
     });
+    const categoryProposalForm = useForm({
+        name: '',
+        description: '',
+        suggested_color: '#3B82F6',
+    });
+    const subjectProposalForm = useForm({
+        name: '',
+        description: '',
+        teaching_category_id: firstCategory ? String(firstCategory) : '',
+        category_proposal_id: '',
+    });
 
     const availableSubjects = useMemo(
         () => categories.find((category) => category.id === data.teaching_category_id)?.subjects ?? [],
@@ -157,6 +181,20 @@ export default function TeacherOfferForm({
                 ? [...data.language_ids, languageId]
                 : data.language_ids.filter((id) => id !== languageId),
         );
+    };
+
+    const submitCategoryProposal = () => {
+        categoryProposalForm.post('/teacher/category-proposals', {
+            preserveScroll: true,
+            onSuccess: () => categoryProposalForm.reset(),
+        });
+    };
+
+    const submitSubjectProposal = () => {
+        subjectProposalForm.post('/teacher/subject-proposals', {
+            preserveScroll: true,
+            onSuccess: () => subjectProposalForm.reset(),
+        });
     };
 
     return (
@@ -225,6 +263,90 @@ export default function TeacherOfferForm({
                         </Select>
                         <InputError message={errors.teaching_subject_id} />
                     </div>
+                    {(proposalSettings.allow_category_proposals || proposalSettings.allow_subject_proposals) && (
+                        <div className="grid gap-4 rounded-lg border border-dashed border-emerald-200 bg-emerald-50/60 p-4 md:col-span-2 dark:border-emerald-900/60 dark:bg-emerald-950/20">
+                            <div>
+                                <h2 className="text-sm font-semibold">{t('teacher_proposals.title')}</h2>
+                                <p className="mt-1 text-sm leading-6 text-muted-foreground">{t('teacher_proposals.intro')}</p>
+                            </div>
+                            {proposalSettings.allow_category_proposals && (
+                                <div className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-[1fr_1fr_auto] dark:border-slate-800 dark:bg-slate-900">
+                                    <div className="space-y-2">
+                                        <Label>{t('teacher_proposals.category_name')}</Label>
+                                        <Input value={categoryProposalForm.data.name} onChange={(event) => categoryProposalForm.setData('name', event.target.value)} />
+                                        <InputError message={categoryProposalForm.errors.name} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>{t('teacher_proposals.description')}</Label>
+                                        <Input value={categoryProposalForm.data.description} onChange={(event) => categoryProposalForm.setData('description', event.target.value)} />
+                                        <InputError message={categoryProposalForm.errors.description} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>{t('teacher_proposals.suggested_color')}</Label>
+                                        <div className="flex gap-2">
+                                            <Input type="color" value={categoryProposalForm.data.suggested_color} onChange={(event) => categoryProposalForm.setData('suggested_color', event.target.value.toUpperCase())} className="h-10 w-14 p-1" />
+                                            <Button type="button" disabled={categoryProposalForm.processing} onClick={submitCategoryProposal}>{t('teacher_proposals.submit_category')}</Button>
+                                        </div>
+                                        <InputError message={categoryProposalForm.errors.suggested_color} />
+                                    </div>
+                                </div>
+                            )}
+                            {proposalSettings.allow_subject_proposals && (
+                                <div className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-2 dark:border-slate-800 dark:bg-slate-900">
+                                    <div className="space-y-2">
+                                        <Label>{t('teacher_proposals.subject_name')}</Label>
+                                        <Input value={subjectProposalForm.data.name} onChange={(event) => subjectProposalForm.setData('name', event.target.value)} />
+                                        <InputError message={subjectProposalForm.errors.name} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>{t('teacher_proposals.description')}</Label>
+                                        <Input value={subjectProposalForm.data.description} onChange={(event) => subjectProposalForm.setData('description', event.target.value)} />
+                                        <InputError message={subjectProposalForm.errors.description} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>{t('teacher_proposals.existing_category')}</Label>
+                                        <select
+                                            value={subjectProposalForm.data.teaching_category_id}
+                                            onChange={(event) => {
+                                                subjectProposalForm.setData('teaching_category_id', event.target.value);
+                                                subjectProposalForm.setData('category_proposal_id', '');
+                                            }}
+                                            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                                        >
+                                            <option value="">{t('teacher_proposals.no_existing_category')}</option>
+                                            {categories.map((category) => (
+                                                <option key={category.id} value={String(category.id)}>{category.name}</option>
+                                            ))}
+                                        </select>
+                                        <InputError message={subjectProposalForm.errors.teaching_category_id} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>{t('teacher_proposals.pending_category')}</Label>
+                                        <select
+                                            value={subjectProposalForm.data.category_proposal_id}
+                                            onChange={(event) => {
+                                                subjectProposalForm.setData('category_proposal_id', event.target.value);
+
+                                                if (event.target.value) {
+                                                    subjectProposalForm.setData('teaching_category_id', '');
+                                                }
+                                            }}
+                                            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                                        >
+                                            <option value="">{t('common.none')}</option>
+                                            {categoryProposals.map((proposal) => (
+                                                <option key={proposal.id} value={String(proposal.id)}>{proposal.name}</option>
+                                            ))}
+                                        </select>
+                                        <InputError message={subjectProposalForm.errors.category_proposal_id} />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <Button type="button" variant="outline" disabled={subjectProposalForm.processing} onClick={submitSubjectProposal}>{t('teacher_proposals.submit_subject')}</Button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
                     <div className="space-y-2 md:col-span-2">
                         <Label htmlFor="summary">{t('teacher_offers.summary')}</Label>
                         <Textarea id="summary" value={data.summary} onChange={(event) => setData('summary', event.target.value)} />

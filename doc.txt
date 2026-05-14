@@ -2803,3 +2803,430 @@ Pending after this public polish task
 - Better teacher recommendations.
 - Optional custom hero artwork.
 - Public open-session calendar.
+
+Admin branch completion status - 2026-05-13
+-------------------------------------------
+
+This task completed the unfinished admin completion branch without creating parallel systems.
+
+The core product rule remains unchanged:
+
+- Teach4Free is completely free.
+- No payments, subscriptions, credits, wallets, paid plans, commissions, monetization logic or premium visibility were added.
+- Payment requests and commercial pressure are explicitly reportable incident types.
+
+Admin pages current status
+--------------------------
+
+The admin sidebar was cleaned so linked sections are either implemented or useful admin status pages.
+
+Implemented admin pages now include:
+
+- Dashboard.
+- World map / country distribution.
+- Analytics settings.
+- Calendar overview.
+- Users.
+- Teachers.
+- Students.
+- Languages.
+- Categories.
+- Category proposals.
+- Subjects.
+- Subject proposals.
+- Teaching offers.
+- Applications.
+- Sessions.
+- Reports & incidents.
+- Platform settings.
+
+Professional admin status pages remain for:
+
+- Translations.
+- Email log.
+- Audit log.
+- Reviews moderation.
+- Badges.
+- Reputation rules.
+- Content pages.
+- Help pages.
+- Legal pages.
+
+Sidebar links that had no useful page were removed from visible navigation:
+
+- Banned users.
+- Verification requests.
+- Open sessions.
+- Waiting lists.
+- Notifications.
+- Blocked content.
+- Duplicate Reports link.
+
+The /admin/reports route still exists and redirects to /admin/incidents.
+
+Reports and incidents admin
+---------------------------
+
+The existing Incident model is the internal report system.
+
+Admin routes:
+
+- GET /admin/incidents
+- GET /admin/incidents/{incident}
+- PATCH /admin/incidents/{incident}
+- GET /admin/reports redirects to /admin/incidents
+
+The incidents index supports:
+
+- Search.
+- Status filter.
+- Type filter.
+- Priority filter.
+- Reporter filter.
+- Reported user filter.
+- Related teaching offer filter.
+- Pagination.
+
+Incident detail shows:
+
+- Subject.
+- Description.
+- Reporter.
+- Reported user.
+- Related teaching offer.
+- Related application.
+- Related session.
+- Type.
+- Status.
+- Priority.
+- Admin notes.
+- Created and updated dates.
+- Resolution user/date when applicable.
+
+Admins can:
+
+- Mark incidents open.
+- Mark incidents in review.
+- Resolve incidents.
+- Dismiss incidents.
+- Change priority.
+- Add or update admin notes.
+
+Supported incident types now include:
+
+- user
+- teaching_offer
+- application
+- session
+- technical
+- abuse
+- spam
+- payment_request
+- commercial_pressure
+- other
+
+The user-facing /support/report flow creates incidents and can store related offer, reported user and class session references when present.
+
+World map country statistics
+----------------------------
+
+The reported world map error was fixed by ensuring all frontend variables are defined and safe when no country data exists.
+
+The page now behaves as a country distribution dashboard and shows:
+
+- Total located users.
+- Countries represented.
+- Top country by users.
+- Top country by teachers.
+- Top country by students.
+- Country code and country name when known.
+- Total users.
+- Students.
+- Teachers.
+- Mixed student/teacher users.
+- Published public offers.
+- Pending applications.
+- Percentage of located users.
+
+Only country and optional city data are used. No exact addresses or coordinates are stored or displayed.
+
+Analytics and tracking settings
+-------------------------------
+
+The analytics page is now a real configuration page backed by:
+
+- platform_tracking_settings
+- App\Models\PlatformTrackingSetting
+
+Admins can store:
+
+- Google Analytics ID.
+- Google Tag Manager ID.
+- Meta/Facebook Pixel ID.
+- TikTok Pixel ID.
+- LinkedIn Partner ID.
+- Microsoft Clarity ID.
+- Plausible domain.
+- Custom head script.
+- Custom body script.
+- Tracking enabled flag.
+- Cookie consent required flag.
+
+Security note:
+
+- Custom scripts are stored but not executed inside admin preview.
+- Public script injection was not added in this task.
+- If cookie consent is required, public injection should wait for a safe cookie consent implementation.
+- The admin page does not claim GDPR compliance.
+
+Category color picker
+---------------------
+
+Admin category create/edit now includes:
+
+- HTML color picker.
+- Manual hex input.
+- Preset color palette.
+- Live color preview.
+
+The accepted stored format is:
+
+- #RRGGBB
+
+The category index now includes:
+
+- Name.
+- Slug.
+- Color chip.
+- Icon.
+- Active status.
+- Sort order.
+- Number of subjects.
+- Number of offers.
+- Created date.
+- Actions.
+- Search and active/inactive filters.
+
+Teacher category proposals
+--------------------------
+
+Teachers can suggest new categories from the teaching offer form.
+
+The flow uses:
+
+- category_proposals
+- App\Models\CategoryProposal
+- POST /teacher/category-proposals
+- GET /admin/category-proposals
+- PATCH /admin/category-proposals/{proposal}
+
+Teachers do not directly create active public categories.
+
+Admins can:
+
+- View proposals.
+- Filter by status.
+- Approve as a new category.
+- Reject.
+- Merge with an existing category.
+- Add admin notes.
+
+Approval creates a teaching category. Merge links to an existing category. The proposal stores reviewer and review date.
+
+Teacher subject proposals
+-------------------------
+
+Teachers can suggest new subjects from the teaching offer form.
+
+The flow uses:
+
+- subject_proposals
+- App\Models\SubjectProposal
+- POST /teacher/subject-proposals
+- GET /admin/subject-proposals
+- PATCH /admin/subject-proposals/{proposal}
+
+Teachers do not directly create active public subjects.
+
+Admins can:
+
+- View proposals.
+- Filter by status.
+- Approve under a selected category.
+- Reject.
+- Merge with an existing subject.
+- Add admin notes.
+
+Approval creates a teaching subject. Merge links to an existing subject. The proposal stores reviewer and review date.
+
+Calendar overview analytics
+---------------------------
+
+/admin/calendar-overview is now an admin reporting page, not a large calendar for every user.
+
+It shows:
+
+- Availability blocks.
+- Sessions.
+- Upcoming sessions.
+- Applications.
+- Pending applications.
+- Most available weekdays.
+- Availability by timezone.
+- Teachers with most availability blocks.
+- Teachers without availability.
+- Session status counts.
+- Upcoming sessions by day.
+- Most active categories and subjects.
+- Most requested weekdays.
+- Subjects by applications.
+- Offers with waitlisted learners.
+- Average pending applications per offer.
+
+The page is empty-safe and explains what data appears after teachers publish availability and sessions are scheduled.
+
+Platform settings
+-----------------
+
+/admin/platform-settings is now backed by:
+
+- platform_settings
+- App\Models\PlatformSetting
+
+Admins can edit:
+
+- Platform name.
+- Support email.
+- Default locale.
+- Allow teacher category proposals.
+- Allow teacher subject proposals.
+- Require email verification.
+- Allow public teacher profiles.
+- Allow open public sessions.
+- Maintenance notice.
+
+These settings do not add payments, plans or premium visibility.
+
+Dummy data improvements
+-----------------------
+
+After:
+
+- php artisan migrate:fresh --seed
+
+The local demo database now includes:
+
+- 59 users.
+- 37 student profiles.
+- 32 teacher profiles.
+- 11 mixed learner/teacher users.
+- 12 represented countries.
+- 50 teaching offers.
+- 100 teaching offer applications.
+- 20 incidents/reports.
+- 8 category proposals.
+- 12 subject proposals.
+- 64 teacher availability blocks.
+- 20 class sessions.
+
+The required development users remain:
+
+- admin@example.com / password
+- user@example.com / password
+
+New admin tests
+---------------
+
+Focused tests were added in:
+
+- tests/Feature/AdminBranchCompletionTest.php
+
+Coverage includes:
+
+- Admin world map loads without located users.
+- Admin calendar overview loads.
+- Admin incidents page loads and filters payment request reports.
+- Admin can save analytics settings.
+- Category color validation accepts valid #RRGGBB and rejects invalid values.
+- Teacher can submit category and subject proposals.
+- Admin can approve, reject and merge category proposals.
+- Admin can approve subject proposals.
+
+Admin world map visual map - 2026-05-14
+---------------------------------------
+
+The admin world map page at:
+
+- /admin/world-map
+
+now includes a real visual world map instead of only country statistic cards.
+
+The map is rendered as a local SVG map using bundled world geography data and approximate country centroids. It does not use Google Maps, Mapbox, API keys, paid providers or remote map images.
+
+Country activity remains aggregated at country level only. The application does not store or display precise geolocation, GPS coordinates or exact addresses for this page.
+
+The backend provides map-ready country rows with:
+
+- country code.
+- country name.
+- approximate country latitude and longitude.
+- total users.
+- active teachers.
+- active students.
+- mixed learner/teacher users.
+- published public teaching offers.
+- pending applications.
+
+Admins can switch the map view between:
+
+- All users.
+- Teachers.
+- Students.
+- Teaching offers.
+
+Marker bubbles are shown for countries with activity in the selected mode. Bubble size scales from a small visible marker to a capped maximum size so high-activity countries do not cover the map.
+
+Clicking a marker selects that country and shows its country-level totals in a side panel. Browser hover/title text also exposes the main counts.
+
+The page is empty-safe. If no users have country data, the world map still renders and a translated empty message is shown instead of crashing.
+
+The existing country statistics remain available below the map:
+
+- Total located users.
+- Countries represented.
+- Top country by users.
+- Top country by teachers.
+- Top country by students.
+- Country statistic cards.
+
+Demo data after:
+
+- php artisan migrate:fresh --seed
+
+continues to include users, teachers, students and offers distributed across the 12 demo countries:
+
+- ES Spain.
+- FR France.
+- US United States.
+- GB United Kingdom.
+- DE Germany.
+- IT Italy.
+- PT Portugal.
+- MX Mexico.
+- AR Argentina.
+- CO Colombia.
+- CL Chile.
+- BR Brazil.
+
+What remains pending
+--------------------
+
+- Cookie consent banner before activating external tracking scripts.
+- Full analytics script injection after consent.
+- Advanced audit log UI.
+- Advanced email log UI.
+- Full CMS for content/legal/help pages.
+- Advanced report moderation queues.
+- Reviews moderation after reviews exist.
+- Badges and reputation rules after reputation exists.
+- Rich calendar charts or heatmaps if the statistics page needs them later.

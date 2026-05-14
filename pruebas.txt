@@ -1159,3 +1159,211 @@ Automated coverage added:
 - Public offer detail exposes a public teacher profile link without exposing teacher email.
 - Authenticated users can upload and remove a teacher banner on the public disk.
 - Existing home, About, public offer search, language-filter and teacher-filter coverage remains passing.
+
+Admin branch completion - 2026-05-13
+------------------------------------
+
+Commands executed:
+
+- php -l app\Http\Controllers\Admin\WorldMapController.php; php -l app\Http\Controllers\Admin\IncidentController.php; php -l app\Http\Controllers\Admin\CalendarOverviewController.php; php -l app\Http\Controllers\Admin\TeachingCategoryController.php; php -l app\Http\Controllers\Admin\TeachingSubjectController.php; php -l app\Http\Controllers\Admin\CategoryProposalController.php; php -l app\Http\Controllers\Admin\SubjectProposalController.php; php -l app\Http\Controllers\TeacherOfferController.php; php -l app\Http\Controllers\TeacherProposalController.php; php -l app\Http\Controllers\SupportReportController.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l database\seeders\DatabaseSeeder.php; php -l lang\en\ui.php; php -l lang\es\ui.php; php -l lang\fr\ui.php
+- Result: Passed. No PHP syntax errors.
+
+- php artisan route:list --path=admin --no-interaction
+- Result: Passed. Admin routes rendered, including analytics, calendar overview, teachers, students, category proposals, subject proposals, incidents, reports redirect and platform settings.
+
+- npm run types:check
+- Result: Passed. TypeScript reported no errors.
+
+- composer run lint:check
+- Initial result: Failed. Pint reported style/import fixes needed in admin controllers, TeacherOfferController, DatabaseSeeder, routes/web.php and the new admin branch test.
+- Fix applied: composer run lint and removed one unused test import.
+
+- npm run lint:check
+- Initial result: Failed. ESLint reported one missing blank line in resources/js/pages/teacher/offers/form.tsx.
+- Fix applied: added the required blank line.
+
+- composer run lint
+- Result: Passed. Pint fixed the PHP style issues.
+
+- composer run lint:check
+- Result: Passed. Pint reported no required changes.
+
+- npm run lint:check
+- Result: Passed. ESLint reported no errors.
+
+- php artisan migrate:fresh --seed --no-interaction
+- First attempt result: Timed out at the two-minute command timeout before a final result was returned.
+
+- php artisan migrate:fresh --seed --no-interaction
+- Result: Passed with a longer timeout. Database was rebuilt and seeded successfully.
+
+- php artisan tinker --execute="echo 'users=' . \App\Models\User::count() . ' students=' . \App\Models\StudentProfile::count() . ' teachers=' . \App\Models\TeacherProfile::count() . ' mixed=' . \App\Models\User::whereHas('studentProfile')->whereHas('teacherProfile')->count() . ' offers=' . \App\Models\TeachingOffer::count() . ' applications=' . \App\Models\TeachingOfferApplication::count() . ' incidents=' . \App\Models\Incident::count() . ' category_proposals=' . \App\Models\CategoryProposal::count() . ' subject_proposals=' . \App\Models\SubjectProposal::count() . ' availability=' . \App\Models\TeacherAvailability::count() . ' sessions=' . \App\Models\ClassSession::count() . ' countries=' . \App\Models\User::whereNotNull('country_code')->distinct()->count('country_code') . ' admin=' . (\App\Models\User::where('email','admin@example.com')->exists() ? 'yes' : 'no') . ' user=' . (\App\Models\User::where('email','user@example.com')->exists() ? 'yes' : 'no');"
+- Result: Passed. users=59 students=37 teachers=32 mixed=11 offers=50 applications=100 incidents=20 category_proposals=8 subject_proposals=12 availability=64 sessions=20 countries=12 admin=yes user=yes.
+
+- php artisan test tests\Feature\AdminBranchCompletionTest.php
+- Result: Passed.
+- 6 tests executed.
+- 6 passed.
+- 49 assertions.
+
+- php artisan test
+- Result: Passed.
+- 108 tests executed.
+- 108 passed.
+- 650 assertions.
+
+- npm run build
+- Result: Passed.
+- Vite production build completed.
+- Note: Vite printed plugin timing warnings, but the build succeeded.
+
+Automated coverage added:
+
+- Admin world map loads without crashing when no located users exist.
+- Admin calendar overview loads.
+- Admin incidents page loads and filters payment request reports.
+- Admin can save analytics settings.
+- Category create accepts a valid #RRGGBB color.
+- Category create rejects an invalid color.
+- Teacher can submit category proposals.
+- Teacher can submit subject proposals.
+- Admin can approve category proposals.
+- Admin can reject category proposals.
+- Admin can merge category proposals.
+- Admin can approve subject proposals.
+
+Manual verification checklist:
+
+1. Run:
+   php artisan migrate:fresh --seed
+
+2. Login as:
+   admin@example.com
+   password
+
+3. Open admin dashboard.
+
+4. Open /admin/world-map and confirm it does not crash.
+
+5. Open /admin/incidents or /admin/reports and confirm reports appear.
+
+6. Open an incident detail and update status/priority/admin notes.
+
+7. Open /admin/analytics and save tracking settings.
+
+8. Open /admin/categories/create and confirm color picker/palette works.
+
+9. Open /admin/categories and confirm color chips appear.
+
+10. Open /admin/category-proposals and confirm demo proposals exist.
+
+11. Approve/reject/merge a category proposal.
+
+12. Open /admin/subject-proposals and confirm demo proposals exist.
+
+13. Approve/reject/merge a subject proposal.
+
+14. Open /admin/calendar-overview and confirm statistics/empty-safe sections appear.
+
+15. Open /admin/platform-settings and confirm settings can be viewed/edited.
+
+16. Login as a teacher user.
+
+17. Confirm teacher can submit category/subject proposal from offer creation/edit flow.
+
+18. Confirm non-admin cannot access admin pages.
+
+Admin visual world map - 2026-05-14
+-----------------------------------
+
+PHPUnit tests were not executed for this task.
+
+Reason:
+
+- Tests were not required for this small visual branch.
+- The change was verified with frontend type/lint/build checks and PHP syntax checks.
+
+Implementation note:
+
+- react-simple-maps was not added because its published peer dependency allows React 16/17/18 and this project uses React 19.
+- The implemented map uses local bundled world-atlas data with d3-geo and topojson-client instead.
+
+Commands executed:
+
+- npm install react-simple-maps world-atlas
+- Result: Failed. npm refused the dependency tree because react-simple-maps requires React ^16.8.0, 17.x or 18.x while the project uses React 19.
+
+- npm install d3-geo topojson-client world-atlas @types/d3-geo @types/topojson-client
+- Result: Passed. Lightweight local map dependencies were installed.
+
+- npm install --save-dev @types/d3-geo @types/topojson-client
+- Result: Passed. Type packages were moved to devDependencies.
+
+- php -l app\Http\Controllers\Admin\WorldMapController.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l lang\en\ui.php; php -l lang\es\ui.php; php -l lang\fr\ui.php
+- Result: Passed. No PHP syntax errors.
+
+- npm run types:check
+- Initial result: Failed. TypeScript required the imported TopoJSON object to be cast through unknown before using the typed topology shape.
+- Fix applied: cast the bundled world-atlas JSON through unknown before the WorldTopology type.
+
+- npm run types:check
+- Result: Passed. TypeScript reported no errors.
+
+- npm run lint:check
+- Initial result: Failed. ESLint reported import ordering issues and a React 19 hook lint warning for setState inside an effect.
+- Fix applied: reordered imports and derived the selected country without a synchronous effect update.
+
+- npm run lint:check
+- Result: Passed. ESLint reported no errors.
+
+- composer run lint:check
+- Result: Passed. Pint reported no required changes.
+
+- npm run build
+- Result: Passed. Vite production build completed.
+- Note: Vite printed plugin timing warnings, but the build succeeded.
+
+- php artisan route:list --path=admin/world-map
+- Result: Passed. The admin.world-map route is registered.
+
+- Inline PHP translation key check for new admin_world_map keys across en/es/fr
+- Result: Passed. Required keys were present in all three locales.
+
+- Inline PHP controller smoke check for map props
+- Result: Not completed. Local MySQL refused the connection to 127.0.0.1:3306 for database teach4free, so DB-backed page data could not be checked in this environment.
+
+Manual verification checklist:
+
+1. Run:
+   php artisan migrate:fresh --seed
+
+2. Login as:
+   admin@example.com
+   password
+
+3. Open:
+   /admin/world-map
+
+4. Confirm a real world map is visible.
+
+5. Confirm countries with demo data show markers/bubbles.
+
+6. Switch mode to:
+   - All users
+   - Teachers
+   - Students
+   - Teaching offers
+
+7. Confirm markers update when changing mode.
+
+8. Hover/click a country marker and confirm country data appears.
+
+9. Confirm statistics cards/table still appear.
+
+10. Confirm the page does not crash if no located users exist.

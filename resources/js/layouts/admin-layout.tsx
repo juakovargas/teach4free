@@ -1,12 +1,10 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
     BadgeCheck,
-    Ban,
-    Bell,
     BookOpenCheck,
     CalendarDays,
     FileText,
-    Flag,
+    GitMerge,
     Globe2,
     GraduationCap,
     Languages,
@@ -19,7 +17,6 @@ import {
     Presentation,
     Scale,
     ScrollText,
-    SearchCheck,
     Settings,
     ShieldAlert,
     SlidersHorizontal,
@@ -65,6 +62,7 @@ const groups: AdminNavGroup[] = [
             { labelKey: 'admin_sections.dashboard', href: '/admin', icon: LayoutDashboard },
             { labelKey: 'admin_sections.world_map', href: '/admin/world-map', icon: Map },
             { labelKey: 'admin_sections.analytics', href: '/admin/analytics', icon: TrendingUp },
+            { labelKey: 'admin_sections.calendar_overview', href: '/admin/calendar-overview', icon: CalendarDays },
         ],
     },
     {
@@ -73,8 +71,6 @@ const groups: AdminNavGroup[] = [
             { labelKey: 'admin_sections.users', href: '/admin/users', icon: Users },
             { labelKey: 'admin_sections.teachers', href: '/admin/teachers', icon: Presentation },
             { labelKey: 'admin_sections.students', href: '/admin/students', icon: GraduationCap },
-            { labelKey: 'admin_sections.banned_users', href: '/admin/banned-users', icon: Ban },
-            { labelKey: 'admin_sections.verification_requests', href: '/admin/verification-requests', icon: SearchCheck },
         ],
     },
     {
@@ -83,30 +79,26 @@ const groups: AdminNavGroup[] = [
             { labelKey: 'admin_sections.languages', href: '/admin/languages', icon: Languages },
             { labelKey: 'admin_sections.translations', href: '/admin/translations', icon: Globe2 },
             { labelKey: 'admin_sections.categories', href: '/admin/categories', icon: Library },
+            { labelKey: 'admin_sections.category_proposals', href: '/admin/category-proposals', icon: MessageSquareWarning },
             { labelKey: 'admin_sections.subjects', href: '/admin/subjects', icon: BookOpenCheck },
+            { labelKey: 'admin_sections.subject_proposals', href: '/admin/subject-proposals', icon: GitMerge },
             { labelKey: 'admin_sections.teaching_offers', href: '/admin/teaching-offers', icon: FileText },
-            { labelKey: 'admin_sections.open_sessions', href: '/admin/open-sessions', icon: Flag },
         ],
     },
     {
         labelKey: 'admin_sidebar.operations',
         items: [
             { labelKey: 'admin_sections.applications', href: '/admin/applications', icon: ScrollText },
-            { labelKey: 'admin_sections.waiting_lists', href: '/admin/waiting-lists', icon: NotebookTabs },
             { labelKey: 'admin_sections.sessions', href: '/admin/sessions', icon: CalendarDays },
-            { labelKey: 'admin_sections.calendar_overview', href: '/admin/calendar-overview', icon: CalendarDays },
-            { labelKey: 'admin_sections.notifications', href: '/admin/notifications', icon: Bell },
             { labelKey: 'admin_sections.email_log', href: '/admin/email-log', icon: Mail },
+            { labelKey: 'admin_sections.audit_log', href: '/admin/audit-log', icon: NotebookTabs },
         ],
     },
     {
         labelKey: 'admin_sidebar.moderation',
         items: [
             { labelKey: 'admin_sections.incidents', href: '/admin/incidents', icon: ShieldAlert },
-            { labelKey: 'admin_sections.reports', href: '/admin/reports', icon: MessageSquareWarning },
             { labelKey: 'admin_sections.reviews_moderation', href: '/admin/reviews-moderation', icon: Star },
-            { labelKey: 'admin_sections.blocked_content', href: '/admin/blocked-content', icon: Ban },
-            { labelKey: 'admin_sections.audit_log', href: '/admin/audit-log', icon: ScrollText },
         ],
     },
     {

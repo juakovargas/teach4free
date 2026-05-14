@@ -42,13 +42,16 @@ Security notes:
 Future platform work
 --------------------
 
-- Manual browser verification of the recovered admin dashboard, user admin, world-map statistics and demo login flow after php artisan migrate:fresh --seed.
-- Add focused automated admin tests for login redirection, admin dashboard separation, user restriction safety, impersonation and incidents.
+- Manual browser verification of the completed admin dashboard, visual world map, country statistics, incidents, analytics settings, proposals and platform settings after php artisan migrate:fresh --seed.
+- Add more focused automated admin tests for login redirection, admin dashboard separation, user restriction safety and impersonation.
+- Cookie consent banner before activating external tracking scripts.
+- Full analytics script injection after consent.
 - Full searchable audit log UI.
+- Advanced audit log filters and export.
 - Advanced report moderation queues.
 - Admin email log.
+- Advanced email log filters and delivery status details.
 - Advanced translation database editor if file-based translations become limiting.
-- Full map visualization with a lightweight map library.
 - Real calendar UI with month/week views for teacher availability and sessions.
 - Advanced timezone conversion UI.
 - Session rescheduling.
@@ -58,6 +61,8 @@ Future platform work
 - Review system after completed classes.
 - Badges and reputation.
 - Reputation rules.
+- Reviews moderation after reviews exist.
+- Badge and reputation rule admin screens after reputation exists.
 - Queued mail setup.
 - Rich internal messaging/chat.
 - Advanced open session handling.

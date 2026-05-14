@@ -9,7 +9,6 @@ use App\Models\TeacherProfile;
 use App\Models\TeachingOffer;
 use App\Models\TeachingOfferApplication;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -54,11 +53,15 @@ class CalendarOverviewController extends Controller
                 ])->values(),
                 'upcoming_by_day' => ClassSession::query()
                     ->where('starts_at', '>=', now())
-                    ->selectRaw('DATE(starts_at) as date, count(*) as sessions_count')
-                    ->groupBy('date')
-                    ->orderBy('date')
-                    ->limit(14)
-                    ->get(),
+                    ->orderBy('starts_at')
+                    ->get(['starts_at'])
+                    ->groupBy(fn (ClassSession $session): string => $session->starts_at->toDateString())
+                    ->map(fn ($sessions, string $date): array => [
+                        'date' => $date,
+                        'sessions_count' => $sessions->count(),
+                    ])
+                    ->values()
+                    ->take(14),
                 'active_categories' => ClassSession::query()
                     ->join('teaching_offers', 'class_sessions.teaching_offer_id', '=', 'teaching_offers.id')
                     ->join('teaching_categories', 'teaching_offers.teaching_category_id', '=', 'teaching_categories.id')
@@ -79,14 +82,14 @@ class CalendarOverviewController extends Controller
             'demand' => [
                 'requested_weekdays' => TeachingOfferApplication::query()
                     ->whereNotNull('preferred_starts_at')
-                    ->selectRaw('DAYOFWEEK(preferred_starts_at) as mysql_day, count(*) as applications_count')
-                    ->groupBy('mysql_day')
-                    ->orderByDesc('applications_count')
-                    ->get()
-                    ->map(fn ($row): array => [
-                        'day_of_week' => $this->isoWeekday((int) $row->mysql_day),
-                        'applications_count' => (int) $row->applications_count,
-                    ]),
+                    ->get(['preferred_starts_at'])
+                    ->groupBy(fn (TeachingOfferApplication $application): int => $application->preferred_starts_at->dayOfWeekIso)
+                    ->map(fn ($applications, int $day): array => [
+                        'day_of_week' => $day,
+                        'applications_count' => $applications->count(),
+                    ])
+                    ->sortByDesc('applications_count')
+                    ->values(),
                 'subjects_by_applications' => TeachingOfferApplication::query()
                     ->join('teaching_offers', 'teaching_offer_applications.teaching_offer_id', '=', 'teaching_offers.id')
                     ->join('teaching_subjects', 'teaching_offers.teaching_subject_id', '=', 'teaching_subjects.id')
@@ -98,10 +101,11 @@ class CalendarOverviewController extends Controller
                 'waitlisted_offers' => TeachingOffer::query()
                     ->with('user:id,name,email')
                     ->withCount(['applications as waitlisted_count' => fn ($query) => $query->where('status', TeachingOfferApplication::STATUS_WAITLISTED)])
-                    ->having('waitlisted_count', '>', 0)
                     ->orderByDesc('waitlisted_count')
                     ->limit(8)
-                    ->get(['id', 'slug', 'title', 'user_id']),
+                    ->get(['id', 'slug', 'title', 'user_id'])
+                    ->filter(fn (TeachingOffer $offer): bool => $offer->waitlisted_count > 0)
+                    ->values(),
                 'average_pending_per_offer' => round((float) TeachingOffer::query()
                     ->withCount(['applications as pending_count' => fn ($query) => $query->where('status', TeachingOfferApplication::STATUS_PENDING)])
                     ->get()
@@ -115,10 +119,5 @@ class CalendarOverviewController extends Controller
                 'pending_applications' => TeachingOfferApplication::query()->where('status', TeachingOfferApplication::STATUS_PENDING)->count(),
             ],
         ]);
-    }
-
-    private function isoWeekday(int $mysqlDay): int
-    {
-        return $mysqlDay === 1 ? 7 : $mysqlDay - 1;
     }
 }

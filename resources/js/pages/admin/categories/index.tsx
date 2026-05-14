@@ -1,8 +1,12 @@
-import { Head, Link, usePage } from '@inertiajs/react';
-import { Edit, Library, Plus, Trash2 } from 'lucide-react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Edit, Filter, Library, Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import type { FormEvent } from 'react';
 import { ContextualHelp } from '@/components/contextual-help';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useTranslation } from '@/hooks/use-translation';
 
 type Category = {
@@ -16,15 +20,26 @@ type Category = {
     sort_order: number;
     subjects_count: number;
     offers_count: number;
+    created_at: string;
 };
 
 type Props = {
     categories: Category[];
+    filters: {
+        search: string;
+        status: string;
+    };
 };
 
-export default function AdminCategories({ categories }: Props) {
+export default function AdminCategories({ categories, filters }: Props) {
     const { t } = useTranslation();
     const { flash } = usePage().props;
+    const [form, setForm] = useState(filters);
+
+    const submit = (event: FormEvent) => {
+        event.preventDefault();
+        router.get('/admin/categories', form, { preserveState: true, replace: true });
+    };
 
     return (
         <>
@@ -56,6 +71,27 @@ export default function AdminCategories({ categories }: Props) {
                     </div>
                 )}
 
+                <form onSubmit={submit} className="grid gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 sm:grid-cols-[1fr_12rem_auto]">
+                    <div className="grid gap-2">
+                        <Label htmlFor="search">{t('admin_categories.search')}</Label>
+                        <Input id="search" value={form.search} onChange={(event) => setForm({ ...form, search: event.target.value })} />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="status">{t('admin_categories.status')}</Label>
+                        <select id="status" value={form.status} onChange={(event) => setForm({ ...form, status: event.target.value })} className="h-10 rounded-md border border-input bg-background px-3 text-sm">
+                            <option value="all">{t('common.all')}</option>
+                            <option value="active">{t('statuses.active')}</option>
+                            <option value="inactive">{t('statuses.inactive')}</option>
+                        </select>
+                    </div>
+                    <div className="flex items-end">
+                        <Button type="submit" className="w-full">
+                            <Filter />
+                            {t('actions.filter')}
+                        </Button>
+                    </div>
+                </form>
+
                 <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">
@@ -63,13 +99,22 @@ export default function AdminCategories({ categories }: Props) {
                                 <tr>
                                     <th className="px-4 py-3">{t('admin_categories.name')}</th>
                                     <th className="px-4 py-3">{t('admin_categories.slug')}</th>
+                                    <th className="px-4 py-3">{t('admin_categories.color')}</th>
+                                    <th className="px-4 py-3">{t('admin_categories.icon')}</th>
                                     <th className="px-4 py-3">{t('admin_categories.subjects')}</th>
                                     <th className="px-4 py-3">{t('admin_categories.offers')}</th>
+                                    <th className="px-4 py-3">{t('admin_categories.sort_order')}</th>
                                     <th className="px-4 py-3">{t('admin_categories.status')}</th>
+                                    <th className="px-4 py-3">{t('admin_categories.created_at')}</th>
                                     <th className="px-4 py-3 text-right">{t('admin_categories.actions')}</th>
                                 </tr>
                             </thead>
                             <tbody>
+                                {categories.length === 0 && (
+                                    <tr>
+                                        <td colSpan={10} className="px-4 py-8 text-center text-muted-foreground">{t('admin_categories.empty')}</td>
+                                    </tr>
+                                )}
                                 {categories.map((category) => (
                                     <tr key={category.id} className="border-b last:border-0">
                                         <td className="px-4 py-4">
@@ -89,13 +134,22 @@ export default function AdminCategories({ categories }: Props) {
                                             </div>
                                         </td>
                                         <td className="px-4 py-4 text-muted-foreground">{category.slug}</td>
+                                        <td className="px-4 py-4">
+                                            <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-2 py-1 text-xs dark:border-slate-800">
+                                                <span className="size-3 rounded-full" style={{ backgroundColor: category.color ?? '#64748B' }} />
+                                                {category.color ?? t('common.none')}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-4 text-muted-foreground">{category.icon ?? t('common.none')}</td>
                                         <td className="px-4 py-4">{category.subjects_count}</td>
                                         <td className="px-4 py-4">{category.offers_count}</td>
+                                        <td className="px-4 py-4">{category.sort_order}</td>
                                         <td className="px-4 py-4">
                                             <Badge variant={category.is_active ? 'default' : 'outline'}>
                                                 {t(category.is_active ? 'statuses.active' : 'statuses.inactive')}
                                             </Badge>
                                         </td>
+                                        <td className="px-4 py-4 text-muted-foreground">{new Date(category.created_at).toLocaleDateString()}</td>
                                         <td className="px-4 py-4">
                                             <div className="flex justify-end gap-2">
                                                 <Button variant="outline" size="sm" asChild>

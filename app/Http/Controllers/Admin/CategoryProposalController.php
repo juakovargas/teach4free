@@ -49,13 +49,13 @@ class CategoryProposalController extends Controller
         $data = $request->validate([
             'action' => ['required', 'string', Rule::in(['approve', 'reject', 'merge'])],
             'admin_notes' => ['nullable', 'string', 'max:4000'],
-            'existing_category_id' => ['nullable', 'integer', Rule::exists('teaching_categories', 'id')],
+            'existing_category_id' => ['nullable', 'required_if:action,merge', 'integer', Rule::exists('teaching_categories', 'id')],
         ]);
 
         $category = null;
 
         if ($data['action'] === 'approve') {
-            $category = TeachingCategory::create([
+            $category = $proposal->approvedCategory ?? TeachingCategory::create([
                 'name' => $proposal->name,
                 'slug' => $this->uniqueSlug($proposal->name),
                 'description' => $proposal->description,

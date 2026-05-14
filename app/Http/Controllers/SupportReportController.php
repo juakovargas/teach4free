@@ -17,6 +17,7 @@ class SupportReportController extends Controller
             'type' => $request->query('type', Incident::TYPE_OTHER),
             'teachingOfferId' => $request->query('teaching_offer_id'),
             'reportedUserId' => $request->query('reported_user_id'),
+            'classSessionId' => $request->query('class_session_id'),
             'types' => Incident::TYPES,
         ]);
     }
@@ -29,12 +30,14 @@ class SupportReportController extends Controller
             'description' => ['required', 'string', 'max:4000'],
             'reported_user_id' => ['nullable', 'integer', Rule::exists('users', 'id')],
             'teaching_offer_id' => ['nullable', 'integer', Rule::exists('teaching_offers', 'id')],
+            'class_session_id' => ['nullable', 'integer', Rule::exists('class_sessions', 'id')],
         ]);
 
         Incident::create([
             'reporter_user_id' => $request->user()?->id,
             'reported_user_id' => $data['reported_user_id'] ?? null,
             'teaching_offer_id' => $data['teaching_offer_id'] ?? null,
+            'class_session_id' => $data['class_session_id'] ?? null,
             'type' => $data['type'],
             'status' => Incident::STATUS_OPEN,
             'priority' => Incident::PRIORITY_NORMAL,
