@@ -42,6 +42,8 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 import type { BreadcrumbItem } from '@/types';
+import { ConsentAwareTrackingScripts } from '@/components/consent-aware-tracking-scripts';
+import { CookieConsentManager } from '@/components/cookie-consent-manager';
 
 type Props = PropsWithChildren<{
     breadcrumbs?: BreadcrumbItem[];
@@ -128,10 +130,11 @@ const groups: AdminNavGroup[] = [
 export default function AdminLayout({ children, breadcrumbs = [] }: Props) {
     const { t } = useTranslation();
 
-    return (
-        <div className="min-h-screen bg-slate-50 text-slate-950 dark:bg-slate-950 dark:text-slate-50">
-            <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
-                <div className="flex h-16 items-center gap-3 px-3 sm:px-5">
+return (
+    <div className="min-h-screen bg-slate-50 text-slate-950 dark:bg-slate-950 dark:text-slate-50">
+        <ConsentAwareTrackingScripts />
+        <CookieConsentManager />
+        <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">                <div className="flex h-16 items-center gap-3 px-3 sm:px-5">
                     <Sheet>
                         <SheetTrigger asChild>
                             <Button variant="ghost" size="icon" className="lg:hidden" aria-label={t('navigation.menu')}>

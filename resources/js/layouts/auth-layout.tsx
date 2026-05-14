@@ -1,3 +1,5 @@
+import { ConsentAwareTrackingScripts } from '@/components/consent-aware-tracking-scripts';
+import { CookieConsentManager } from '@/components/cookie-consent-manager';
 import { useTranslation } from '@/hooks/use-translation';
 import AuthLayoutTemplate from '@/layouts/auth/auth-simple-layout';
 
@@ -13,8 +15,13 @@ export default function AuthLayout({
     const { t } = useTranslation();
 
     return (
-        <AuthLayoutTemplate title={t(title)} description={t(description)}>
-            {children}
-        </AuthLayoutTemplate>
+        <>
+            <ConsentAwareTrackingScripts />
+            <CookieConsentManager />
+
+            <AuthLayoutTemplate title={t(title)} description={t(description)}>
+                {children}
+            </AuthLayoutTemplate>
+        </>
     );
 }

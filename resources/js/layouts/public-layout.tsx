@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
 import { dashboard } from '@/routes';
 import type { Auth } from '@/types';
+import { ConsentAwareTrackingScripts } from '@/components/consent-aware-tracking-scripts';
+import { CookieConsentManager } from '@/components/cookie-consent-manager';
 
 type Props = PropsWithChildren;
 type PublicPageProps = {
@@ -21,10 +23,11 @@ export default function PublicLayout({ children }: Props) {
     const { t } = useTranslation();
     const startTeachingHref = auth.user ? '/teacher/offers' : '/register';
 
-    return (
-        <div className="min-h-screen bg-[#fffaf3] text-slate-950 dark:bg-slate-950 dark:text-slate-50">
-            <header className="sticky top-0 z-40 border-b border-emerald-900/10 bg-white/85 shadow-xs backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/85">
-                <div className="mx-auto flex h-16 max-w-7xl items-center gap-2 px-2 sm:gap-4 sm:px-6 lg:px-8">
+return (
+    <div className="min-h-screen bg-[#fffaf3] text-slate-950 dark:bg-slate-950 dark:text-slate-50">
+        <ConsentAwareTrackingScripts />
+        <CookieConsentManager />
+        <header className="sticky top-0 z-40 border-b border-emerald-900/10 bg-white/85 shadow-xs backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/85">                <div className="mx-auto flex h-16 max-w-7xl items-center gap-2 px-2 sm:gap-4 sm:px-6 lg:px-8">
                     <Link
                         href="/"
                         className="flex items-center gap-2 [&>div:last-child]:hidden sm:[&>div:last-child]:grid"
