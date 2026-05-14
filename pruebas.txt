@@ -1367,3 +1367,103 @@ Manual verification checklist:
 9. Confirm statistics cards/table still appear.
 
 10. Confirm the page does not crash if no located users exist.
+
+Cookie consent privacy branch - 2026-05-14
+------------------------------------------
+
+PHPUnit tests were not executed for this task.
+
+Reason:
+
+- Tests were not required for this short privacy/compliance branch.
+- The change was verified with PHP syntax checks, frontend type/lint/build checks, route checks and translation key checks.
+
+Commands executed:
+
+- php -l app\Models\CookieSetting.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l app\Http\Controllers\Admin\CookieSettingsController.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l app\Http\Middleware\HandleInertiaRequests.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l app\Http\Controllers\ContentPageController.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l database\migrations\2026_05_14_120000_create_cookie_settings_table.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l database\seeders\DatabaseSeeder.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l routes\web.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l lang\en\ui.php; php -l lang\es\ui.php; php -l lang\fr\ui.php
+- Result: Passed. No PHP syntax errors.
+
+- npm run types:check
+- Result: Passed. TypeScript reported no errors.
+
+- npm run lint:check
+- Result: Passed. ESLint reported no errors.
+
+- composer run lint:check
+- Result: Passed. Pint reported no required changes.
+
+- npm run build
+- Result: Passed. Vite production build completed.
+
+- php artisan route:list --path=cookie
+- Result: Passed. The cookie policy and admin cookie settings routes are registered.
+
+- php artisan route:list --path=admin/cookie-settings
+- Result: Passed. The admin cookie settings GET and PUT routes are registered.
+
+- Inline PHP translation key check for new cookie consent, cookie policy and admin cookie settings keys across en/es/fr
+- Result: Passed. Required keys were present in all three locales.
+
+Implementation notes:
+
+- Cookie consent settings are stored in the cookie_settings table.
+- Visitor consent is stored in the first-party teach4free_cookie_consent cookie with a localStorage mirror.
+- Consent records are not persisted in the database in this focused branch.
+- Tracking scripts are loaded through a consent-aware frontend loader and are not injected before the relevant consent category allows them when blocking is enabled.
+
+Manual verification checklist:
+
+1. Run:
+   php artisan migrate --seed
+
+2. Open the site in a private/incognito browser.
+
+3. Confirm the cookie consent banner appears.
+
+4. Click Reject non-essential.
+
+5. Confirm the banner disappears and does not reappear on refresh.
+
+6. Reopen Cookie preferences from footer.
+
+7. Enable Analytics only and save.
+
+8. Confirm preferences are remembered.
+
+9. Clear consent cookie or change consent version in admin.
+
+10. Confirm banner appears again.
+
+11. Login as admin:
+   admin@example.com
+   password
+
+12. Open:
+   /admin/cookie-settings
+
+13. Change consent duration and banner style.
+
+14. Confirm settings save.
+
+15. Confirm analytics/tracking scripts are not loaded before consent.

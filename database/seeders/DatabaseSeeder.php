@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\CategoryProposal;
 use App\Models\ClassSession;
 use App\Models\ClassSessionAttendee;
+use App\Models\CookieSetting;
 use App\Models\Incident;
 use App\Models\Language;
 use App\Models\PlatformSetting;
@@ -124,6 +125,11 @@ class DatabaseSeeder extends Seeder
             'tracking_enabled' => false,
             'cookie_consent_required' => true,
             'plausible_domain' => 'teach4free.local',
+            'updated_by' => $admin->id,
+        ])->save();
+
+        CookieSetting::current()->forceFill([
+            ...CookieSetting::defaults(),
             'updated_by' => $admin->id,
         ])->save();
 

@@ -42,10 +42,149 @@ Security notes:
 Future platform work
 --------------------
 
+Current priority order
+----------------------
+
+1. Internal messaging / chat
+2. Session reminders
+3. Reviews and ratings
+4. Basic reputation system
+5. Badges
+6. Teacher verification workflow
+7. Public SEO
+8. Public open sessions calendar
+9. Favorites and alerts
+
+High priority - Internal messaging / chat
+-----------------------------------------
+
+Teach4Free is a contact platform between learners and teachers, so internal messaging is a core feature.
+
+The first messaging version should be a solid internal inbox system, not necessarily real-time chat yet.
+
+Required first version:
+
+- Internal inbox.
+- Conversation list.
+- Conversation detail.
+- Messages between users.
+- Conversations linked to:
+  - teaching offer applications
+  - teaching offers
+  - class sessions
+- Unread/read status.
+- Unread message count in the navbar.
+- Internal notification when a new message arrives.
+- Optional external email notification when the user allows message emails.
+- User can report a conversation or message.
+- Admin can review reported conversations/messages.
+- Messages must not expose user emails publicly.
+- Conversations should respect platform safety and no-money rules.
+- Teachers and students should be able to coordinate without leaving the platform.
+
+Future messaging improvements:
+
+- Real-time chat with broadcasting.
+- Typing indicator.
+- Attachments.
+- Automatic translation.
+- Message templates.
+- User blocking.
+- Advanced moderation tools.
+- AI-assisted moderation.
+- Conversation archiving.
+
+Session reminders
+-----------------
+
+- Reminder emails 24h and 1h before sessions.
+- Internal notifications 24h and 1h before sessions.
+- Reminder command/scheduler.
+- Respect user notification preferences.
+- Store reminder delivery state to avoid duplicates.
+
+Reviews and ratings
+-------------------
+
+- Review system after completed classes.
+- Student rates teacher after completed session.
+- Stars and optional written comment.
+- Review moderation.
+- Teacher review summary on public profiles.
+- Reviews moderation after reviews exist.
+
+Basic reputation system
+-----------------------
+
+- Completed sessions count.
+- Students helped count.
+- Teaching hours count.
+- Average rating.
+- Cancellation rate.
+- No-show rate.
+- Reliability indicators.
+- Reputation should never be purchasable.
+
+Badges
+------
+
+- First class completed.
+- 10 students helped.
+- 50 teaching hours.
+- Reliable teacher.
+- Open knowledge contributor.
+- Subject/category-specific badges.
+- Badge and reputation rule admin screens after reputation exists.
+
+Teacher verification workflow
+-----------------------------
+
+- Teacher requests verification.
+- Admin reviews verification request.
+- Admin approves/rejects.
+- Public verified teacher badge.
+- Admin verification queue.
+
+Public SEO
+----------
+
+- SEO metadata for public home.
+- SEO metadata for public offers.
+- SEO metadata for public teacher profiles.
+- SEO metadata for legal/content pages.
+- OpenGraph metadata.
+- Twitter card metadata.
+- Sitemap.
+- robots.txt.
+- Structured data where appropriate.
+
+Public open sessions calendar
+-----------------------------
+
+- Public calendar/list of upcoming open sessions.
+- Filter by language, category, subject, level and date.
+- Link from home and footer.
+- Join/signup flow through existing session/application system.
+
+Favorites and alerts
+--------------------
+
+- Favorite teachers.
+- Favorite offers.
+- Alerts when a favorite teacher opens new classes.
+- Alerts for new offers by language/category/subject.
+- Notification preferences for alerts.
+
+Other pending platform work
+---------------------------
+
 - Manual browser verification of the completed admin dashboard, visual world map, country statistics, incidents, analytics settings, proposals and platform settings after php artisan migrate:fresh --seed.
 - Add more focused automated admin tests for login redirection, admin dashboard separation, user restriction safety and impersonation.
-- Cookie consent banner before activating external tracking scripts.
-- Full analytics script injection after consent.
+- More precise geolocation provider for consent regions only if ever needed.
+- Full cookie audit table for each third-party script.
+- Advanced consent logs export if database consent records are later required.
+- Granular script category assignment in analytics settings.
+- External content placeholders for embeds.
 - Full searchable audit log UI.
 - Advanced audit log filters and export.
 - Advanced report moderation queues.
@@ -57,36 +196,8 @@ Future platform work
 - Session rescheduling.
 - Calendar export/integration.
 - Calendar invitations.
-- Reminder emails 24h and 1h before sessions.
-- Review system after completed classes.
-- Badges and reputation.
-- Reputation rules.
-- Reviews moderation after reviews exist.
-- Badge and reputation rule admin screens after reputation exists.
 - Queued mail setup.
-- Rich internal messaging/chat.
 - Advanced open session handling.
 - Optional Jitsi integration.
 - Advanced public class/event pages beyond current offer detail pages.
 - Full admin CRUD screens beyond the newly implemented users, languages, incidents, categories, subjects, teaching offer visibility and application visibility.
-- Teacher verification workflow.
-
-Local public storage setup
---------------------------
-
-- Run php artisan storage:link in each local or deployed environment that serves uploaded profile photos and teacher banners from the public disk.
-
-Public identity and discovery pending items
--------------------------------------------
-
-- Add admin-editable CMS support for legal/content pages if static translated pages become limiting.
-- Add advanced teacher profile customization beyond the current banner, avatar and profile text.
-- Add teacher reviews display on public teacher profiles once reviews exist.
-- Add reputation and badges to public teacher profiles once rules exist.
-- Add SEO metadata for public teacher profiles and legal/content pages.
-- Add better teacher recommendations beyond the current filters and language-aware discovery.
-- Add custom brand artwork or a refined hero illustration if a stronger visual asset is needed later.
-- Add SEO metadata for public home and offers pages.
-- Add an advanced recommendation/ranking engine beyond the current filters and language-first fallback.
-- Build a real public session calendar for open sessions.
-- Add richer browser-language detection only if the current Accept-Language fallback proves insufficient.

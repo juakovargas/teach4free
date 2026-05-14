@@ -1,4 +1,8 @@
 import { useSyncExternalStore } from 'react';
+import {
+    COOKIE_CONSENT_CHANGED_EVENT,
+    COOKIE_CONSENT_COOKIE,
+} from '@/lib/cookie-consent';
 
 export type ResolvedAppearance = 'light' | 'dark';
 export type Appearance = ResolvedAppearance | 'system';
@@ -29,8 +33,48 @@ const setCookie = (name: string, value: string, days = 365): void => {
     document.cookie = `${name}=${value};path=/;max-age=${maxAge};SameSite=Lax`;
 };
 
+const clearCookie = (name: string): void => {
+    if (typeof document === 'undefined') {
+        return;
+    }
+
+    document.cookie = `${name}=;path=/;max-age=0;SameSite=Lax`;
+};
+
+const canStoreAppearancePreference = (): boolean => {
+    if (typeof document === 'undefined') {
+        return false;
+    }
+
+    const rawCookie = document.cookie
+        .split('; ')
+        .find((row) => row.startsWith(`${COOKIE_CONSENT_COOKIE}=`))
+        ?.split('=')[1];
+
+    if (!rawCookie) {
+        return false;
+    }
+
+    try {
+        const consent = JSON.parse(decodeURIComponent(rawCookie)) as {
+            expiresAt?: string;
+            categories?: { preferences?: boolean };
+        };
+
+        return consent.categories?.preferences === true
+            && typeof consent.expiresAt === 'string'
+            && new Date(consent.expiresAt).getTime() > Date.now();
+    } catch {
+        return false;
+    }
+};
+
 const getStoredAppearance = (): Appearance => {
     if (typeof window === 'undefined') {
+        return 'system';
+    }
+
+    if (!canStoreAppearancePreference()) {
         return 'system';
     }
 
@@ -75,16 +119,22 @@ export function initializeTheme(): void {
         return;
     }
 
-    if (!localStorage.getItem('appearance')) {
-        localStorage.setItem('appearance', 'system');
-        setCookie('appearance', 'system');
-    }
-
     currentAppearance = getStoredAppearance();
     applyTheme(currentAppearance);
 
     // Set up system theme change listener
     mediaQuery()?.addEventListener('change', handleSystemThemeChange);
+    window.addEventListener(COOKIE_CONSENT_CHANGED_EVENT, () => {
+        if (canStoreAppearancePreference()) {
+            localStorage.setItem('appearance', currentAppearance);
+            setCookie('appearance', currentAppearance);
+
+            return;
+        }
+
+        localStorage.removeItem('appearance');
+        clearCookie('appearance');
+    });
 }
 
 export function useAppearance(): UseAppearanceReturn {
@@ -101,11 +151,13 @@ export function useAppearance(): UseAppearanceReturn {
     const updateAppearance = (mode: Appearance): void => {
         currentAppearance = mode;
 
-        // Store in localStorage for client-side persistence...
-        localStorage.setItem('appearance', mode);
-
-        // Store in cookie for SSR...
-        setCookie('appearance', mode);
+        if (canStoreAppearancePreference()) {
+            localStorage.setItem('appearance', mode);
+            setCookie('appearance', mode);
+        } else {
+            localStorage.removeItem('appearance');
+            clearCookie('appearance');
+        }
 
         applyTheme(mode);
         notify();

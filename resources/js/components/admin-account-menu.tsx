@@ -1,5 +1,5 @@
 import { Link, router, usePage } from '@inertiajs/react';
-import { ChevronDown, LayoutDashboard, LogOut, Settings, ShieldCheck } from 'lucide-react';
+import { ChevronDown, Cookie, LayoutDashboard, LogOut, Settings, ShieldCheck } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useInitials } from '@/hooks/use-initials';
 import { useTranslation } from '@/hooks/use-translation';
+import { openCookiePreferences } from '@/lib/cookie-consent';
 import { logout } from '@/routes';
 import type { Auth } from '@/types';
 
@@ -83,6 +84,10 @@ export function AdminAccountMenu() {
                         <LayoutDashboard className="mr-2" />
                         {t('admin_account.user_dashboard')}
                     </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer" onClick={openCookiePreferences}>
+                    <Cookie className="mr-2" />
+                    {t('cookie_consent.cookie_preferences')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>

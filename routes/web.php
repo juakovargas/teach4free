@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AnalyticsController as AdminAnalyticsController;
 use App\Http\Controllers\Admin\CalendarOverviewController as AdminCalendarOverviewController;
 use App\Http\Controllers\Admin\CategoryProposalController as AdminCategoryProposalController;
+use App\Http\Controllers\Admin\CookieSettingsController as AdminCookieSettingsController;
 use App\Http\Controllers\Admin\ImpersonationController as AdminImpersonationController;
 use App\Http\Controllers\Admin\IncidentController as AdminIncidentController;
 use App\Http\Controllers\Admin\LanguageController as AdminLanguageController;
@@ -47,6 +48,7 @@ Route::get('/', HomeController::class)->name('home');
 Route::inertia('/about', 'about')->name('about');
 Route::get('/terms', [ContentPageController::class, 'terms'])->name('terms');
 Route::get('/privacy', [ContentPageController::class, 'privacy'])->name('privacy');
+Route::get('/cookie-policy', [ContentPageController::class, 'cookiePolicy'])->name('cookie-policy');
 Route::get('/community-guidelines', [ContentPageController::class, 'communityGuidelines'])->name('community-guidelines');
 Route::get('/teacher-guidelines', [ContentPageController::class, 'teacherGuidelines'])->name('teacher-guidelines');
 Route::get('/free-learning-rules', [ContentPageController::class, 'freeLearningRules'])->name('free-learning-rules');
@@ -133,6 +135,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('calendar-overview', AdminCalendarOverviewController::class)->name('calendar-overview');
             Route::get('platform-settings', [AdminPlatformSettingsController::class, 'edit'])->name('platform-settings.edit');
             Route::put('platform-settings', [AdminPlatformSettingsController::class, 'update'])->name('platform-settings.update');
+            Route::get('cookie-settings', [AdminCookieSettingsController::class, 'edit'])->name('cookie-settings.edit');
+            Route::put('cookie-settings', [AdminCookieSettingsController::class, 'update'])->name('cookie-settings.update');
             Route::get('teachers', [AdminTeacherController::class, 'index'])->name('teachers.index');
             Route::get('students', [AdminStudentController::class, 'index'])->name('students.index');
             Route::resource('users', AdminUserController::class)

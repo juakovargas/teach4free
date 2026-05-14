@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\CookieSetting;
+use App\Models\PlatformTrackingSetting;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
@@ -38,6 +40,10 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $cookieSettings = CookieSetting::current();
+        $trackingSettings = PlatformTrackingSetting::current();
+        $countryCode = $this->visitorCountryCode($request);
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
@@ -78,7 +84,79 @@ class HandleInertiaRequests extends Middleware
                 ],
             'impersonation' => $this->impersonation($request),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'cookieConsent' => [
+                'required' => $this->cookieConsentRequired($cookieSettings, $countryCode),
+                'detected_country_code' => $countryCode,
+                'settings' => [
+                    'banner_enabled' => $cookieSettings->banner_enabled,
+                    'consent_required_regions' => $cookieSettings->consent_required_regions,
+                    'consent_duration_days' => $cookieSettings->consent_duration_days,
+                    'consent_version' => $cookieSettings->consent_version,
+                    'show_reject_button' => $cookieSettings->show_reject_button,
+                    'show_configure_button' => $cookieSettings->show_configure_button,
+                    'block_analytics_until_consent' => $cookieSettings->block_analytics_until_consent,
+                    'block_marketing_until_consent' => $cookieSettings->block_marketing_until_consent,
+                    'block_external_content_until_consent' => $cookieSettings->block_external_content_until_consent,
+                    'banner_style' => $cookieSettings->banner_style,
+                    'cookie_policy_url' => route('cookie-policy'),
+                ],
+                'tracking' => [
+                    'tracking_enabled' => $trackingSettings->tracking_enabled,
+                    'cookie_consent_required' => $trackingSettings->cookie_consent_required,
+                    'google_analytics_id' => $trackingSettings->google_analytics_id,
+                    'google_tag_manager_id' => $trackingSettings->google_tag_manager_id,
+                    'meta_pixel_id' => $trackingSettings->meta_pixel_id,
+                    'tiktok_pixel_id' => $trackingSettings->tiktok_pixel_id,
+                    'linkedin_partner_id' => $trackingSettings->linkedin_partner_id,
+                    'microsoft_clarity_id' => $trackingSettings->microsoft_clarity_id,
+                    'plausible_domain' => $trackingSettings->plausible_domain,
+                    'custom_head_script' => $trackingSettings->custom_head_script,
+                    'custom_body_script' => $trackingSettings->custom_body_script,
+                ],
+            ],
         ];
+    }
+
+    private function cookieConsentRequired(CookieSetting $settings, ?string $countryCode): bool
+    {
+        if (! $settings->banner_enabled) {
+            return false;
+        }
+
+        if ($settings->consent_required_regions === CookieSetting::REGION_ALL) {
+            return true;
+        }
+
+        if (! $countryCode) {
+            return true;
+        }
+
+        if ($settings->consent_required_regions === CookieSetting::REGION_CUSTOM) {
+            $customCountryCodes = $settings->customCountryCodes();
+
+            return $customCountryCodes === [] || in_array($countryCode, $customCountryCodes, true);
+        }
+
+        return in_array($countryCode, CookieSetting::consentRequiredCountryCodes(), true);
+    }
+
+    private function visitorCountryCode(Request $request): ?string
+    {
+        $userCountryCode = $request->user()?->country_code;
+
+        if (is_string($userCountryCode) && $userCountryCode !== '') {
+            return strtoupper($userCountryCode);
+        }
+
+        foreach (['CF-IPCountry', 'X-App-Country-Code'] as $header) {
+            $countryCode = $request->headers->get($header);
+
+            if (is_string($countryCode) && preg_match('/^[A-Za-z]{2}$/', $countryCode) === 1) {
+                return strtoupper($countryCode);
+            }
+        }
+
+        return null;
     }
 
     /**

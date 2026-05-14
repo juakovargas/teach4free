@@ -2975,8 +2975,9 @@ Admins can store:
 Security note:
 
 - Custom scripts are stored but not executed inside admin preview.
-- Public script injection was not added in this task.
-- If cookie consent is required, public injection should wait for a safe cookie consent implementation.
+- Public script injection is handled by the consent-aware tracking loader.
+- Analytics scripts load only when admin tracking is enabled and analytics consent allows them while blocking is enabled.
+- Marketing pixels and custom head/body scripts load only when admin tracking is enabled and marketing consent allows them while blocking is enabled.
 - The admin page does not claim GDPR compliance.
 
 Category color picker
@@ -3218,11 +3219,197 @@ continues to include users, teachers, students and offers distributed across the
 - CL Chile.
 - BR Brazil.
 
+Cookie consent system - 2026-05-14
+----------------------------------
+
+Teach4Free now includes a configurable cookie consent system for privacy-conscious use in Europe, Spain and other regions where consent may be required.
+
+The core product rule remains unchanged:
+
+- Teach4Free is completely free.
+- No payments, subscriptions, credits, wallets, paid plans, commissions, monetization logic or premium visibility were added.
+
+Cookie categories
+-----------------
+
+The consent UI uses these categories:
+
+- necessary
+- preferences
+- analytics
+- marketing
+- external_content
+
+Necessary cookies are always enabled and cannot be disabled. They are used for login, security, session, CSRF, language preference and cookie consent storage.
+
+Optional categories default to off until the visitor chooses them:
+
+- preferences stores optional UI preferences such as appearance when consent allows it.
+- analytics covers analytics tools such as Google Analytics, Google Tag Manager analytics usage, Plausible and Microsoft Clarity.
+- marketing covers Meta/Facebook Pixel, TikTok Pixel, LinkedIn Insight, advertising tags, retargeting and custom tracking scripts.
+- external_content is reserved for future third-party embeds or widgets that may set cookies.
+
+Consent storage
+---------------
+
+Visitor choices are stored in a first-party cookie named:
+
+- teach4free_cookie_consent
+
+The cookie value includes:
+
+- consent id.
+- consent version.
+- accepted categories.
+- action type.
+- creation timestamp.
+- expiry timestamp.
+
+A localStorage mirror is also kept for client-side convenience, but the cookie is the primary source. Clearing the cookie makes the banner appear again.
+
+Consent is not stored in the database in this focused branch. This avoids storing raw IP addresses or extra personal data. No fake consent records are seeded.
+
+Consent duration and versioning
+-------------------------------
+
+Admin can configure how long consent is remembered:
+
+- 30 days.
+- 90 days.
+- 180 days.
+- 365 days.
+
+The default is 180 days.
+
+Admin can also change the consent version. Stored consent with an old version is treated as outdated and the banner appears again so visitors can choose again after policy changes.
+
+Region behavior
+---------------
+
+The default consent-required mode is:
+
+- eu_eea_uk_ch
+
+The supported consent-required countries include EU/EEA countries plus:
+
+- GB
+- CH
+
+If an authenticated user has a country_code, that country can be used to decide whether consent is required.
+
+For guests or unknown regions, Teach4Free is conservative and shows the banner. The app does not use a paid geolocation provider and does not store precise geolocation.
+
+Admin cookie settings
+---------------------
+
+A new admin page exists:
+
+- GET /admin/cookie-settings
+- PUT /admin/cookie-settings
+
+Admins can configure:
+
+- Cookie banner enabled.
+- Consent required regions mode: all, eu_eea_uk_ch or custom.
+- Custom required country codes for custom mode.
+- Consent duration.
+- Consent version.
+- Show reject button.
+- Show configure button.
+- Block analytics until consent.
+- Block marketing until consent.
+- Block external content until consent.
+- Banner style: centered modal or bottom banner.
+
+The page includes contextual help explaining:
+
+- Necessary cookies cannot be disabled.
+- Optional categories are off by default.
+- Analytics, marketing and external content can be blocked until category consent.
+- Consent duration controls how long choices are remembered.
+- Consent version can force visitors to choose again.
+
+The existing platform settings page links to the cookie settings page.
+
+Cookie banner and preferences UI
+--------------------------------
+
+The global React app now renders a cookie consent manager.
+
+When consent is required and no valid consent exists, visitors see a banner/modal with:
+
+- Short explanation.
+- Accept all.
+- Reject non-essential.
+- Configure.
+
+The configure view shows all categories with clear descriptions. Necessary is enabled and disabled. Optional categories are not pre-enabled.
+
+The UI is keyboard-accessible, responsive and compatible with light/dark mode.
+
+Users can reopen preferences from:
+
+- The public footer link: Cookie preferences.
+- Authenticated user dropdown.
+- Admin account dropdown.
+
+Analytics and tracking integration
+----------------------------------
+
+The app now includes a consent-aware tracking loader.
+
+Tracking scripts only load when:
+
+- Admin analytics tracking is enabled.
+- The relevant consent category allows it, when blocking is enabled.
+
+Analytics category gates:
+
+- Google Analytics.
+- Google Tag Manager analytics usage.
+- Plausible.
+- Microsoft Clarity.
+
+Marketing category gates:
+
+- Meta/Facebook Pixel.
+- TikTok Pixel.
+- LinkedIn Insight.
+- Custom head script.
+- Custom body script.
+
+Custom head/body scripts are treated as marketing by default and are not injected before marketing consent when blocking is enabled.
+
+The admin analytics help text was updated to explain that analytics and marketing scripts are non-essential and should stay blocked until consent allows them.
+
+Cookie policy page
+------------------
+
+A public cookie policy page was added:
+
+- GET /cookie-policy
+
+The public footer links to it.
+
+The cookie policy explains:
+
+- What cookies are.
+- Necessary cookies.
+- Preference cookies.
+- Analytics cookies.
+- Marketing cookies.
+- External content cookies.
+- How users can accept, reject or configure choices.
+- How preferences can be reopened.
+- Consent duration and versioning.
+- That Teach4Free does not process payments.
+- That tracking tools may be configured by admins but are controlled by consent.
+
+This page is concise and professional. It does not claim full legal compliance.
+
 What remains pending
 --------------------
 
-- Cookie consent banner before activating external tracking scripts.
-- Full analytics script injection after consent.
 - Advanced audit log UI.
 - Advanced email log UI.
 - Full CMS for content/legal/help pages.
@@ -3230,3 +3417,8 @@ What remains pending
 - Reviews moderation after reviews exist.
 - Badges and reputation rules after reputation exists.
 - Rich calendar charts or heatmaps if the statistics page needs them later.
+- More precise non-paid region detection only if ever needed.
+- Full cookie audit table for each third-party script.
+- Advanced consent logs export if database consent records are later required.
+- Granular script category assignment in analytics settings.
+- External content placeholders for embeds.

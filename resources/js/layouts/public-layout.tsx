@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
-import type { PropsWithChildren } from 'react';
+import type { PropsWithChildren, ReactNode } from 'react';
 import AppLogo from '@/components/app-logo';
+import { CookiePreferencesButton } from '@/components/cookie-preferences-button';
 import { ImpersonationBanner } from '@/components/impersonation-banner';
 import { LanguageSelector } from '@/components/language-selector';
 import { NavbarActions } from '@/components/navbar-actions';
@@ -132,6 +133,7 @@ function PublicFooter({
         { href: '/support/report', label: t('footer.report_issue') },
         { href: '/terms', label: t('footer.terms') },
         { href: '/privacy', label: t('footer.privacy') },
+        { href: '/cookie-policy', label: t('footer.cookie_policy') },
         { href: '/community-guidelines', label: t('footer.community_guidelines') },
     ];
 
@@ -151,7 +153,9 @@ function PublicFooter({
                 </div>
                 <FooterColumn title={t('footer.learn')} links={learnLinks} />
                 <FooterColumn title={t('footer.teach')} links={teachLinks} />
-                <FooterColumn title={t('footer.community_safety')} links={safetyLinks} />
+                <FooterColumn title={t('footer.community_safety')} links={safetyLinks}>
+                    <CookiePreferencesButton className="text-slate-300 hover:text-white" />
+                </FooterColumn>
                 <div>
                     <h2 className="text-sm font-semibold text-white">
                         {t('footer.language')}
@@ -171,9 +175,11 @@ function PublicFooter({
 function FooterColumn({
     title,
     links,
+    children,
 }: {
     title: string;
     links: { href: string; label: string }[];
+    children?: ReactNode;
 }) {
     return (
         <nav>
@@ -188,6 +194,7 @@ function FooterColumn({
                         {link.label}
                     </Link>
                 ))}
+                {children}
             </div>
         </nav>
     );

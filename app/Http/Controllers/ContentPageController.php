@@ -17,6 +17,11 @@ class ContentPageController extends Controller
         return $this->render('privacy');
     }
 
+    public function cookiePolicy(): Response
+    {
+        return $this->render('cookie_policy');
+    }
+
     public function communityGuidelines(): Response
     {
         return $this->render('community_guidelines');

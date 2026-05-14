@@ -1,3 +1,4 @@
+import type { CookieConsentSharedProps } from '@/lib/cookie-consent';
 import type { Auth } from '@/types/auth';
 
 export type LocaleOption = {
@@ -29,6 +30,7 @@ declare module '@inertiajs/core' {
             };
             errors: Record<string, string>;
             sidebarOpen: boolean;
+            cookieConsent: CookieConsentSharedProps;
             [key: string]: unknown;
         };
     }

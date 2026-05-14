@@ -1,4 +1,4 @@
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { Save, Settings } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { ContextualHelp } from '@/components/contextual-help';
@@ -58,6 +58,11 @@ export default function AdminPlatformSettings({ settings, supportedLocales }: Pr
                         <div>
                             <h1 className="text-2xl font-semibold tracking-normal">{t('admin_platform_settings.title')}</h1>
                             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">{t('admin_platform_settings.intro')}</p>
+                            <div className="mt-4">
+                                <Button variant="outline" size="sm" asChild>
+                                    <Link href="/admin/cookie-settings">{t('admin_platform_settings.cookie_settings_link')}</Link>
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </section>

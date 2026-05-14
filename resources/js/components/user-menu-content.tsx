@@ -3,6 +3,7 @@ import {
     BookOpenCheck,
     CalendarClock,
     CalendarDays,
+    Cookie,
     FileText,
     Inbox,
     Languages,
@@ -20,6 +21,7 @@ import {
 import { UserInfo } from '@/components/user-info';
 import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
 import { useTranslation } from '@/hooks/use-translation';
+import { openCookiePreferences } from '@/lib/cookie-consent';
 import { logout } from '@/routes';
 import { edit } from '@/routes/profile';
 import type { User } from '@/types';
@@ -179,6 +181,16 @@ export function UserMenuContent({ user }: Props) {
                         <Settings className="mr-2" />
                         {t('navigation.settings')}
                     </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={() => {
+                        cleanup();
+                        openCookiePreferences();
+                    }}
+                >
+                    <Cookie className="mr-2" />
+                    {t('cookie_consent.cookie_preferences')}
                 </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
