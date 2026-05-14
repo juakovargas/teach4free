@@ -4,6 +4,7 @@ import {
     Languages,
     LayoutGrid,
     Menu,
+    MessageCircle,
     Presentation,
     Search,
     Shield,
@@ -75,6 +76,11 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
             title: 'navigation.teaching_offers',
             href: '/teacher/offers',
             icon: Presentation,
+        },
+        {
+            title: 'navigation.messages',
+            href: '/messages',
+            icon: MessageCircle,
         },
     ];
 

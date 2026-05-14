@@ -7,6 +7,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -198,6 +199,40 @@ class User extends Authenticatable implements MustVerifyEmail
     public function sessionAttendances(): HasMany
     {
         return $this->hasMany(ClassSessionAttendee::class);
+    }
+
+    /**
+     * @return BelongsToMany<Conversation, $this>
+     */
+    public function conversations(): BelongsToMany
+    {
+        return $this->belongsToMany(Conversation::class, 'conversation_participants')
+            ->withPivot(['role', 'last_read_at', 'archived_at', 'muted_at'])
+            ->withTimestamps();
+    }
+
+    /**
+     * @return HasMany<ConversationParticipant, $this>
+     */
+    public function conversationParticipants(): HasMany
+    {
+        return $this->hasMany(ConversationParticipant::class);
+    }
+
+    /**
+     * @return HasMany<ConversationMessage, $this>
+     */
+    public function sentConversationMessages(): HasMany
+    {
+        return $this->hasMany(ConversationMessage::class, 'sender_user_id');
+    }
+
+    /**
+     * @return HasMany<ConversationReport, $this>
+     */
+    public function submittedConversationReports(): HasMany
+    {
+        return $this->hasMany(ConversationReport::class, 'reporter_user_id');
     }
 
     /**

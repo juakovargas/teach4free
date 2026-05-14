@@ -18,6 +18,7 @@ type Application = {
     rejected_at: string | null;
     cancelled_at: string | null;
     preferred_language: { name: string } | null;
+    conversation_id: number | null;
     can_cancel: boolean;
     offer: {
         title: string;
@@ -104,6 +105,13 @@ export default function MyApplications({ applications }: Props) {
                                             {t('applications.view_offer')}
                                         </Link>
                                     </Button>
+                                    {application.conversation_id && (
+                                        <Button variant="outline" size="sm" asChild>
+                                            <Link href={`/messages/${application.conversation_id}`}>
+                                                {t('messages.open_conversation')}
+                                            </Link>
+                                        </Button>
+                                    )}
                                     {application.can_cancel && (
                                         <Button variant="outline" size="sm" asChild>
                                             <Link

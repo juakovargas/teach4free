@@ -3,6 +3,8 @@
 use App\Http\Controllers\Admin\AnalyticsController as AdminAnalyticsController;
 use App\Http\Controllers\Admin\CalendarOverviewController as AdminCalendarOverviewController;
 use App\Http\Controllers\Admin\CategoryProposalController as AdminCategoryProposalController;
+use App\Http\Controllers\Admin\ConversationController as AdminConversationController;
+use App\Http\Controllers\Admin\ConversationReportController as AdminConversationReportController;
 use App\Http\Controllers\Admin\CookieSettingsController as AdminCookieSettingsController;
 use App\Http\Controllers\Admin\ImpersonationController as AdminImpersonationController;
 use App\Http\Controllers\Admin\IncidentController as AdminIncidentController;
@@ -22,6 +24,7 @@ use App\Http\Controllers\Admin\WorldMapController as AdminWorldMapController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\ContentPageController;
+use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocaleController;
@@ -77,6 +80,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::patch('notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
     Route::patch('notifications/{notification}/read', [NotificationController::class, 'read'])->name('notifications.read');
+    Route::get('messages', [ConversationController::class, 'index'])->name('messages.index');
+    Route::get('messages/{conversation}', [ConversationController::class, 'show'])->name('messages.show');
+    Route::post('messages/{conversation}', [ConversationController::class, 'store'])->name('messages.store');
+    Route::patch('messages/{conversation}/read', [ConversationController::class, 'read'])->name('messages.read');
+    Route::post('messages/{conversation}/archive', [ConversationController::class, 'archive'])->name('messages.archive');
+    Route::post('messages/{conversation}/report', [ConversationController::class, 'report'])->name('messages.report');
+    Route::post('messages/{conversation}/messages/{message}/report', [ConversationController::class, 'reportMessage'])->name('messages.messages.report');
     Route::post('admin/impersonation/stop', [AdminImpersonationController::class, 'stop'])->name('admin.impersonation.stop');
 
     Route::get('profile/preferences', [ProfilePreferencesController::class, 'edit'])->name('profile.preferences.edit');
@@ -149,6 +159,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::resource('incidents', AdminIncidentController::class)
                 ->only(['index', 'show', 'update']);
             Route::get('reports', fn () => redirect()->route('admin.incidents.index'))->name('reports.index');
+            Route::get('conversations', [AdminConversationController::class, 'index'])->name('conversations.index');
+            Route::get('conversations/{conversation}', [AdminConversationController::class, 'show'])->name('conversations.show');
+            Route::patch('conversations/{conversation}', [AdminConversationController::class, 'update'])->name('conversations.update');
+            Route::get('conversation-reports', [AdminConversationReportController::class, 'index'])->name('conversation-reports.index');
+            Route::get('conversation-reports/{report}', [AdminConversationReportController::class, 'show'])->name('conversation-reports.show');
+            Route::patch('conversation-reports/{report}', [AdminConversationReportController::class, 'update'])->name('conversation-reports.update');
             Route::resource('languages', AdminLanguageController::class)
                 ->except(['show', 'destroy']);
             Route::resource('categories', AdminTeachingCategoryController::class)

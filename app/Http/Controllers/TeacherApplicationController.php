@@ -97,6 +97,7 @@ class TeacherApplicationController extends Controller
                 'offer.category:id,name,slug,color',
                 'offer.subject:id,name,slug',
                 'offer.languages:id,code,name,native_name',
+                'conversation:id,teaching_offer_application_id',
             ])
             ->latest('requested_at');
     }

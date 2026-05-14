@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\CookieSetting;
 use App\Models\PlatformTrackingSetting;
 use App\Models\User;
+use App\Services\ConversationService;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Lang;
@@ -43,6 +44,9 @@ class HandleInertiaRequests extends Middleware
         $cookieSettings = CookieSetting::current();
         $trackingSettings = PlatformTrackingSetting::current();
         $countryCode = $this->visitorCountryCode($request);
+        $messageUnreadCount = $request->user()
+            ? app(ConversationService::class)->unreadCountFor($request->user())
+            : 0;
 
         return [
             ...parent::share($request),
@@ -82,6 +86,9 @@ class HandleInertiaRequests extends Middleware
                     'unread_count' => 0,
                     'latest' => [],
                 ],
+            'messages' => [
+                'unread_count' => $messageUnreadCount,
+            ],
             'impersonation' => $this->impersonation($request),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'cookieConsent' => [

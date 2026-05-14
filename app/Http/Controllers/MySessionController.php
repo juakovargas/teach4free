@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ClassSession;
 use App\Models\ClassSessionAttendee;
 use App\Notifications\ClassSessionNotification;
+use App\Services\ConversationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -18,6 +19,7 @@ class MySessionController extends Controller
             ->with([
                 'session.offer:id,title,slug',
                 'session.teacher:id,name,email,avatar_path,avatar_url',
+                'session.conversation:id,class_session_id',
             ])
             ->whereHas('session')
             ->latest()
@@ -43,12 +45,13 @@ class MySessionController extends Controller
                     ]),
                     'offer' => $attendance->session->offer,
                     'teacher' => $attendance->session->teacher,
+                    'conversation_id' => $attendance->session->conversation?->id,
                 ],
             ]),
         ]);
     }
 
-    public function cancel(Request $request, ClassSession $session): RedirectResponse
+    public function cancel(Request $request, ClassSession $session, ConversationService $conversations): RedirectResponse
     {
         $attendance = $session->attendees()
             ->where('user_id', $request->user()->id)
@@ -65,6 +68,12 @@ class MySessionController extends Controller
             $session,
             ClassSessionNotification::EVENT_STUDENT_CANCELLED,
         ));
+
+        $conversation = $conversations->ensureSessionConversation($session);
+        $conversations->addSystemMessage($conversation, __('ui.messages.system.session_student_cancelled', [
+            'student' => $request->user()->name,
+            'session' => $session->title,
+        ]));
 
         return back()->with('status', __('ui.sessions.participation_cancelled'));
     }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ClassSession;
 use App\Models\ClassSessionAttendee;
 use App\Notifications\ClassSessionNotification;
+use App\Services\ConversationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -16,7 +17,7 @@ class TeacherSessionController extends Controller
     {
         $sessions = ClassSession::query()
             ->where('teacher_user_id', $request->user()->id)
-            ->with(['offer:id,title,slug', 'attendees.user:id,name,email,avatar_path,avatar_url'])
+            ->with(['offer:id,title,slug', 'conversation:id,class_session_id', 'attendees.user:id,name,email,avatar_path,avatar_url'])
             ->withCount(['attendees as enrolled_attendees_count' => fn ($query) => $query->where('status', ClassSessionAttendee::STATUS_ENROLLED)])
             ->orderBy('starts_at')
             ->get();
@@ -26,7 +27,7 @@ class TeacherSessionController extends Controller
         ]);
     }
 
-    public function complete(Request $request, ClassSession $session): RedirectResponse
+    public function complete(Request $request, ClassSession $session, ConversationService $conversations): RedirectResponse
     {
         $this->authorizeSession($request, $session);
 
@@ -43,11 +44,15 @@ class TeacherSessionController extends Controller
             ]);
 
         $this->notifyAttendees($session, ClassSessionNotification::EVENT_SESSION_COMPLETED);
+        $conversation = $conversations->ensureSessionConversation($session);
+        $conversations->addSystemMessage($conversation, __('ui.messages.system.session_no_show', [
+            'session' => $session->title,
+        ]));
 
         return back()->with('status', __('ui.sessions.completed'));
     }
 
-    public function cancel(Request $request, ClassSession $session): RedirectResponse
+    public function cancel(Request $request, ClassSession $session, ConversationService $conversations): RedirectResponse
     {
         $this->authorizeSession($request, $session);
 
@@ -70,11 +75,15 @@ class TeacherSessionController extends Controller
             ]);
 
         $this->notifyAttendees($session, ClassSessionNotification::EVENT_SESSION_CANCELLED);
+        $conversation = $conversations->ensureSessionConversation($session);
+        $conversations->addSystemMessage($conversation, __('ui.messages.system.session_cancelled', [
+            'session' => $session->title,
+        ]));
 
         return back()->with('status', __('ui.sessions.cancelled'));
     }
 
-    public function noShow(Request $request, ClassSession $session): RedirectResponse
+    public function noShow(Request $request, ClassSession $session, ConversationService $conversations): RedirectResponse
     {
         $this->authorizeSession($request, $session);
 
@@ -92,6 +101,10 @@ class TeacherSessionController extends Controller
             ]);
 
         $this->notifyAttendees($session, ClassSessionNotification::EVENT_SESSION_NO_SHOW);
+        $conversation = $conversations->ensureSessionConversation($session);
+        $conversations->addSystemMessage($conversation, __('ui.messages.system.session_completed', [
+            'session' => $session->title,
+        ]));
 
         return back()->with('status', __('ui.sessions.no_show_marked'));
     }

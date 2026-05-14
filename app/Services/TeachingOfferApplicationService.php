@@ -12,6 +12,8 @@ use Illuminate\Validation\ValidationException;
 
 class TeachingOfferApplicationService
 {
+    public function __construct(private readonly ConversationService $conversations) {}
+
     /**
      * @param  array<string, mixed>  $data
      */
@@ -58,6 +60,12 @@ class TeachingOfferApplicationService
             'accepted_at' => $status === TeachingOfferApplication::STATUS_ACCEPTED ? $now : null,
         ]);
 
+        $conversation = $this->conversations->ensureApplicationConversation($application);
+        $this->conversations->addSystemMessage($conversation, __('ui.messages.system.application_submitted', [
+            'student' => $student->name,
+            'offer' => $offer->title,
+        ]));
+
         if ($status === TeachingOfferApplication::STATUS_WAITLISTED) {
             $student->notify(new TeachingOfferApplicationNotification(
                 $application,
@@ -68,6 +76,10 @@ class TeachingOfferApplicationService
         }
 
         if ($status === TeachingOfferApplication::STATUS_ACCEPTED) {
+            $this->conversations->addSystemMessage($conversation, __('ui.messages.system.application_accepted', [
+                'offer' => $offer->title,
+            ]));
+
             $student->notify(new TeachingOfferApplicationNotification(
                 $application,
                 TeachingOfferApplicationNotification::EVENT_APPLICATION_ACCEPTED,
@@ -111,6 +123,11 @@ class TeachingOfferApplicationService
             'cancelled_at' => null,
         ])->save();
 
+        $conversation = $this->conversations->ensureApplicationConversation($application);
+        $this->conversations->addSystemMessage($conversation, __('ui.messages.system.application_accepted', [
+            'offer' => $application->offer->title,
+        ]));
+
         $application->student->notify(new TeachingOfferApplicationNotification(
             $application,
             TeachingOfferApplicationNotification::EVENT_APPLICATION_ACCEPTED,
@@ -136,6 +153,11 @@ class TeachingOfferApplicationService
             'rejected_at' => now(),
         ])->save();
 
+        $conversation = $this->conversations->ensureApplicationConversation($application);
+        $this->conversations->addSystemMessage($conversation, __('ui.messages.system.application_rejected', [
+            'offer' => $application->offer->title,
+        ]));
+
         $application->student->notify(new TeachingOfferApplicationNotification(
             $application,
             TeachingOfferApplicationNotification::EVENT_APPLICATION_REJECTED,
@@ -158,6 +180,11 @@ class TeachingOfferApplicationService
             'status' => TeachingOfferApplication::STATUS_CANCELLED,
             'cancelled_at' => now(),
         ])->save();
+
+        $conversation = $this->conversations->ensureApplicationConversation($application);
+        $this->conversations->addSystemMessage($conversation, __('ui.messages.system.application_cancelled_by_student', [
+            'offer' => $application->offer->title,
+        ]));
 
         $application->teacher->notify(new TeachingOfferApplicationNotification(
             $application,
@@ -186,6 +213,11 @@ class TeachingOfferApplicationService
             'teacher_response' => $response,
             'cancelled_at' => now(),
         ])->save();
+
+        $conversation = $this->conversations->ensureApplicationConversation($application);
+        $this->conversations->addSystemMessage($conversation, __('ui.messages.system.application_cancelled_by_teacher', [
+            'offer' => $application->offer->title,
+        ]));
 
         $application->student->notify(new TeachingOfferApplicationNotification(
             $application,
@@ -268,6 +300,11 @@ class TeachingOfferApplicationService
             'status' => $newStatus,
             'accepted_at' => $newStatus === TeachingOfferApplication::STATUS_ACCEPTED ? now() : null,
         ])->save();
+
+        $conversation = $this->conversations->ensureApplicationConversation($application);
+        $this->conversations->addSystemMessage($conversation, __('ui.messages.system.waiting_list_promoted', [
+            'offer' => $application->offer->title,
+        ]));
 
         $application->student->notify(new TeachingOfferApplicationNotification(
             $application,

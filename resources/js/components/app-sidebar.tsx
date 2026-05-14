@@ -6,6 +6,7 @@ import {
     CalendarDays,
     FileText,
     Inbox,
+    MessageCircle,
     Languages,
     LayoutGrid,
     Presentation,
@@ -67,6 +68,11 @@ export function AppSidebar() {
             title: 'navigation.my_applications',
             href: '/my-applications',
             icon: Inbox,
+        },
+        {
+            title: 'navigation.messages',
+            href: '/messages',
+            icon: MessageCircle,
         },
         {
             title: 'navigation.my_sessions',

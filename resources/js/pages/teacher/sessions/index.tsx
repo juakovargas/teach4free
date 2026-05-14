@@ -25,6 +25,7 @@ type Session = {
     meeting_tool: string;
     enrolled_attendees_count: number;
     offer: { title: string; slug: string };
+    conversation?: { id: number } | null;
     attendees: Attendee[];
 };
 
@@ -116,6 +117,11 @@ function SessionCard({ session }: { session: Session }) {
                     </div>
                 </div>
                 <div className="grid content-start gap-3">
+                    {session.conversation && (
+                        <Button variant="outline" asChild>
+                            <Link href={`/messages/${session.conversation.id}`}>{t('messages.open_session_conversation')}</Link>
+                        </Button>
+                    )}
                     {actionable && (
                         <>
                             <Button onClick={() => router.patch(`/teacher/sessions/${session.id}/complete`, {}, { preserveScroll: true })}>

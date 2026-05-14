@@ -17,6 +17,7 @@ type PreferenceKey =
     | 'email_application_rejected_enabled'
     | 'email_application_cancelled_enabled'
     | 'email_waiting_list_enabled'
+    | 'email_new_message_enabled'
     | 'email_platform_updates_enabled';
 
 type Preferences = Record<PreferenceKey, boolean>;
@@ -48,6 +49,11 @@ const groups: { title: string; description: string; fields: PreferenceKey[] }[] 
         ],
     },
     {
+        title: 'notification_preferences.messages',
+        description: 'notification_preferences.messages_help',
+        fields: ['email_new_message_enabled'],
+    },
+    {
         title: 'notification_preferences.platform',
         description: 'notification_preferences.platform_help',
         fields: ['email_platform_updates_enabled'],
@@ -68,6 +74,7 @@ export default function NotificationPreferences({ preferences }: Props) {
         email_application_rejected_enabled: preferences.email_application_rejected_enabled,
         email_application_cancelled_enabled: preferences.email_application_cancelled_enabled,
         email_waiting_list_enabled: preferences.email_waiting_list_enabled,
+        email_new_message_enabled: preferences.email_new_message_enabled,
         email_platform_updates_enabled: preferences.email_platform_updates_enabled,
     });
 

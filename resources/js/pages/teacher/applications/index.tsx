@@ -24,6 +24,7 @@ type Application = {
     requested_at: string | null;
     preferred_language: { name: string } | null;
     student: { name: string; email: string; avatar?: string | null };
+    conversation?: { id: number } | null;
     offer: {
         title: string;
         slug: string;
@@ -175,6 +176,11 @@ function ApplicationCard({ application }: { application: Application }) {
                         <Button variant="outline" size="sm" asChild>
                             <Link href={`/offers/${application.offer.slug}`}>{t('teacher_applications.view_offer')}</Link>
                         </Button>
+                        {application.conversation && (
+                            <Button variant="outline" size="sm" asChild>
+                                <Link href={`/messages/${application.conversation.id}`}>{t('messages.open_conversation')}</Link>
+                            </Button>
+                        )}
                         {actionable && (
                             <>
                                 <Button size="sm" disabled={processing} onClick={(event) => submit(event, 'accept')}>

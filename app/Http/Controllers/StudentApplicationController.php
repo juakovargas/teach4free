@@ -7,6 +7,7 @@ use App\Models\ClassSessionAttendee;
 use App\Models\TeachingOffer;
 use App\Models\TeachingOfferApplication;
 use App\Notifications\ClassSessionNotification;
+use App\Services\ConversationService;
 use App\Services\TeachingOfferApplicationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -28,6 +29,7 @@ class StudentApplicationController extends Controller
                 'offer.category:id,name,slug,color',
                 'offer.subject:id,name,slug',
                 'offer.languages:id,code,name,native_name',
+                'conversation:id,teaching_offer_application_id',
             ])
             ->latest('requested_at')
             ->get()
@@ -44,6 +46,7 @@ class StudentApplicationController extends Controller
                 'rejected_at' => $application->rejected_at,
                 'cancelled_at' => $application->cancelled_at,
                 'preferred_language' => $application->preferredLanguage,
+                'conversation_id' => $application->conversation?->id,
                 'can_cancel' => $application->isCancellable(),
                 'offer' => [
                     'title' => $application->offer->title,
@@ -65,8 +68,12 @@ class StudentApplicationController extends Controller
         ]);
     }
 
-    public function store(Request $request, TeachingOffer $offer, TeachingOfferApplicationService $service): RedirectResponse
-    {
+    public function store(
+        Request $request,
+        TeachingOffer $offer,
+        TeachingOfferApplicationService $service,
+        ConversationService $conversations,
+    ): RedirectResponse {
         abort_unless($offer->is_public && $offer->is_active && $offer->published_at !== null, 404);
 
         $languageIds = $offer->languages()->pluck('languages.id')->all();
@@ -94,6 +101,11 @@ class StudentApplicationController extends Controller
 
         if ($session && $application->status === TeachingOfferApplication::STATUS_ACCEPTED) {
             $this->enrollInSession($session, $application, $request);
+            $conversation = $conversations->ensureSessionConversation($session);
+            $conversations->addSystemMessage($conversation, __('ui.messages.system.session_student_added', [
+                'student' => $request->user()->name,
+                'session' => $session->title,
+            ]));
         }
 
         return redirect()

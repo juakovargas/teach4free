@@ -21,6 +21,7 @@ type SessionRow = {
         status: string;
         meeting_tool: string;
         meeting_url: string | null;
+        conversation_id: number | null;
         offer: { title: string; slug: string };
         teacher: { name: string; email: string; avatar?: string | null };
     };
@@ -92,6 +93,13 @@ export default function MySessions({ sessions }: Props) {
                                                 <ExternalLink />
                                                 {t('sessions.open_meeting')}
                                             </a>
+                                        </Button>
+                                    )}
+                                    {session.conversation_id && (
+                                        <Button variant="outline" asChild>
+                                            <Link href={`/messages/${session.conversation_id}`}>
+                                                {t('messages.open_session_conversation')}
+                                            </Link>
                                         </Button>
                                     )}
                                     {can_cancel && (

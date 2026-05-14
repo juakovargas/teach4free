@@ -5,6 +5,10 @@ namespace Database\Seeders;
 use App\Models\CategoryProposal;
 use App\Models\ClassSession;
 use App\Models\ClassSessionAttendee;
+use App\Models\Conversation;
+use App\Models\ConversationMessage;
+use App\Models\ConversationParticipant;
+use App\Models\ConversationReport;
 use App\Models\CookieSetting;
 use App\Models\Incident;
 use App\Models\Language;
@@ -285,6 +289,7 @@ class DatabaseSeeder extends Seeder
                     'email_application_rejected_enabled' => true,
                     'email_application_cancelled_enabled' => true,
                     'email_waiting_list_enabled' => true,
+                    'email_new_message_enabled' => true,
                     'email_platform_updates_enabled' => $index % 5 === 0,
                 ],
             );
@@ -725,5 +730,180 @@ class DatabaseSeeder extends Seeder
                 ],
             );
         }
+
+        if (Schema::hasTable('conversations')) {
+            DB::table('conversation_reports')->delete();
+            DB::table('conversation_messages')->delete();
+            DB::table('conversation_participants')->delete();
+            DB::table('conversations')->delete();
+
+            $createdConversations = collect();
+            $messageBodies = [
+                'Thanks for applying. Teach4Free sessions always stay free.',
+                'Happy to coordinate a time here before the class.',
+                'That schedule works for me. I can prepare a few free examples.',
+                'Please keep all payment or commercial offers outside this conversation.',
+                'I will bring questions and keep the meeting link private.',
+                'Great, see you in the scheduled free session.',
+            ];
+
+            $applicationConversations = TeachingOfferApplication::query()
+                ->with(['offer', 'student', 'teacher'])
+                ->limit(18)
+                ->get();
+
+            foreach ($applicationConversations as $index => $application) {
+                $conversation = Conversation::create([
+                    'type' => Conversation::TYPE_APPLICATION,
+                    'teaching_offer_id' => $application->teaching_offer_id,
+                    'teaching_offer_application_id' => $application->id,
+                    'subject' => 'Application: '.$application->offer->title,
+                    'status' => $index % 8 === 0 ? Conversation::STATUS_REPORTED : Conversation::STATUS_OPEN,
+                    'created_by_user_id' => $application->student_user_id,
+                    'last_message_at' => now()->subHours($index),
+                ]);
+                $this->seedParticipant($conversation, $application->student, ConversationParticipant::ROLE_LEARNER, $index % 4 === 0, $index % 9 === 0);
+                $this->seedParticipant($conversation, $application->teacher, ConversationParticipant::ROLE_TEACHER, false, false);
+                $this->seedMessages($conversation, [$application->student, $application->teacher], $messageBodies, 4, $index);
+                $createdConversations->push($conversation);
+            }
+
+            $sessionConversations = ClassSession::query()
+                ->with(['teacher', 'attendees.user'])
+                ->limit(7)
+                ->get();
+
+            foreach ($sessionConversations as $index => $session) {
+                $conversation = Conversation::create([
+                    'type' => Conversation::TYPE_SESSION,
+                    'teaching_offer_id' => $session->teaching_offer_id,
+                    'teaching_offer_application_id' => $session->application_id,
+                    'class_session_id' => $session->id,
+                    'subject' => 'Session: '.$session->title,
+                    'status' => $index % 5 === 0 ? Conversation::STATUS_REPORTED : Conversation::STATUS_OPEN,
+                    'created_by_user_id' => $session->teacher_user_id,
+                    'last_message_at' => now()->subHours($index + 20),
+                ]);
+                $this->seedParticipant($conversation, $session->teacher, ConversationParticipant::ROLE_TEACHER, false, false);
+                $sessionUsers = collect([$session->teacher]);
+                foreach ($session->attendees as $attendeeIndex => $attendance) {
+                    if ($attendance->user) {
+                        $this->seedParticipant($conversation, $attendance->user, ConversationParticipant::ROLE_LEARNER, $attendeeIndex === 0, $index % 4 === 0);
+                        $sessionUsers->push($attendance->user);
+                    }
+                }
+                $this->seedMessages($conversation, $sessionUsers->unique('id')->values()->all(), $messageBodies, 5, $index + 20);
+                $createdConversations->push($conversation);
+            }
+
+            $studentOne = User::query()->where('email', 'student1@example.com')->first();
+            $teacherOne = User::query()->where('email', 'teacher1@example.com')->first();
+            $supportUsers = collect([$studentOne, $teacherOne, $devUser])->filter()->values();
+
+            for ($index = 0; $index < 3; $index++) {
+                $first = $supportUsers[$index % $supportUsers->count()];
+                $second = $allTeachers[($index + 4) % $allTeachers->count()];
+                $conversation = Conversation::create([
+                    'type' => $index === 0 ? Conversation::TYPE_SUPPORT : Conversation::TYPE_DIRECT,
+                    'subject' => $index === 0 ? 'Support: keeping coordination on Teach4Free' : 'Direct demo conversation '.($index + 1),
+                    'status' => $index === 1 ? Conversation::STATUS_REPORTED : Conversation::STATUS_OPEN,
+                    'created_by_user_id' => $first->id,
+                    'last_message_at' => now()->subHours($index + 40),
+                ]);
+                $this->seedParticipant($conversation, $first, ConversationParticipant::ROLE_PARTICIPANT, true, false);
+                $this->seedParticipant($conversation, $second, ConversationParticipant::ROLE_PARTICIPANT, false, false);
+                $this->seedMessages($conversation, [$first, $second], $messageBodies, 5, $index + 40);
+                $createdConversations->push($conversation);
+            }
+
+            $reportTypes = [
+                ConversationReport::TYPE_PAYMENT_REQUEST,
+                ConversationReport::TYPE_COMMERCIAL_PRESSURE,
+                ConversationReport::TYPE_SPAM,
+                ConversationReport::TYPE_ABUSE,
+                ConversationReport::TYPE_UNSAFE_LINK,
+                ConversationReport::TYPE_OTHER,
+                ConversationReport::TYPE_HARASSMENT,
+                ConversationReport::TYPE_PRIVACY_ISSUE,
+                ConversationReport::TYPE_PAYMENT_REQUEST,
+                ConversationReport::TYPE_COMMERCIAL_PRESSURE,
+            ];
+
+            foreach ($createdConversations->take(10)->values() as $index => $conversation) {
+                $message = ConversationMessage::query()
+                    ->where('conversation_id', $conversation->id)
+                    ->where('system_message', false)
+                    ->latest()
+                    ->first();
+                $reporter = $conversation->participants()->with('user')->first()?->user ?? $allLearners[$index % $allLearners->count()];
+                $reportedUser = $message?->sender_user_id === $reporter->id
+                    ? $conversation->participants()->where('user_id', '!=', $reporter->id)->first()?->user
+                    : $message?->sender;
+                $type = $reportTypes[$index];
+
+                ConversationReport::create([
+                    'conversation_id' => $conversation->id,
+                    'message_id' => $message?->id,
+                    'reporter_user_id' => $reporter->id,
+                    'reported_user_id' => $reportedUser?->id,
+                    'type' => $type,
+                    'status' => [ConversationReport::STATUS_OPEN, ConversationReport::STATUS_IN_REVIEW, ConversationReport::STATUS_RESOLVED, ConversationReport::STATUS_DISMISSED][$index % 4],
+                    'priority' => ConversationReport::defaultPriorityFor($type),
+                    'description' => 'Demo conversation report for messaging moderation.',
+                    'admin_notes' => $index % 3 === 0 ? 'Demo admin note for reviewed report.' : null,
+                    'resolved_by' => $index % 4 >= 2 ? $admin->id : null,
+                    'resolved_at' => $index % 4 >= 2 ? now()->subDays(1) : null,
+                    'created_at' => now()->subDays($index),
+                    'updated_at' => now()->subDays($index),
+                ]);
+
+                $conversation->forceFill(['status' => Conversation::STATUS_REPORTED])->save();
+            }
+        }
+    }
+
+    private function seedParticipant(Conversation $conversation, User $user, string $role, bool $unread, bool $archived): void
+    {
+        ConversationParticipant::create([
+            'conversation_id' => $conversation->id,
+            'user_id' => $user->id,
+            'role' => $role,
+            'last_read_at' => $unread ? now()->subDays(2) : now(),
+            'archived_at' => $archived ? now()->subDay() : null,
+        ]);
+    }
+
+    /**
+     * @param  array<int, User>  $participants
+     * @param  array<int, string>  $messageBodies
+     */
+    private function seedMessages(Conversation $conversation, array $participants, array $messageBodies, int $count, int $offset): void
+    {
+        ConversationMessage::create([
+            'conversation_id' => $conversation->id,
+            'sender_user_id' => null,
+            'body' => 'Demo system note: keep learning coordination free and inside Teach4Free.',
+            'system_message' => true,
+            'created_at' => now()->subDays(3)->addMinutes($offset),
+            'updated_at' => now()->subDays(3)->addMinutes($offset),
+        ]);
+
+        for ($index = 0; $index < $count; $index++) {
+            $sender = $participants[($index + $offset) % count($participants)];
+            $createdAt = now()->subHours(max(1, $offset + $count - $index));
+
+            ConversationMessage::create([
+                'conversation_id' => $conversation->id,
+                'sender_user_id' => $sender->id,
+                'body' => $messageBodies[($index + $offset) % count($messageBodies)],
+                'system_message' => false,
+                'created_at' => $createdAt,
+                'updated_at' => $createdAt,
+            ]);
+        }
+
+        $conversation->forceFill([
+            'last_message_at' => $conversation->messages()->latest()->value('created_at'),
+        ])->save();
     }
 }

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'teaching_offer_id',
@@ -72,6 +73,14 @@ class ClassSession extends Model
     public function attendees(): HasMany
     {
         return $this->hasMany(ClassSessionAttendee::class);
+    }
+
+    /**
+     * @return HasOne<Conversation, $this>
+     */
+    public function conversation(): HasOne
+    {
+        return $this->hasOne(Conversation::class);
     }
 
     /**

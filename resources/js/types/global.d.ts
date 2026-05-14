@@ -28,6 +28,9 @@ declare module '@inertiajs/core' {
                     created_at?: string | null;
                 }[];
             };
+            messages: {
+                unread_count: number;
+            };
             errors: Record<string, string>;
             sidebarOpen: boolean;
             cookieConsent: CookieConsentSharedProps;

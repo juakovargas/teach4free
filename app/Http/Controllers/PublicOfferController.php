@@ -116,6 +116,7 @@ class PublicOfferController extends Controller
             $currentApplication = $offer->applications()
                 ->where('student_user_id', $request->user()->id)
                 ->whereIn('status', TeachingOfferApplication::ACTIVE_STATUSES)
+                ->with('conversation:id,teaching_offer_application_id')
                 ->latest('requested_at')
                 ->first();
         }
@@ -129,7 +130,11 @@ class PublicOfferController extends Controller
                 'allow_waiting_list' => $offer->allow_waiting_list,
                 'waiting_list_limit' => $offer->waiting_list_limit,
             ],
-            'currentApplication' => $currentApplication?->only(['id', 'status']),
+            'currentApplication' => $currentApplication ? [
+                'id' => $currentApplication->id,
+                'status' => $currentApplication->status,
+                'conversation_id' => $currentApplication->conversation?->id,
+            ] : null,
             'isOwnOffer' => $isOwnOffer,
             'visibleMeetingUrl' => $this->visibleMeetingUrl($offer, $currentApplication),
             'teacherAvailability' => [

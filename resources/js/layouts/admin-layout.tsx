@@ -14,6 +14,7 @@ import {
     Mail,
     Map,
     MessageSquareWarning,
+    MessagesSquare,
     NotebookTabs,
     Presentation,
     Scale,
@@ -34,6 +35,7 @@ import { AppearanceToggle } from '@/components/appearance-toggle';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { ImpersonationBanner } from '@/components/impersonation-banner';
 import { LanguageSelector } from '@/components/language-selector';
+import { MessageMenu } from '@/components/message-menu';
 import { NotificationMenu } from '@/components/notification-menu';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -99,6 +101,8 @@ const groups: AdminNavGroup[] = [
         labelKey: 'admin_sidebar.moderation',
         items: [
             { labelKey: 'admin_sections.incidents', href: '/admin/incidents', icon: ShieldAlert },
+            { labelKey: 'admin_sections.conversations', href: '/admin/conversations', icon: MessagesSquare },
+            { labelKey: 'admin_sections.conversation_reports', href: '/admin/conversation-reports', icon: MessageSquareWarning },
             { labelKey: 'admin_sections.reviews_moderation', href: '/admin/reviews-moderation', icon: Star },
         ],
     },
@@ -147,6 +151,7 @@ export default function AdminLayout({ children, breadcrumbs = [] }: Props) {
                     <div className="ml-auto flex items-center gap-2">
                         <AppearanceToggle />
                         <LanguageSelector />
+                        <MessageMenu />
                         <NotificationMenu />
                         <AdminAccountMenu />
                     </div>

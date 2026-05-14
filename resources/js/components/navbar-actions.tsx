@@ -1,6 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import { AppearanceToggle } from '@/components/appearance-toggle';
 import { LanguageSelector } from '@/components/language-selector';
+import { MessageMenu } from '@/components/message-menu';
 import { NotificationMenu } from '@/components/notification-menu';
 import { Button } from '@/components/ui/button';
 import { UserDropdown } from '@/components/user-dropdown';
@@ -40,6 +41,7 @@ export function NavbarActions({
             <LanguageSelector />
             {user ? (
                 <>
+                    <MessageMenu />
                     {showNotifications && <NotificationMenu />}
                     <UserDropdown user={user} showName={showUserName} />
                 </>

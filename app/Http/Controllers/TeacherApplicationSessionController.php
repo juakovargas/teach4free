@@ -8,6 +8,7 @@ use App\Models\TeacherAvailabilityException;
 use App\Models\TeachingOffer;
 use App\Models\TeachingOfferApplication;
 use App\Notifications\ClassSessionNotification;
+use App\Services\ConversationService;
 use App\Services\TeachingOfferApplicationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,6 +21,7 @@ class TeacherApplicationSessionController extends Controller
         Request $request,
         TeachingOfferApplication $application,
         TeachingOfferApplicationService $applicationService,
+        ConversationService $conversations,
     ): RedirectResponse {
         abort_unless($application->teacher_user_id === $request->user()->id, 403);
 
@@ -82,6 +84,11 @@ class TeacherApplicationSessionController extends Controller
             $session,
             ClassSessionNotification::EVENT_SESSION_SCHEDULED,
         ));
+
+        $conversation = $conversations->ensureSessionConversation($session);
+        $conversations->addSystemMessage($conversation, __('ui.messages.system.session_scheduled', [
+            'session' => $session->title,
+        ]));
 
         return back()->with('status', $withinAvailability
             ? __('ui.teacher_applications.session_scheduled')

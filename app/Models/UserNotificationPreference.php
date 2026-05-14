@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'email_application_rejected_enabled',
     'email_application_cancelled_enabled',
     'email_waiting_list_enabled',
+    'email_new_message_enabled',
     'email_platform_updates_enabled',
 ])]
 class UserNotificationPreference extends Model
@@ -33,6 +34,7 @@ class UserNotificationPreference extends Model
         'email_application_rejected_enabled',
         'email_application_cancelled_enabled',
         'email_waiting_list_enabled',
+        'email_new_message_enabled',
         'email_platform_updates_enabled',
     ];
 

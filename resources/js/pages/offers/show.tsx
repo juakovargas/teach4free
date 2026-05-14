@@ -57,6 +57,7 @@ type SeatSummary = {
 type CurrentApplication = {
     id: number;
     status: string;
+    conversation_id: number | null;
 };
 
 type ApplicationForm = {
@@ -235,7 +236,19 @@ export default function PublicOfferShow({ offer, seatSummary, currentApplication
                             {auth.user && currentApplication && (
                                 <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-950 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-100">
                                     <p>{t('applications.current_status', { status: t(`application_statuses.${currentApplication.status}`) })}</p>
+                                    {currentApplication.conversation_id && (
+                                        <Button className="mt-3 w-full" variant="outline" asChild>
+                                            <Link href={`/messages/${currentApplication.conversation_id}`}>
+                                                {t('messages.open_conversation')}
+                                            </Link>
+                                        </Button>
+                                    )}
                                 </div>
+                            )}
+                            {auth.user && !currentApplication && !isOwnOffer && (
+                                <p className="mt-4 rounded-lg border border-slate-200 p-3 text-sm text-muted-foreground dark:border-slate-800">
+                                    {t('messages.apply_to_start_conversation')}
+                                </p>
                             )}
                             {visibleMeetingUrl && (
                                 <Button className="mt-4 w-full" asChild>
