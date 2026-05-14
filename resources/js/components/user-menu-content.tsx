@@ -10,6 +10,7 @@ import {
     LogOut,
     Presentation,
     Settings,
+    ShieldAlert,
     Shield,
 } from 'lucide-react';
 import {
@@ -156,6 +157,17 @@ export function UserMenuContent({ user }: Props) {
                     >
                         <Settings className="mr-2" />
                         {t('navigation.notification_preferences')}
+                    </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                    <Link
+                        className="block w-full cursor-pointer"
+                        href="/my-reports"
+                        prefetch
+                        onClick={cleanup}
+                    >
+                        <ShieldAlert className="mr-2" />
+                        {t('navigation.my_reports')}
                     </Link>
                 </DropdownMenuItem>
                 {user.role === 'admin' && (

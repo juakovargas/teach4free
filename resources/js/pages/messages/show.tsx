@@ -419,6 +419,9 @@ function ReportDialog({
                     <DialogDescription>{t('messages.report_modal_intro')}</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={submit} className="grid gap-4">
+                    <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm leading-6 text-muted-foreground dark:border-slate-800 dark:bg-slate-950">
+                        {t('my_reports.responsible_warning')}
+                    </div>
                     <div className="grid gap-2">
                         <Label>{t('messages.report_type')}</Label>
                         <Select value={form.data.type} onValueChange={(value) => form.setData('type', value)}>

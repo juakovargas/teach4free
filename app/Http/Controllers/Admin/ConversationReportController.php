@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\ConversationReport;
+use App\Notifications\ReportFollowUpNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -69,6 +71,7 @@ class ConversationReportController extends Controller
             'reporter:id,name,email,avatar_path,avatar_url',
             'reportedUser:id,name,email,avatar_path,avatar_url',
             'resolver:id,name,email',
+            'publicResponder:id,name,email',
         ]);
 
         return Inertia::render('admin/conversation-reports/show', [
@@ -85,21 +88,73 @@ class ConversationReportController extends Controller
             'status' => ['required', 'string', Rule::in(ConversationReport::STATUSES)],
             'priority' => ['required', 'string', Rule::in(ConversationReport::PRIORITIES)],
             'admin_notes' => ['nullable', 'string', 'max:5000'],
+            'public_response' => ['nullable', 'string', 'max:5000'],
         ]);
 
+        $previousStatus = $report->status;
+        $previousPublicResponse = $report->public_response;
         $resolved = in_array($data['status'], [
             ConversationReport::STATUS_RESOLVED,
             ConversationReport::STATUS_DISMISSED,
         ], true);
+        $publicResponse = trim((string) ($data['public_response'] ?? ''));
+        $publicResponse = $publicResponse === '' ? null : $publicResponse;
+        $publicResponseChanged = trim((string) $previousPublicResponse) !== trim((string) $publicResponse);
 
         $report->forceFill([
             'status' => $data['status'],
             'priority' => $data['priority'],
             'admin_notes' => $data['admin_notes'] ?? null,
+            'public_response' => $publicResponse,
+            'public_response_by' => $publicResponse ? $request->user()->id : null,
+            'public_response_sent_at' => $publicResponse && ($publicResponseChanged || ! $report->public_response_sent_at)
+                ? now()
+                : ($publicResponse ? $report->public_response_sent_at : null),
             'resolved_by' => $resolved ? $request->user()->id : null,
             'resolved_at' => $resolved ? now() : null,
         ])->save();
 
+        AuditLog::create([
+            'actor_user_id' => $request->user()->id,
+            'target_user_id' => $report->reported_user_id,
+            'action' => 'admin.conversation_report.updated',
+            'metadata' => ['conversation_report_id' => $report->id, 'status' => $report->status],
+            'ip_address' => $request->ip(),
+        ]);
+
+        $this->notifyReporterIfNeeded($report, $previousStatus, $publicResponseChanged);
+
         return back()->with('status', __('ui.admin_conversation_reports.updated'));
+    }
+
+    private function notifyReporterIfNeeded(ConversationReport $report, string $previousStatus, bool $publicResponseChanged): void
+    {
+        if (! $report->reporter) {
+            return;
+        }
+
+        $subject = $report->conversation?->subject ?: __('ui.messages.untitled_conversation', [], 'en');
+
+        if ($publicResponseChanged && $report->public_response) {
+            $report->reporter->notify(new ReportFollowUpNotification(
+                ReportFollowUpNotification::KIND_CONVERSATION_REPORT,
+                $report->id,
+                $subject,
+                $report->status,
+                ReportFollowUpNotification::EVENT_RESPONSE_UPDATED,
+            ));
+
+            return;
+        }
+
+        if ($previousStatus !== $report->status) {
+            $report->reporter->notify(new ReportFollowUpNotification(
+                ReportFollowUpNotification::KIND_CONVERSATION_REPORT,
+                $report->id,
+                $subject,
+                $report->status,
+                ReportFollowUpNotification::EVENT_STATUS_UPDATED,
+            ));
+        }
     }
 }

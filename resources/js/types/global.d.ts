@@ -35,6 +35,7 @@ declare module '@inertiajs/core' {
                 open_incidents: number;
                 open_conversation_reports: number;
                 pending_moderation: number;
+                reports_awaiting_response: number;
             };
             errors: Record<string, string>;
             sidebarOpen: boolean;

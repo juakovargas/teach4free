@@ -12,6 +12,7 @@ import {
     Presentation,
     Search,
     Shield,
+    ShieldAlert,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
@@ -93,6 +94,11 @@ export function AppSidebar() {
             title: 'navigation.notification_preferences',
             href: '/profile/notification-preferences',
             icon: BellRing,
+        },
+        {
+            title: 'navigation.my_reports',
+            href: '/my-reports',
+            icon: ShieldAlert,
         },
     ];
 

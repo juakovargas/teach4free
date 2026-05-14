@@ -1580,3 +1580,103 @@ Manual verification checklist:
 17. Confirm statuses are translated.
 
 18. Open admin conversation reports if available.
+
+User report follow-up and public admin responses - 2026-05-14
+-------------------------------------------------------------
+
+PHPUnit tests were not executed for this task.
+
+Reason:
+
+- This branch focused on report follow-up UI, public admin responses, notifications and moderation copy.
+- Verification was done with PHP syntax checks, frontend type/lint checks, route checks and a production build.
+
+Commands executed:
+
+- php -l app\Http\Controllers\Admin\IncidentController.php; php -l app\Http\Controllers\Admin\ConversationReportController.php; php -l app\Http\Controllers\MyReportController.php; php -l app\Http\Controllers\DashboardController.php; php -l app\Http\Controllers\AdminDashboardController.php; php -l app\Http\Middleware\HandleInertiaRequests.php; php -l app\Notifications\ReportFollowUpNotification.php; php -l database\migrations\2026_05_14_150000_add_public_response_fields_to_reports.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l lang\en\ui.php; php -l lang\es\ui.php; php -l lang\fr\ui.php
+- Result: Passed. No PHP syntax errors in translation files.
+
+- npm run types:check
+- Result: Passed. TypeScript reported no errors.
+
+- npm run lint:check
+- Result: Passed. ESLint reported no errors.
+
+- composer run lint:check
+- Result: Passed. Pint reported no required changes.
+
+- php artisan route:list --path=my-reports
+- Result: Passed. My reports index and detail routes are registered.
+
+- php artisan route:list --path=admin/incidents
+- Result: Passed. Admin incident index/show/update routes are registered.
+
+- php artisan route:list --path=admin/conversation-reports
+- Result: Passed. Admin conversation report index/show/update routes are registered.
+
+- npm run build
+- Result: Passed. Vite production build completed.
+- Note: Vite printed plugin timing warnings, but the build succeeded.
+
+Implementation notes:
+
+- Added /my-reports for authenticated users.
+- Added separate report detail pages for incidents and conversation/message reports.
+- Users only see their own reports.
+- Public admin responses are visible to the reporting user.
+- Private admin notes are not sent to user report pages.
+- Admin incident and conversation report details now separate private notes from public response.
+- Reporters receive internal notifications when public responses or statuses change.
+- Responsible-report warnings were added to user-facing report forms and report follow-up pages.
+- Admin dashboard includes reports awaiting public response.
+- Demo seed data includes reports with and without public responses.
+- False-report marking/penalty automation was not implemented in this branch and remains pending.
+
+Manual verification checklist:
+
+1. Run:
+   php artisan migrate --seed
+
+2. Login as a demo user.
+
+3. Open:
+   /my-reports
+
+4. Confirm only that user's reports appear.
+
+5. Open a report detail.
+
+6. Confirm status is translated.
+
+7. Confirm public response appears if available.
+
+8. Confirm internal admin notes are not visible.
+
+9. Open a report form.
+
+10. Confirm responsible-report warning is visible.
+
+11. Login as admin:
+    admin@example.com
+    password
+
+12. Open admin incidents/reports.
+
+13. Open a report detail.
+
+14. Add private admin notes.
+
+15. Add public response.
+
+16. Change status to resolved.
+
+17. Login again as reporter.
+
+18. Confirm internal notification appears.
+
+19. Confirm report detail shows the public response.
+
+20. Confirm user cannot see private admin notes.

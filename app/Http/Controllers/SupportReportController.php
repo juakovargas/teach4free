@@ -33,7 +33,7 @@ class SupportReportController extends Controller
             'class_session_id' => ['nullable', 'integer', Rule::exists('class_sessions', 'id')],
         ]);
 
-        Incident::create([
+        $incident = Incident::create([
             'reporter_user_id' => $request->user()?->id,
             'reported_user_id' => $data['reported_user_id'] ?? null,
             'teaching_offer_id' => $data['teaching_offer_id'] ?? null,
@@ -44,6 +44,10 @@ class SupportReportController extends Controller
             'subject' => $data['subject'],
             'description' => $data['description'],
         ]);
+
+        if ($request->user()) {
+            return redirect()->route('my-reports.incidents.show', $incident)->with('status', __('ui.support_report.created'));
+        }
 
         return redirect()->route('support.report.create')->with('status', __('ui.support_report.created'));
     }

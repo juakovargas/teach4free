@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\ClassSession;
 use App\Models\ClassSessionAttendee;
+use App\Models\ConversationReport;
+use App\Models\Incident;
 use App\Models\TeachingOfferApplication;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -17,6 +20,10 @@ class DashboardController extends Controller
             'studentProfile',
             'teacherProfile',
         ]);
+        $reportsHavePublicResponse = Schema::hasTable('incidents')
+            && Schema::hasColumn('incidents', 'public_response')
+            && Schema::hasTable('conversation_reports')
+            && Schema::hasColumn('conversation_reports', 'public_response');
 
         return Inertia::render('dashboard', [
             'summary' => [
@@ -51,6 +58,24 @@ class DashboardController extends Controller
                     ])
                     ->count(),
                 'unread_notifications_count' => $user->unreadNotifications()->count(),
+                'open_reports_count' => Incident::query()
+                    ->where('reporter_user_id', $user->id)
+                    ->whereIn('status', [Incident::STATUS_OPEN, Incident::STATUS_IN_REVIEW])
+                    ->count()
+                    + ConversationReport::query()
+                        ->where('reporter_user_id', $user->id)
+                        ->whereIn('status', [ConversationReport::STATUS_OPEN, ConversationReport::STATUS_IN_REVIEW])
+                        ->count(),
+                'reports_with_response_count' => $reportsHavePublicResponse
+                    ? Incident::query()
+                        ->where('reporter_user_id', $user->id)
+                        ->whereNotNull('public_response')
+                        ->count()
+                        + ConversationReport::query()
+                            ->where('reporter_user_id', $user->id)
+                            ->whereNotNull('public_response')
+                            ->count()
+                    : 0,
                 'student_status' => $user->studentProfile?->is_active ? 'active' : 'inactive',
                 'teacher_status' => match (true) {
                     $user->teacherProfile?->is_active => 'active',

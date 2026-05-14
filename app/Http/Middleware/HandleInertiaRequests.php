@@ -138,20 +138,38 @@ class HandleInertiaRequests extends Middleware
                 'open_incidents' => 0,
                 'open_conversation_reports' => 0,
                 'pending_moderation' => 0,
+                'reports_awaiting_response' => 0,
             ];
         }
 
-        $openIncidents = Schema::hasTable('incidents')
+        $hasIncidents = Schema::hasTable('incidents');
+        $hasConversationReports = Schema::hasTable('conversation_reports');
+        $openIncidents = $hasIncidents
             ? Incident::query()->where('status', Incident::STATUS_OPEN)->count()
             : 0;
-        $openConversationReports = Schema::hasTable('conversation_reports')
+        $openConversationReports = $hasConversationReports
             ? ConversationReport::query()->where('status', ConversationReport::STATUS_OPEN)->count()
             : 0;
+        $reportsAwaitingResponse = ($hasIncidents && Schema::hasColumn('incidents', 'public_response')
+            ? Incident::query()
+                ->whereNotNull('reporter_user_id')
+                ->whereIn('status', Incident::STATUSES)
+                ->whereNull('public_response')
+                ->count()
+            : 0)
+            + ($hasConversationReports && Schema::hasColumn('conversation_reports', 'public_response')
+                ? ConversationReport::query()
+                    ->whereNotNull('reporter_user_id')
+                    ->whereIn('status', ConversationReport::STATUSES)
+                    ->whereNull('public_response')
+                    ->count()
+                : 0);
 
         return [
             'open_incidents' => $openIncidents,
             'open_conversation_reports' => $openConversationReports,
             'pending_moderation' => $openIncidents + $openConversationReports,
+            'reports_awaiting_response' => $reportsAwaitingResponse,
         ];
     }
 

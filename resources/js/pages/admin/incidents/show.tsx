@@ -16,6 +16,8 @@ type Incident = {
     subject: string;
     description: string;
     admin_notes?: string | null;
+    public_response?: string | null;
+    public_response_sent_at?: string | null;
     created_at: string;
     updated_at: string;
     reporter?: { id: number; name: string; email: string } | null;
@@ -24,6 +26,7 @@ type Incident = {
     application?: { id: number; status: string; message?: string | null; student?: { name: string; email: string } | null; teacher?: { name: string; email: string } | null } | null;
     class_session?: { id: number; title: string; status: string; starts_at?: string | null; ends_at?: string | null; timezone?: string | null } | null;
     resolver?: { name: string; email: string } | null;
+    public_responder?: { name: string; email: string } | null;
     resolved_at?: string | null;
 };
 
@@ -40,6 +43,7 @@ export default function AdminIncidentShow({ incident, statuses, priorities }: Pr
         status: incident.status,
         priority: incident.priority,
         admin_notes: incident.admin_notes ?? '',
+        public_response: incident.public_response ?? '',
     });
 
     const submit = (event: FormEvent) => {
@@ -120,8 +124,20 @@ export default function AdminIncidentShow({ incident, statuses, priorities }: Pr
                             </select>
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="admin_notes">{t('admin_incidents.admin_notes')}</Label>
+                            <Label htmlFor="admin_notes">{t('admin_incidents.private_admin_notes')}</Label>
+                            <p className="text-xs leading-5 text-muted-foreground">{t('admin_incidents.private_admin_notes_help')}</p>
                             <Textarea id="admin_notes" value={form.data.admin_notes} onChange={(event) => form.setData('admin_notes', event.target.value)} rows={7} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="public_response">{t('admin_incidents.public_response')}</Label>
+                            <p className="text-xs leading-5 text-muted-foreground">{t('admin_incidents.public_response_help')}</p>
+                            <Textarea id="public_response" value={form.data.public_response} onChange={(event) => form.setData('public_response', event.target.value)} rows={7} />
+                            {incident.public_response_sent_at && (
+                                <p className="text-xs text-muted-foreground">
+                                    {t('admin_incidents.response_sent_at')}: {new Date(incident.public_response_sent_at).toLocaleString()}
+                                    {incident.public_responder ? ` / ${t('admin_incidents.response_by')}: ${incident.public_responder.name}` : ''}
+                                </p>
+                            )}
                         </div>
                         <Button type="submit" disabled={form.processing}>{t('actions.save')}</Button>
                     </form>

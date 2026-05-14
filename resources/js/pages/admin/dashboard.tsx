@@ -38,6 +38,7 @@ type Stats = {
     incidents_pending_review: number;
     open_conversation_reports: number;
     pending_moderation: number;
+    reports_awaiting_response: number;
     banned_users: number;
     blocked_users: number;
     active_languages: number;
@@ -137,6 +138,7 @@ export default function AdminDashboard({ stats, growth, activity, world }: Props
         { label: t('admin.open_reports'), value: stats.open_conversation_reports, icon: MessageSquareWarning, href: '/admin/conversation-reports?status=open' },
         { label: t('admin.reports'), value: stats.reports, icon: MessageSquareWarning, href: '/admin/reports' },
         { label: t('admin.incidents_pending_review'), value: stats.incidents_pending_review, icon: ShieldAlert, href: '/admin/incidents' },
+        { label: t('admin.reports_awaiting_response'), value: stats.reports_awaiting_response, icon: MessageSquareWarning, href: '/admin/incidents' },
         { label: t('admin.banned_users'), value: stats.banned_users, icon: Ban, href: '/admin/users?status=banned' },
         { label: t('admin.blocked_users'), value: stats.blocked_users, icon: Ban, href: '/admin/users?status=blocked' },
         { label: t('admin.suspended_offers'), value: stats.suspended_offers, icon: FileText, href: '/admin/teaching-offers' },

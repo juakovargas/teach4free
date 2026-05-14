@@ -3652,6 +3652,114 @@ Seeded messaging data includes:
 - reported conversations.
 - conversation reports including payment request, commercial pressure, spam, abuse, unsafe link and other cases.
 
+User report follow-up and public admin responses - 2026-05-14
+-------------------------------------------------------------
+
+Teach4Free now has a user-facing report follow-up area so people who submit reports are not left without visibility.
+
+User-facing routes:
+
+- GET /my-reports
+- GET /my-reports/incidents/{incident}
+- GET /my-reports/conversation-reports/{report}
+
+The My reports page shows only reports submitted by the current authenticated user.
+
+It combines two existing moderation systems without creating a duplicate report system:
+
+- General incidents.
+- Conversation and message reports.
+
+The list shows:
+
+- report subject.
+- report type.
+- translated status.
+- related safe context, such as offer, session, conversation, application or user.
+- created and updated dates.
+- whether a public response is available.
+
+The report detail page shows:
+
+- the user's original report description.
+- reported message excerpt for message reports.
+- translated report status.
+- related safe context.
+- public response from the moderation team when one exists.
+- a calm responsible-report notice.
+
+Private admin notes are not sent to the user pages and remain admin-only.
+
+Public response fields
+----------------------
+
+General incidents and conversation reports now support public moderation responses:
+
+- public_response
+- public_response_sent_at
+- public_response_by
+
+The existing admin_notes field remains private and is used only for internal moderation context.
+
+Admin incident and conversation report detail pages now separate:
+
+- Private admin notes.
+- Public response to reporter.
+
+Saving a changed public response notifies the reporter internally. Updating report status without changing the public response also notifies the reporter.
+
+Report follow-up notifications
+------------------------------
+
+Internal notifications are created when:
+
+- an admin adds or changes a public report response.
+- an admin changes report status.
+
+Notifications link to the user's own report detail page.
+
+The system avoids notifying reporters for private admin note changes only.
+
+Responsible report warning
+--------------------------
+
+User-facing report surfaces now include a professional warning:
+
+- Reports should be used responsibly.
+- False, malicious or abusive reports may lead to account restrictions.
+
+The warning appears on:
+
+- /support/report
+- conversation/message report modal.
+- /my-reports
+- report detail pages.
+
+False-report marking and automatic penalties were intentionally not automated in this branch. Admins can still use the existing user restriction, block and ban tools when repeated malicious reporting is identified.
+
+Admin report counts
+-------------------
+
+The admin dashboard now includes an "Awaiting public response" moderation count.
+
+The existing admin sidebar badges continue to show open incidents and open conversation reports as pending moderation work.
+
+Demo report follow-up data
+--------------------------
+
+The demo seeder now creates public responses for some resolved or dismissed incidents and for several conversation reports.
+
+After:
+
+- php artisan migrate:fresh --seed
+
+Demo users have a mix of:
+
+- open reports without public response.
+- in-review reports.
+- resolved reports with public response.
+- dismissed reports with public response.
+
 What remains pending
 --------------------
 
@@ -3659,6 +3767,10 @@ What remains pending
 - Advanced email log UI.
 - Full CMS for content/legal/help pages.
 - Advanced report moderation queues.
+- False report penalty automation.
+- Report analytics.
+- Full moderation audit UI.
+- External report response emails if ever needed.
 - Real-time chat.
 - Typing indicators.
 - Attachments.

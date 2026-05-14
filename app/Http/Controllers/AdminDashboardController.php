@@ -25,6 +25,8 @@ class AdminDashboardController extends Controller
         $lastWeek = now()->subDays(7);
         $hasConversationReports = Schema::hasTable('conversation_reports');
         $hasIncidents = Schema::hasTable('incidents');
+        $hasIncidentPublicResponses = $hasIncidents && Schema::hasColumn('incidents', 'public_response');
+        $hasConversationReportPublicResponses = $hasConversationReports && Schema::hasColumn('conversation_reports', 'public_response');
         $hasNotifications = Schema::hasTable('notifications');
         $hasSessions = Schema::hasTable('class_sessions');
         $countryRows = User::query()
@@ -73,6 +75,16 @@ class AdminDashboardController extends Controller
                     ->count() : 0)
                     + ($hasConversationReports ? ConversationReport::query()
                         ->where('status', ConversationReport::STATUS_OPEN)
+                        ->count() : 0),
+                'reports_awaiting_response' => ($hasIncidentPublicResponses ? Incident::query()
+                    ->whereNotNull('reporter_user_id')
+                    ->whereIn('status', Incident::STATUSES)
+                    ->whereNull('public_response')
+                    ->count() : 0)
+                    + ($hasConversationReportPublicResponses ? ConversationReport::query()
+                        ->whereNotNull('reporter_user_id')
+                        ->whereIn('status', ConversationReport::STATUSES)
+                        ->whereNull('public_response')
                         ->count() : 0),
                 'banned_users' => User::query()->whereNotNull('banned_at')->count(),
                 'blocked_users' => User::query()->whereNotNull('blocked_at')->count(),

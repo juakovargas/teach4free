@@ -28,6 +28,7 @@ use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\MyReportController;
 use App\Http\Controllers\MySessionController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\NotificationPreferenceController;
@@ -76,6 +77,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('my-applications/{application}/cancel', [StudentApplicationController::class, 'cancel'])->name('my-applications.cancel');
     Route::get('my-sessions', [MySessionController::class, 'index'])->name('my-sessions.index');
     Route::patch('my-sessions/{session}/cancel', [MySessionController::class, 'cancel'])->name('my-sessions.cancel');
+    Route::get('my-reports', [MyReportController::class, 'index'])->name('my-reports.index');
+    Route::get('my-reports/incidents/{incident}', [MyReportController::class, 'showIncident'])->name('my-reports.incidents.show');
+    Route::get('my-reports/conversation-reports/{report}', [MyReportController::class, 'showConversationReport'])->name('my-reports.conversation-reports.show');
 
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::patch('notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');

@@ -18,10 +18,13 @@ type Report = {
     priority: string;
     description: string | null;
     admin_notes: string | null;
+    public_response: string | null;
+    public_response_sent_at: string | null;
     created_at: string | null;
     reporter: { name: string; email: string } | null;
     reported_user: { name: string; email: string } | null;
     resolver: { name: string; email: string } | null;
+    public_responder: { name: string; email: string } | null;
     message: { body: string; sender?: { name: string; email: string } | null } | null;
     conversation: {
         id: number;
@@ -45,6 +48,7 @@ export default function AdminConversationReportShow({ report, statuses, prioriti
         status: report.status,
         priority: report.priority,
         admin_notes: report.admin_notes ?? '',
+        public_response: report.public_response ?? '',
     });
 
     const submit = (event: FormEvent) => {
@@ -124,8 +128,17 @@ export default function AdminConversationReportShow({ report, statuses, prioriti
                                         </SelectContent>
                                     </Select>
                                 </Field>
-                                <Field label={t('admin_conversation_reports.admin_notes')}>
+                                <Field label={t('admin_conversation_reports.private_admin_notes')} description={t('admin_conversation_reports.private_admin_notes_help')}>
                                     <Textarea value={form.data.admin_notes} onChange={(event) => form.setData('admin_notes', event.target.value)} />
+                                </Field>
+                                <Field label={t('admin_conversation_reports.public_response')} description={t('admin_conversation_reports.public_response_help')}>
+                                    <Textarea value={form.data.public_response} onChange={(event) => form.setData('public_response', event.target.value)} rows={6} />
+                                    {report.public_response_sent_at && (
+                                        <p className="text-xs text-muted-foreground">
+                                            {t('admin_conversation_reports.response_sent_at')}: {new Date(report.public_response_sent_at).toLocaleString()}
+                                            {report.public_responder ? ` / ${t('admin_conversation_reports.response_by')}: ${report.public_responder.name}` : ''}
+                                        </p>
+                                    )}
                                 </Field>
                                 <Button disabled={form.processing}>
                                     <Save />
@@ -156,10 +169,11 @@ function Info({ label, value }: { label: string; value: string }) {
     );
 }
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
+function Field({ label, description, children }: { label: string; description?: string; children: ReactNode }) {
     return (
         <div className="grid gap-2">
             <Label>{label}</Label>
+            {description && <p className="text-xs leading-5 text-muted-foreground">{description}</p>}
             {children}
         </div>
     );

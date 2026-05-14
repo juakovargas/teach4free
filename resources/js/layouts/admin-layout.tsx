@@ -57,7 +57,7 @@ type AdminNavItem = {
     badgeKey?: AdminModerationKey;
 };
 
-type AdminModerationKey = 'open_incidents' | 'open_conversation_reports' | 'pending_moderation';
+type AdminModerationKey = 'open_incidents' | 'open_conversation_reports' | 'pending_moderation' | 'reports_awaiting_response';
 
 type AdminNavGroup = {
     labelKey: string;

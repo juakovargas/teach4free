@@ -16,6 +16,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'priority',
     'description',
     'admin_notes',
+    'public_response',
+    'public_response_sent_at',
+    'public_response_by',
     'resolved_by',
     'resolved_at',
 ])]
@@ -133,11 +136,20 @@ class ConversationReport extends Model
     }
 
     /**
+     * @return BelongsTo<User, $this>
+     */
+    public function publicResponder(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'public_response_by');
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
     {
         return [
+            'public_response_sent_at' => 'datetime',
             'resolved_at' => 'datetime',
         ];
     }

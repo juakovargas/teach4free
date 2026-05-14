@@ -53,6 +53,9 @@ export default function SupportReport({ type, teachingOfferId, reportedUserId, c
                 )}
 
                 <form onSubmit={submit} className="grid gap-5 rounded-lg border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+                    <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm leading-6 text-muted-foreground dark:border-slate-800 dark:bg-slate-950">
+                        {t('support_report.responsible_warning')}
+                    </div>
                     <div className="grid gap-2">
                         <Label>{t('support_report.type')}</Label>
                         <select value={form.data.type} onChange={(event) => form.setData('type', event.target.value)} className="h-10 rounded-md border border-input bg-background px-3 text-sm">

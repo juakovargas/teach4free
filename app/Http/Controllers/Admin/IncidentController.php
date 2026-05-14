@@ -7,6 +7,7 @@ use App\Models\AuditLog;
 use App\Models\Incident;
 use App\Models\TeachingOffer;
 use App\Models\User;
+use App\Notifications\ReportFollowUpNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -89,6 +90,7 @@ class IncidentController extends Controller
             'application.teacher:id,name,email',
             'classSession:id,title,status,starts_at,ends_at,timezone,teaching_offer_id,application_id',
             'resolver:id,name,email',
+            'publicResponder:id,name,email',
         ]);
 
         return Inertia::render('admin/incidents/show', [
@@ -104,14 +106,25 @@ class IncidentController extends Controller
             'status' => ['required', 'string', Rule::in(Incident::STATUSES)],
             'priority' => ['required', 'string', Rule::in(Incident::PRIORITIES)],
             'admin_notes' => ['nullable', 'string', 'max:4000'],
+            'public_response' => ['nullable', 'string', 'max:5000'],
         ]);
 
+        $previousStatus = $incident->status;
+        $previousPublicResponse = $incident->public_response;
         $resolved = in_array($data['status'], [Incident::STATUS_RESOLVED, Incident::STATUS_DISMISSED], true);
+        $publicResponse = trim((string) ($data['public_response'] ?? ''));
+        $publicResponse = $publicResponse === '' ? null : $publicResponse;
+        $publicResponseChanged = trim((string) $previousPublicResponse) !== trim((string) $publicResponse);
 
         $incident->forceFill([
             'status' => $data['status'],
             'priority' => $data['priority'],
             'admin_notes' => $data['admin_notes'] ?? null,
+            'public_response' => $publicResponse,
+            'public_response_by' => $publicResponse ? $request->user()->id : null,
+            'public_response_sent_at' => $publicResponse && ($publicResponseChanged || ! $incident->public_response_sent_at)
+                ? now()
+                : ($publicResponse ? $incident->public_response_sent_at : null),
             'resolved_by' => $resolved ? $request->user()->id : null,
             'resolved_at' => $resolved ? now() : null,
         ])->save();
@@ -124,7 +137,38 @@ class IncidentController extends Controller
             'ip_address' => $request->ip(),
         ]);
 
+        $this->notifyReporterIfNeeded($incident, $previousStatus, $publicResponseChanged);
+
         return back()->with('status', __('ui.admin_incidents.updated'));
+    }
+
+    private function notifyReporterIfNeeded(Incident $incident, string $previousStatus, bool $publicResponseChanged): void
+    {
+        if (! $incident->reporter) {
+            return;
+        }
+
+        if ($publicResponseChanged && $incident->public_response) {
+            $incident->reporter->notify(new ReportFollowUpNotification(
+                ReportFollowUpNotification::KIND_INCIDENT,
+                $incident->id,
+                $incident->subject,
+                $incident->status,
+                ReportFollowUpNotification::EVENT_RESPONSE_UPDATED,
+            ));
+
+            return;
+        }
+
+        if ($previousStatus !== $incident->status) {
+            $incident->reporter->notify(new ReportFollowUpNotification(
+                ReportFollowUpNotification::KIND_INCIDENT,
+                $incident->id,
+                $incident->subject,
+                $incident->status,
+                ReportFollowUpNotification::EVENT_STATUS_UPDATED,
+            ));
+        }
     }
 
     /**

@@ -705,6 +705,9 @@ class DatabaseSeeder extends Seeder
         foreach ($incidentSubjects as $index => [$subject, $type, $priority]) {
             $status = Incident::STATUSES[$index % count(Incident::STATUSES)];
             $resolved = in_array($status, [Incident::STATUS_RESOLVED, Incident::STATUS_DISMISSED], true);
+            $publicResponse = $resolved
+                ? 'Demo public response: the moderation team reviewed this report and recorded the outcome for the reporter.'
+                : null;
             $reporter = $allLearners[$index % $allLearners->count()];
             $reported = $allTeachers[$index % $allTeachers->count()];
             $offer = $offers[$index % $offers->count()];
@@ -725,6 +728,9 @@ class DatabaseSeeder extends Seeder
                     'priority' => $priority,
                     'description' => 'Demo incident created for admin moderation workflows. Teach4Free remains free and commercial pressure is forbidden.',
                     'admin_notes' => $resolved ? 'Resolved in demo data.' : null,
+                    'public_response' => $publicResponse,
+                    'public_response_by' => $publicResponse ? $admin->id : null,
+                    'public_response_sent_at' => $publicResponse ? now()->subHours($index + 2) : null,
                     'resolved_by' => $resolved ? $admin->id : null,
                     'resolved_at' => $resolved ? now()->subDays(1) : null,
                 ],
@@ -840,6 +846,10 @@ class DatabaseSeeder extends Seeder
                     ? $conversation->participants()->where('user_id', '!=', $reporter->id)->first()?->user
                     : $message?->sender;
                 $type = $reportTypes[$index];
+                $reportStatus = [ConversationReport::STATUS_OPEN, ConversationReport::STATUS_IN_REVIEW, ConversationReport::STATUS_RESOLVED, ConversationReport::STATUS_DISMISSED][$index % 4];
+                $publicResponse = $index % 4 >= 1
+                    ? 'Demo public response: moderation reviewed this conversation report and shared a visible update with the reporter.'
+                    : null;
 
                 ConversationReport::create([
                     'conversation_id' => $conversation->id,
@@ -847,10 +857,13 @@ class DatabaseSeeder extends Seeder
                     'reporter_user_id' => $reporter->id,
                     'reported_user_id' => $reportedUser?->id,
                     'type' => $type,
-                    'status' => [ConversationReport::STATUS_OPEN, ConversationReport::STATUS_IN_REVIEW, ConversationReport::STATUS_RESOLVED, ConversationReport::STATUS_DISMISSED][$index % 4],
+                    'status' => $reportStatus,
                     'priority' => ConversationReport::defaultPriorityFor($type),
                     'description' => 'Demo conversation report for messaging moderation.',
                     'admin_notes' => $index % 3 === 0 ? 'Demo admin note for reviewed report.' : null,
+                    'public_response' => $publicResponse,
+                    'public_response_by' => $publicResponse ? $admin->id : null,
+                    'public_response_sent_at' => $publicResponse ? now()->subHours($index + 3) : null,
                     'resolved_by' => $index % 4 >= 2 ? $admin->id : null,
                     'resolved_at' => $index % 4 >= 2 ? now()->subDays(1) : null,
                     'created_at' => now()->subDays($index),

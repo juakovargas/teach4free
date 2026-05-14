@@ -85,6 +85,26 @@ Implemented first version:
 - Opening a conversation marks it read for the current participant.
 - Admin sidebar/dashboard badges for open incidents and open conversation reports.
 
+Implemented - User report follow-up and public admin responses
+--------------------------------------------------------------
+
+Users can now follow the reports they submitted without seeing private admin moderation notes.
+
+Implemented:
+
+- My reports page at /my-reports.
+- Report detail pages for general incidents and conversation/message reports.
+- Report status shown with translated labels.
+- Public admin response visible to the reporting user.
+- Private admin notes remain admin-only.
+- Internal notification when an admin adds or changes a public response.
+- Internal notification when report status changes.
+- Admin incident detail separates private notes from public response.
+- Admin conversation report detail separates private notes from public response.
+- Responsible-report warning on user-facing report forms and report pages.
+- Admin dashboard count for reports awaiting public response.
+- Demo reports with and without public responses.
+
 Future messaging improvements:
 
 - Real-time chat with broadcasting.
@@ -97,6 +117,14 @@ Future messaging improvements:
 - AI-assisted moderation.
 - Better reply/thread UI if needed.
 - Conversation archiving improvements.
+
+Future report follow-up improvements:
+
+- Advanced report moderation queues.
+- False report penalty automation.
+- Report analytics.
+- Full moderation audit UI.
+- External report response emails if ever needed.
 
 Session reminders
 -----------------

@@ -9,6 +9,7 @@ import {
     Languages,
     Presentation,
     Settings2,
+    ShieldAlert,
 } from 'lucide-react';
 import { ContextualHelp } from '@/components/contextual-help';
 import { Button } from '@/components/ui/button';
@@ -28,6 +29,8 @@ type Summary = {
     waitlisted_applications_count: number;
     requests_to_my_offers_count: number;
     unread_notifications_count: number;
+    open_reports_count: number;
+    reports_with_response_count: number;
     student_status: 'active' | 'inactive';
     teacher_status: 'active' | 'paused' | 'not_activated';
     teacher_accepting_requests: boolean;
@@ -152,6 +155,17 @@ export default function Dashboard({ summary }: Props) {
             }),
             href: '/notifications',
             icon: Inbox,
+        },
+        {
+            title: t('dashboard.my_reports'),
+            body: t('dashboard.my_reports_body', {
+                responses: summary.reports_with_response_count,
+            }),
+            status: t('dashboard.open_reports_count', {
+                count: summary.open_reports_count,
+            }),
+            href: '/my-reports',
+            icon: ShieldAlert,
         },
     ];
 
