@@ -29,10 +29,13 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { PropsWithChildren } from 'react';
+
 import { AdminAccountMenu } from '@/components/admin-account-menu';
 import AppLogo from '@/components/app-logo';
 import { AppearanceToggle } from '@/components/appearance-toggle';
 import { Breadcrumbs } from '@/components/breadcrumbs';
+import { ConsentAwareTrackingScripts } from '@/components/consent-aware-tracking-scripts';
+import { CookieConsentManager } from '@/components/cookie-consent-manager';
 import { ImpersonationBanner } from '@/components/impersonation-banner';
 import { LanguageSelector } from '@/components/language-selector';
 import { MessageMenu } from '@/components/message-menu';
@@ -42,8 +45,6 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 import type { BreadcrumbItem } from '@/types';
-import { ConsentAwareTrackingScripts } from '@/components/consent-aware-tracking-scripts';
-import { CookieConsentManager } from '@/components/cookie-consent-manager';
 
 type Props = PropsWithChildren<{
     breadcrumbs?: BreadcrumbItem[];
@@ -53,11 +54,15 @@ type AdminNavItem = {
     labelKey: string;
     href: string;
     icon: LucideIcon;
+    badgeKey?: AdminModerationKey;
 };
+
+type AdminModerationKey = 'open_incidents' | 'open_conversation_reports' | 'pending_moderation';
 
 type AdminNavGroup = {
     labelKey: string;
     items: AdminNavItem[];
+    badgeKey?: AdminModerationKey;
 };
 
 const groups: AdminNavGroup[] = [
@@ -101,10 +106,11 @@ const groups: AdminNavGroup[] = [
     },
     {
         labelKey: 'admin_sidebar.moderation',
+        badgeKey: 'pending_moderation',
         items: [
-            { labelKey: 'admin_sections.incidents', href: '/admin/incidents', icon: ShieldAlert },
+            { labelKey: 'admin_sections.incidents', href: '/admin/incidents', icon: ShieldAlert, badgeKey: 'open_incidents' },
             { labelKey: 'admin_sections.conversations', href: '/admin/conversations', icon: MessagesSquare },
-            { labelKey: 'admin_sections.conversation_reports', href: '/admin/conversation-reports', icon: MessageSquareWarning },
+            { labelKey: 'admin_sections.conversation_reports', href: '/admin/conversation-reports', icon: MessageSquareWarning, badgeKey: 'open_conversation_reports' },
             { labelKey: 'admin_sections.reviews_moderation', href: '/admin/reviews-moderation', icon: Star },
         ],
     },
@@ -130,11 +136,12 @@ const groups: AdminNavGroup[] = [
 export default function AdminLayout({ children, breadcrumbs = [] }: Props) {
     const { t } = useTranslation();
 
-return (
-    <div className="min-h-screen bg-slate-50 text-slate-950 dark:bg-slate-950 dark:text-slate-50">
-        <ConsentAwareTrackingScripts />
-        <CookieConsentManager />
-        <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">                <div className="flex h-16 items-center gap-3 px-3 sm:px-5">
+    return (
+        <div className="min-h-screen bg-slate-50 text-slate-950 dark:bg-slate-950 dark:text-slate-50">
+            <ConsentAwareTrackingScripts />
+            <CookieConsentManager />
+            <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
+                <div className="flex h-16 items-center gap-3 px-3 sm:px-5">
                     <Sheet>
                         <SheetTrigger asChild>
                             <Button variant="ghost" size="icon" className="lg:hidden" aria-label={t('navigation.menu')}>
@@ -174,6 +181,8 @@ return (
 
 function AdminSidebar() {
     const { t } = useTranslation();
+    const { props } = usePage();
+    const moderation = props.admin_moderation as Record<AdminModerationKey, number> | undefined;
 
     return (
         <div className="flex min-h-full flex-col">
@@ -184,8 +193,13 @@ function AdminSidebar() {
             <nav className="grid gap-5 overflow-y-auto p-4">
                 {groups.map((group) => (
                     <div key={group.labelKey} className="grid gap-1.5">
-                        <p className="px-2 text-xs font-semibold uppercase text-muted-foreground">
-                            {t(group.labelKey)}
+                        <p className="flex items-center gap-2 px-2 text-xs font-semibold uppercase text-muted-foreground">
+                            <span>{t(group.labelKey)}</span>
+                            {group.badgeKey && (moderation?.[group.badgeKey] ?? 0) > 0 && (
+                                <span className="rounded-full bg-rose-600 px-1.5 py-0.5 text-[0.65rem] leading-none text-white">
+                                    {(moderation?.[group.badgeKey] ?? 0) > 99 ? '99+' : moderation?.[group.badgeKey]}
+                                </span>
+                            )}
                         </p>
                         {group.items.map((item) => (
                             <AdminSidebarItem key={item.href} item={item} />
@@ -199,8 +213,10 @@ function AdminSidebar() {
 
 function AdminSidebarItem({ item }: { item: AdminNavItem }) {
     const { t } = useTranslation();
-    const { url } = usePage();
+    const { props, url } = usePage();
     const active = item.href === '/admin' ? url === '/admin' || url === '/admin/dashboard' : url.startsWith(item.href);
+    const moderation = props.admin_moderation as Record<AdminModerationKey, number> | undefined;
+    const badgeValue = item.badgeKey ? (moderation?.[item.badgeKey] ?? 0) : 0;
 
     return (
         <Link
@@ -212,6 +228,11 @@ function AdminSidebarItem({ item }: { item: AdminNavItem }) {
         >
             <item.icon className="size-4 shrink-0" />
             <span className="truncate">{t(item.labelKey)}</span>
+            {badgeValue > 0 && (
+                <span className="ml-auto min-w-5 rounded-full bg-rose-600 px-1.5 py-0.5 text-center text-[0.7rem] font-semibold leading-none text-white">
+                    {badgeValue > 99 ? '99+' : badgeValue}
+                </span>
+            )}
         </Link>
     );
 }

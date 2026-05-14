@@ -45,24 +45,23 @@ Future platform work
 Current priority order
 ----------------------
 
-1. Internal messaging / chat
-2. Session reminders
-3. Reviews and ratings
-4. Basic reputation system
-5. Badges
-6. Teacher verification workflow
-7. Public SEO
-8. Public open sessions calendar
-9. Favorites and alerts
+1. Session reminders
+2. Reviews and ratings
+3. Basic reputation system
+4. Badges
+5. Teacher verification workflow
+6. Public SEO
+7. Public open sessions calendar
+8. Favorites and alerts
 
-High priority - Internal messaging / chat
------------------------------------------
+Implemented - Internal messaging / chat first version
+-----------------------------------------------------
 
 Teach4Free is a contact platform between learners and teachers, so internal messaging is a core feature.
 
-The first messaging version should be a solid internal inbox system, not necessarily real-time chat yet.
+The first messaging version is implemented as a solid internal inbox system, not real-time chat yet.
 
-Required first version:
+Implemented first version:
 
 - Internal inbox.
 - Conversation list.
@@ -81,6 +80,10 @@ Required first version:
 - Messages must not expose user emails publicly.
 - Conversations should respect platform safety and no-money rules.
 - Teachers and students should be able to coordinate without leaving the platform.
+- Discreet message action menu with reply, copy and report where appropriate.
+- Conversation-level reporting through the conversation header action menu.
+- Opening a conversation marks it read for the current participant.
+- Admin sidebar/dashboard badges for open incidents and open conversation reports.
 
 Future messaging improvements:
 
@@ -89,10 +92,11 @@ Future messaging improvements:
 - Attachments.
 - Automatic translation.
 - Message templates.
-- User blocking.
-- Advanced moderation tools.
+- Advanced user blocking.
+- Advanced moderation dashboard.
 - AI-assisted moderation.
-- Conversation archiving.
+- Better reply/thread UI if needed.
+- Conversation archiving improvements.
 
 Session reminders
 -----------------

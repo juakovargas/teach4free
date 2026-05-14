@@ -31,6 +31,11 @@ declare module '@inertiajs/core' {
             messages: {
                 unread_count: number;
             };
+            admin_moderation: {
+                open_incidents: number;
+                open_conversation_reports: number;
+                pending_moderation: number;
+            };
             errors: Record<string, string>;
             sidebarOpen: boolean;
             cookieConsent: CookieConsentSharedProps;

@@ -1467,3 +1467,116 @@ Manual verification checklist:
 14. Confirm settings save.
 
 15. Confirm analytics/tracking scripts are not loaded before consent.
+
+Messaging polish and moderation UX - 2026-05-14
+-----------------------------------------------
+
+PHPUnit tests were not executed for this task.
+
+Reason:
+
+- This branch focused on messaging UI polish, read-state behavior and admin moderation badges.
+- Verification was done with PHP syntax checks, frontend type/lint/build checks, route checks and translation key checks.
+
+Commands executed:
+
+- php -l app\Http\Controllers\ConversationController.php; php -l app\Services\ConversationService.php; php -l app\Http\Middleware\HandleInertiaRequests.php; php -l app\Http\Controllers\AdminDashboardController.php; php -l app\Http\Controllers\Admin\ConversationReportController.php; php -l app\Models\ConversationMessage.php; php -l database\migrations\2026_05_14_140000_add_reply_to_message_id_to_conversation_messages_table.php; php -l lang\en\ui.php; php -l lang\es\ui.php; php -l lang\fr\ui.php
+- Result: Passed. No PHP syntax errors.
+
+- npm run types:check
+- Result: Passed. TypeScript reported no errors.
+
+- npm run lint:check
+- Initial result: Failed.
+- ESLint reported import ordering issues in resources/js/layouts/public-layout.tsx.
+- Fix applied: reordered imports and cleaned the layout formatting touched by the cookie consent branch.
+
+- composer run lint:check
+- Initial result: Failed.
+- Pint reported formatting/import issues in app\Http\Middleware\HandleInertiaRequests.php.
+- Fix applied: ran Pint on the touched PHP files.
+
+- npx eslint --fix resources/js/layouts/public-layout.tsx resources/js/layouts/admin-layout.tsx resources/js/pages/messages/show.tsx resources/js/pages/admin/conversation-reports/index.tsx resources/js/pages/admin/dashboard.tsx resources/js/types/global.d.ts
+- Result: Passed. ESLint automatic fixes completed for the touched frontend files.
+
+- npm run lint:check
+- Result: Passed. ESLint reported no errors.
+
+- composer run lint:check
+- Result: Passed. Pint reported no required changes.
+
+- npm run types:check
+- Result: Passed. TypeScript reported no errors.
+
+- npm run build
+- Result: Passed. Vite production build completed.
+- Note: Vite printed plugin timing warnings, but the build succeeded.
+
+- php artisan route:list --path=messages
+- Result: Passed. User messaging routes are registered.
+
+- php artisan route:list --path=admin/conversation
+- Result: Passed. Admin conversation and conversation report routes are registered.
+
+- php artisan route:list --path=admin/incidents
+- Result: Passed. Admin incidents routes are registered.
+
+- Inline PHP translation key check for new messaging polish and admin moderation badge keys across en/es/fr
+- Result: Passed. Required keys were present in all three locales.
+
+Implementation notes:
+
+- Per-message report controls are no longer visible by default.
+- Each non-system message now has a discreet three-dot action menu.
+- Reply and copy are available from the action menu.
+- Report message is available from the action menu for messages sent by another user.
+- Conversation-level reporting moved to the conversation header action menu.
+- Report forms now open in a modal dialog.
+- Opening a conversation marks the current participant as read by updating conversation_participants.last_read_at.
+- Navbar message unread count is the number of unread conversations for the current user.
+- Admin sidebar badges show open incident and open conversation report counts.
+- Admin dashboard shows pending moderation, open incidents and open reports.
+- Admin conversation report statuses continue to use translated labels.
+- No demo seeder changes were required; the existing messaging seeder already includes unread conversations and open reports for local testing.
+
+Manual verification checklist:
+
+1. Run:
+   php artisan migrate --seed
+
+2. Login as a demo student with unread messages.
+
+3. Confirm navbar messages badge shows unread count.
+
+4. Open /messages.
+
+5. Open an unread conversation.
+
+6. Confirm messages are visible.
+
+7. Confirm the conversation is marked read.
+
+8. Confirm navbar unread count decreases.
+
+9. Confirm each message does not show a visible report button.
+
+10. Open a message action menu.
+
+11. Confirm actions appear:
+    - Reply, if implemented.
+    - Copy.
+    - Report.
+
+12. Report a message through the menu.
+
+13. Confirm report modal opens and submits.
+
+14. Login as admin.
+
+15. Confirm Reports & incidents sidebar badge shows open count.
+
+16. Open admin incidents/reports.
+
+17. Confirm statuses are translated.
+
+18. Open admin conversation reports if available.

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[Fillable([
     'conversation_id',
     'sender_user_id',
+    'reply_to_message_id',
     'body',
     'system_message',
     'read_at',
@@ -32,6 +33,14 @@ class ConversationMessage extends Model
     public function sender(): BelongsTo
     {
         return $this->belongsTo(User::class, 'sender_user_id');
+    }
+
+    /**
+     * @return BelongsTo<ConversationMessage, $this>
+     */
+    public function replyTo(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'reply_to_message_id');
     }
 
     /**

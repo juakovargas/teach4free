@@ -5,6 +5,7 @@ import type { FormEvent } from 'react';
 import { ContextualHelp } from '@/components/contextual-help';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/use-translation';
 
@@ -23,7 +24,7 @@ type Report = {
 
 type Props = {
     reports: Report[];
-    filters: { status: string; type: string; priority: string };
+    filters: { status: string; type: string; priority: string; search: string };
     types: string[];
     statuses: string[];
     priorities: string[];
@@ -55,7 +56,12 @@ export default function AdminConversationReports({ reports, filters, types, stat
 
                 {flash.status && <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">{flash.status}</div>}
 
-                <form onSubmit={submit} className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-xs md:grid-cols-[1fr_1fr_1fr_auto] dark:border-slate-800 dark:bg-slate-900">
+                <form onSubmit={submit} className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-xs md:grid-cols-[1.5fr_1fr_1fr_1fr_auto] dark:border-slate-800 dark:bg-slate-900">
+                    <Input
+                        value={form.data.search}
+                        onChange={(event) => form.setData('search', event.target.value)}
+                        placeholder={t('admin_conversation_reports.search_placeholder')}
+                    />
                     <FilterSelect value={form.data.status} onChange={(value) => form.setData('status', value)} allLabel={t('filters.all_statuses')} values={statuses} prefix="conversation_report_statuses" />
                     <FilterSelect value={form.data.type} onChange={(value) => form.setData('type', value)} allLabel={t('filters.all_types')} values={types} prefix="conversation_report_types" />
                     <FilterSelect value={form.data.priority} onChange={(value) => form.setData('priority', value)} allLabel={t('filters.all_priorities')} values={priorities} prefix="priorities" />
@@ -65,23 +71,35 @@ export default function AdminConversationReports({ reports, filters, types, stat
                 <section className="grid gap-3">
                     {reports.length === 0 && <div className="rounded-lg border border-slate-200 bg-white p-8 text-center text-sm text-muted-foreground shadow-xs dark:border-slate-800 dark:bg-slate-900">{t('admin_conversation_reports.empty')}</div>}
                     {reports.map((report) => (
-                        <Link key={report.id} href={`/admin/conversation-reports/${report.id}`} className="rounded-lg border border-slate-200 bg-white p-4 shadow-xs transition hover:border-emerald-300 dark:border-slate-800 dark:bg-slate-900">
+                        <article key={report.id} className="rounded-lg border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900">
                             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                                <div>
+                                <div className="min-w-0 flex-1">
                                     <div className="flex flex-wrap gap-2">
                                         <Badge>{t(`conversation_report_types.${report.type}`)}</Badge>
                                         <Badge variant="outline">{t(`conversation_report_statuses.${report.status}`)}</Badge>
                                         <Badge variant={report.priority === 'urgent' || report.priority === 'high' ? 'destructive' : 'outline'}>{t(`priorities.${report.priority}`)}</Badge>
                                     </div>
                                     <h2 className="mt-2 font-semibold">{report.conversation?.subject ?? t('messages.untitled_conversation')}</h2>
-                                    <p className="mt-1 text-sm text-muted-foreground">
-                                        {t('admin_conversation_reports.reported_by', { reporter: report.reporter?.name ?? '-' })}
+                                    <div className="mt-2 grid gap-2 text-sm text-muted-foreground md:grid-cols-2">
+                                        <p>
+                                            <span className="font-medium text-foreground">{t('admin_conversation_reports.reporter')}:</span> {report.reporter?.name ?? report.reporter?.email ?? t('common.none')}
+                                        </p>
+                                        <p>
+                                            <span className="font-medium text-foreground">{t('admin_conversation_reports.reported_user')}:</span> {report.reported_user?.name ?? report.reported_user?.email ?? t('common.none')}
+                                        </p>
+                                    </div>
+                                    <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">
+                                        <span className="font-medium text-foreground">{t('admin_conversation_reports.reported_message')}:</span> {report.message?.body ?? report.description ?? t('common.none')}
                                     </p>
-                                    <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{report.message?.body ?? report.description ?? '-'}</p>
                                 </div>
-                                <p className="text-xs text-muted-foreground">{report.created_at ? new Date(report.created_at).toLocaleString() : '-'}</p>
+                                <div className="flex shrink-0 flex-col gap-3 md:items-end">
+                                    <p className="text-xs text-muted-foreground">{report.created_at ? new Date(report.created_at).toLocaleString() : '-'}</p>
+                                    <Button variant="outline" size="sm" asChild>
+                                        <Link href={`/admin/conversation-reports/${report.id}`}>{t('actions.view')}</Link>
+                                    </Button>
+                                </div>
                             </div>
-                        </Link>
+                        </article>
                     ))}
                 </section>
 

@@ -18,6 +18,7 @@ class ConversationReportController extends Controller
             'status' => $request->string('status')->toString() ?: 'open',
             'type' => $request->string('type')->toString() ?: 'all',
             'priority' => $request->string('priority')->toString() ?: 'all',
+            'search' => $request->string('search')->toString(),
         ];
 
         $reports = ConversationReport::query()
@@ -30,6 +31,20 @@ class ConversationReportController extends Controller
             ->when($filters['status'] !== 'all', fn ($query) => $query->where('status', $filters['status']))
             ->when($filters['type'] !== 'all', fn ($query) => $query->where('type', $filters['type']))
             ->when($filters['priority'] !== 'all', fn ($query) => $query->where('priority', $filters['priority']))
+            ->when($filters['search'], function ($query, string $search): void {
+                $query->where(function ($query) use ($search): void {
+                    $query
+                        ->where('description', 'like', "%{$search}%")
+                        ->orWhereHas('conversation', fn ($query) => $query->where('subject', 'like', "%{$search}%"))
+                        ->orWhereHas('message', fn ($query) => $query->where('body', 'like', "%{$search}%"))
+                        ->orWhereHas('reporter', fn ($query) => $query
+                            ->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%"))
+                        ->orWhereHas('reportedUser', fn ($query) => $query
+                            ->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%"));
+                });
+            })
             ->orderByRaw("case priority when 'urgent' then 0 when 'high' then 1 when 'normal' then 2 else 3 end")
             ->latest()
             ->limit(100)

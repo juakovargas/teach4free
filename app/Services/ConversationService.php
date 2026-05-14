@@ -91,7 +91,7 @@ class ConversationService
         return $message;
     }
 
-    public function sendMessage(Conversation $conversation, User $sender, string $body): ConversationMessage
+    public function sendMessage(Conversation $conversation, User $sender, string $body, ?ConversationMessage $replyTo = null): ConversationMessage
     {
         if ($sender->isRestricted()) {
             throw ValidationException::withMessages([
@@ -107,10 +107,17 @@ class ConversationService
 
         abort_unless($this->isParticipant($conversation, $sender), 403);
 
-        return DB::transaction(function () use ($conversation, $sender, $body): ConversationMessage {
+        if ($replyTo && ($replyTo->conversation_id !== $conversation->id || $replyTo->system_message)) {
+            throw ValidationException::withMessages([
+                'reply_to_message_id' => __('ui.messages.invalid_reply_error'),
+            ]);
+        }
+
+        return DB::transaction(function () use ($conversation, $sender, $body, $replyTo): ConversationMessage {
             $message = ConversationMessage::create([
                 'conversation_id' => $conversation->id,
                 'sender_user_id' => $sender->id,
+                'reply_to_message_id' => $replyTo?->id,
                 'body' => $body,
                 'system_message' => false,
             ]);
@@ -141,11 +148,6 @@ class ConversationService
             'last_read_at' => now(),
             'archived_at' => null,
         ])->save();
-
-        $conversation->messages()
-            ->where('sender_user_id', '!=', $user->id)
-            ->whereNull('read_at')
-            ->update(['read_at' => now()]);
     }
 
     public function archiveForUser(Conversation $conversation, User $user): void
@@ -168,6 +170,12 @@ class ConversationService
 
         if ($message && $message->conversation_id !== $conversation->id) {
             abort(404);
+        }
+
+        if ($message?->sender_user_id === $reporter->id) {
+            throw ValidationException::withMessages([
+                'type' => __('ui.messages.report_own_message_error'),
+            ]);
         }
 
         $reportedUser = $this->reportedUser($conversation, $reporter, $message);
@@ -222,7 +230,8 @@ class ConversationService
             })
             ->with('conversation:id')
             ->get()
-            ->sum(fn (ConversationParticipant $participant): int => $this->unreadCountForParticipant($participant));
+            ->filter(fn (ConversationParticipant $participant): bool => $this->unreadCountForParticipant($participant) > 0)
+            ->count();
     }
 
     public function unreadCountForParticipant(ConversationParticipant $participant): int

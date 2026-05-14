@@ -65,21 +65,29 @@ class ConversationController extends Controller
     public function show(Request $request, Conversation $conversation): Response
     {
         $this->authorizeParticipant($request, $conversation);
+        $this->conversations->markRead($conversation, $request->user());
 
         $conversation->load([
             'participants.user:id,name,email,avatar_path,avatar_url,banned_at,blocked_at',
-            'messages' => fn ($query) => $query->whereNull('deleted_at')->with('sender:id,name,avatar_path,avatar_url')->orderBy('created_at'),
+            'messages' => fn ($query) => $query
+                ->whereNull('deleted_at')
+                ->with([
+                    'sender:id,name,avatar_path,avatar_url',
+                    'replyTo.sender:id,name,avatar_path,avatar_url',
+                ])
+                ->orderBy('created_at'),
             'teachingOffer:id,title,slug',
             'classSession:id,title,status,starts_at,ends_at,timezone',
             'application:id,status,teaching_offer_id',
             'reports:id,conversation_id,message_id,reporter_user_id,type,status,priority,created_at',
         ]);
 
-        $this->conversations->markRead($conversation, $request->user());
-
         return Inertia::render('messages/show', [
             'conversation' => $this->conversationDetailPayload($conversation, $request),
             'reportTypes' => ConversationReport::TYPES,
+            'messages' => [
+                'unread_count' => $this->conversations->unreadCountFor($request->user()),
+            ],
         ]);
     }
 
@@ -89,9 +97,21 @@ class ConversationController extends Controller
 
         $data = $request->validate([
             'body' => ['required', 'string', 'max:5000'],
+            'reply_to_message_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('conversation_messages', 'id')
+                    ->where('conversation_id', $conversation->id)
+                    ->where('system_message', false)
+                    ->whereNull('deleted_at'),
+            ],
         ]);
 
-        $this->conversations->sendMessage($conversation, $request->user(), $data['body']);
+        $replyTo = isset($data['reply_to_message_id'])
+            ? ConversationMessage::query()->find($data['reply_to_message_id'])
+            : null;
+
+        $this->conversations->sendMessage($conversation, $request->user(), $data['body'], $replyTo);
 
         return back()->with('status', __('ui.messages.sent'));
     }
@@ -189,6 +209,14 @@ class ConversationController extends Controller
                 'body' => $message->body,
                 'system_message' => $message->system_message,
                 'created_at' => $message->created_at,
+                'reply_to_message' => $message->replyTo ? [
+                    'id' => $message->replyTo->id,
+                    'body' => $message->replyTo->body,
+                    'sender' => $message->replyTo->sender ? [
+                        'id' => $message->replyTo->sender->id,
+                        'name' => $message->replyTo->sender->name,
+                    ] : null,
+                ] : null,
                 'sender' => $message->sender ? [
                     'id' => $message->sender->id,
                     'name' => $message->sender->name,

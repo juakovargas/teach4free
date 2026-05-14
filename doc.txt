@@ -3407,6 +3407,251 @@ The cookie policy explains:
 
 This page is concise and professional. It does not claim full legal compliance.
 
+Internal messaging and moderation polish - 2026-05-14
+----------------------------------------------------
+
+Teach4Free now includes the first internal asynchronous messaging system.
+
+The purpose is to let learners and teachers coordinate free classes inside the platform without exposing private email addresses too early.
+
+The free-product rule remains unchanged:
+
+- No payments.
+- No subscriptions.
+- No credits.
+- No wallets.
+- No paid plans.
+- No commissions.
+- No premium visibility.
+
+Messaging database
+------------------
+
+Messaging uses these tables:
+
+- conversations
+- conversation_participants
+- conversation_messages
+- conversation_reports
+
+Conversation types:
+
+- direct
+- application
+- offer
+- session
+- support
+
+Conversation statuses:
+
+- open
+- closed
+- reported
+- archived
+
+Conversation participants store per-user state:
+
+- role
+- last_read_at
+- archived_at
+- muted_at
+
+The navbar unread badge uses the number of unread conversations for the current user. A conversation is unread when it has one or more non-system messages from other participants after that user's last_read_at timestamp.
+
+Conversation messages support an optional reply_to_message_id. Replies are a light quoted-message feature, not threaded chat.
+
+Application and session conversations
+-------------------------------------
+
+Application conversations are created or reused when a learner applies to a teaching offer.
+
+They are linked to:
+
+- teaching offer.
+- teaching offer application.
+- learner.
+- teacher.
+
+Session conversations are created or reused when a class session is scheduled or when an attendee joins a public/open session.
+
+They are linked to:
+
+- class session.
+- teaching offer.
+- enrolled attendees.
+- teacher.
+
+System messages are added for important application and session events, including application submission, acceptance, rejection, scheduling, cancellation, completion and no-show updates.
+
+Inbox and conversation detail
+-----------------------------
+
+User-facing routes:
+
+- GET /messages
+- GET /messages/{conversation}
+- POST /messages/{conversation}
+- PATCH /messages/{conversation}/read
+- POST /messages/{conversation}/archive
+- POST /messages/{conversation}/report
+- POST /messages/{conversation}/messages/{message}/report
+
+The inbox supports:
+
+- search by participant, offer, session or subject.
+- filters for all, unread, applications, sessions and archived conversations.
+- last-message preview.
+- unread state.
+- conversation status badges.
+
+The conversation detail page shows:
+
+- conversation context.
+- participants.
+- messages.
+- system messages.
+- reply composer.
+- short safety reminder.
+
+Opening a conversation marks it as read for the current participant by updating conversation_participants.last_read_at. It does not mark other participants' conversations as read.
+
+Messaging UI polish
+-------------------
+
+The chat interface was polished so moderation is available without dominating the conversation.
+
+Every regular message now has a discreet three-dot action menu. The menu can contain:
+
+- Reply.
+- Copy message.
+- Report message, only for messages from another user.
+
+The old always-visible report form/button beside each message was removed.
+
+Reply behavior:
+
+- Selecting Reply quotes the selected message above the composer.
+- The next sent message stores reply_to_message_id.
+- The message stream displays a short quoted excerpt above the reply.
+- The reply target must belong to the same conversation.
+
+Copy behavior:
+
+- Copy message uses the browser clipboard when available.
+- A small translated success/failure message is shown.
+
+Message reporting:
+
+- Report message opens a modal.
+- The report type is selected in the modal.
+- Description is optional but available.
+- Own messages cannot be reported as message reports.
+
+Conversation-level reporting remains available through the conversation header action menu. The previous large report form in the side panel was removed.
+
+Safety copy
+-----------
+
+Conversation detail keeps a short reminder:
+
+- Keep learning free.
+- Report payment requests, spam or abusive behavior.
+
+The page intentionally avoids making every message look like a complaint or policing surface.
+
+Notifications and email preferences
+-----------------------------------
+
+When a user sends a message:
+
+- Other conversation participants receive an internal notification.
+- The sender is not notified about their own message.
+- Optional external email is sent only when the recipient has email_new_message_enabled active.
+
+The notification preferences page includes:
+
+- New message emails.
+
+Email notifications include a short excerpt and link back to the conversation, not the full conversation history.
+
+Reports and admin moderation
+----------------------------
+
+Users can report:
+
+- a conversation.
+- a specific message from another user.
+
+Supported conversation report types:
+
+- payment_request
+- commercial_pressure
+- spam
+- abuse
+- harassment
+- unsafe_link
+- privacy_issue
+- other
+
+Submitting a conversation report creates a conversation_report record and also creates a related incident when possible, so existing admin incident moderation remains connected.
+
+Admin moderation routes:
+
+- GET /admin/conversations
+- GET /admin/conversations/{conversation}
+- PATCH /admin/conversations/{conversation}
+- GET /admin/conversation-reports
+- GET /admin/conversation-reports/{report}
+- PATCH /admin/conversation-reports/{report}
+
+Admin conversation moderation defaults toward reported conversations so private chat is not treated as a casual browsing surface.
+
+Admin conversation reports show:
+
+- reporter.
+- reported user when known.
+- conversation subject.
+- reported message excerpt or report description.
+- type.
+- priority.
+- translated status.
+- created date.
+- action link.
+
+Admin open moderation badges
+----------------------------
+
+Admins now see open-work badges in the admin sidebar:
+
+- Incidents shows open incidents.
+- Conversation reports shows open conversation reports.
+
+The admin dashboard moderation area includes:
+
+- Pending moderation.
+- Open incidents.
+- Open reports.
+
+Visible statuses and labels are translated instead of showing raw status strings.
+
+Demo messaging data
+-------------------
+
+The demo seeder creates messaging data for local testing after:
+
+- php artisan migrate:fresh --seed
+
+Seeded messaging data includes:
+
+- application conversations.
+- session conversations.
+- direct/support conversations.
+- over 100 messages.
+- unread conversations for demo users.
+- archived conversations.
+- reported conversations.
+- conversation reports including payment request, commercial pressure, spam, abuse, unsafe link and other cases.
+
 What remains pending
 --------------------
 
@@ -3414,6 +3659,14 @@ What remains pending
 - Advanced email log UI.
 - Full CMS for content/legal/help pages.
 - Advanced report moderation queues.
+- Real-time chat.
+- Typing indicators.
+- Attachments.
+- Automatic message translation.
+- Message templates.
+- Advanced user blocking.
+- AI-assisted moderation.
+- More advanced reply/thread UI if conversation threading becomes necessary.
 - Reviews moderation after reviews exist.
 - Badges and reputation rules after reputation exists.
 - Rich calendar charts or heatmaps if the statistics page needs them later.

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ClassSession;
+use App\Models\ConversationReport;
 use App\Models\Incident;
 use App\Models\Language;
 use App\Models\StudentProfile;
@@ -22,6 +23,7 @@ class AdminDashboardController extends Controller
     public function __invoke(): Response
     {
         $lastWeek = now()->subDays(7);
+        $hasConversationReports = Schema::hasTable('conversation_reports');
         $hasIncidents = Schema::hasTable('incidents');
         $hasNotifications = Schema::hasTable('notifications');
         $hasSessions = Schema::hasTable('class_sessions');
@@ -63,6 +65,15 @@ class AdminDashboardController extends Controller
                 'incidents_pending_review' => $hasIncidents ? Incident::query()
                     ->whereIn('status', [Incident::STATUS_OPEN, Incident::STATUS_IN_REVIEW])
                     ->count() : 0,
+                'open_conversation_reports' => $hasConversationReports ? ConversationReport::query()
+                    ->where('status', ConversationReport::STATUS_OPEN)
+                    ->count() : 0,
+                'pending_moderation' => ($hasIncidents ? Incident::query()
+                    ->where('status', Incident::STATUS_OPEN)
+                    ->count() : 0)
+                    + ($hasConversationReports ? ConversationReport::query()
+                        ->where('status', ConversationReport::STATUS_OPEN)
+                        ->count() : 0),
                 'banned_users' => User::query()->whereNotNull('banned_at')->count(),
                 'blocked_users' => User::query()->whereNotNull('blocked_at')->count(),
                 'active_languages' => Language::query()->where('is_active', true)->count(),

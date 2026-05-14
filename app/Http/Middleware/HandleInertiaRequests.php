@@ -2,13 +2,16 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\ConversationReport;
 use App\Models\CookieSetting;
+use App\Models\Incident;
 use App\Models\PlatformTrackingSetting;
 use App\Models\User;
 use App\Services\ConversationService;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Lang;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -89,6 +92,7 @@ class HandleInertiaRequests extends Middleware
             'messages' => [
                 'unread_count' => $messageUnreadCount,
             ],
+            'admin_moderation' => $this->adminModeration($request),
             'impersonation' => $this->impersonation($request),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'cookieConsent' => [
@@ -121,6 +125,33 @@ class HandleInertiaRequests extends Middleware
                     'custom_body_script' => $trackingSettings->custom_body_script,
                 ],
             ],
+        ];
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    private function adminModeration(Request $request): array
+    {
+        if ($request->user()?->role !== User::ROLE_ADMIN) {
+            return [
+                'open_incidents' => 0,
+                'open_conversation_reports' => 0,
+                'pending_moderation' => 0,
+            ];
+        }
+
+        $openIncidents = Schema::hasTable('incidents')
+            ? Incident::query()->where('status', Incident::STATUS_OPEN)->count()
+            : 0;
+        $openConversationReports = Schema::hasTable('conversation_reports')
+            ? ConversationReport::query()->where('status', ConversationReport::STATUS_OPEN)->count()
+            : 0;
+
+        return [
+            'open_incidents' => $openIncidents,
+            'open_conversation_reports' => $openConversationReports,
+            'pending_moderation' => $openIncidents + $openConversationReports,
         ];
     }
 
