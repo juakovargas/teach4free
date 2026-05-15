@@ -14,11 +14,13 @@ use App\Models\Incident;
 use App\Models\Language;
 use App\Models\PlatformSetting;
 use App\Models\PlatformTrackingSetting;
+use App\Models\ReviewReport;
 use App\Models\StudentProfile;
 use App\Models\SubjectProposal;
 use App\Models\TeacherAvailability;
 use App\Models\TeacherAvailabilityException;
 use App\Models\TeacherProfile;
+use App\Models\TeacherReview;
 use App\Models\TeachingCategory;
 use App\Models\TeachingOffer;
 use App\Models\TeachingOfferApplication;
@@ -656,6 +658,163 @@ class DatabaseSeeder extends Seeder
             }
         }
 
+        if (Schema::hasTable('teacher_reviews')) {
+            if (Schema::hasTable('review_reports')) {
+                DB::table('review_reports')->delete();
+            }
+            DB::table('teacher_reviews')->delete();
+
+            $reviewRatings = [5, 5, 4, 5, 4, 1, 5, 4, 3, 5, 4, 2];
+            $reviewTitles = [
+                'Helpful and generous session',
+                'Clear explanations',
+                'Great practice time',
+                'Patient teacher',
+                'Useful free class',
+                'Needs clearer preparation',
+                'Encouraging and kind',
+                'Practical examples',
+            ];
+            $reviewComments = [
+                'The session stayed free, respectful and practical. I understood the topic much better afterwards.',
+                'The teacher explained each step clearly and gave enough time for questions.',
+                'Good learning pace and helpful examples. I would attend another free class.',
+                'Very patient and supportive during the session.',
+                'A useful community learning experience without any commercial pressure.',
+                'The topic was useful, but the structure could be clearer next time.',
+                'The teacher was generous with time and kept the class welcoming.',
+                'The examples were practical and easy to reuse after class.',
+            ];
+            $lowReviewers = $allLearners->take(2)->values();
+            $createdReviews = collect();
+
+            for ($index = 0; $index < 84; $index++) {
+                $offer = $offers[$index % $offers->count()];
+                $teacher = $allTeachers->firstWhere('id', $offer->user_id) ?? $allTeachers[$index % $allTeachers->count()];
+                $rating = $reviewRatings[$index % count($reviewRatings)];
+                $student = in_array($rating, [1, 2], true) && $lowReviewers->isNotEmpty()
+                    ? $lowReviewers[$index % $lowReviewers->count()]
+                    : $allLearners[($index + 5) % $allLearners->count()];
+
+                if ($student->id === $teacher->id) {
+                    $student = $allLearners[($index + 6) % $allLearners->count()];
+                }
+
+                $startsAt = now()->subDays(($index % 70) + 3)->setTime(16 + ($index % 4), 0);
+                $session = ClassSession::updateOrCreate(
+                    [
+                        'title' => 'Demo completed review session '.($index + 1),
+                        'teacher_user_id' => $teacher->id,
+                    ],
+                    [
+                        'teaching_offer_id' => $offer->id,
+                        'application_id' => null,
+                        'description' => 'Completed demo session used for review and rating workflows.',
+                        'starts_at' => $startsAt,
+                        'ends_at' => (clone $startsAt)->addMinutes($offer->duration_minutes),
+                        'timezone' => $offer->timezone,
+                        'capacity' => $offer->max_students ?? 6,
+                        'meeting_tool' => $offer->meeting_tool,
+                        'meeting_url' => $offer->meeting_url,
+                        'status' => ClassSession::STATUS_COMPLETED,
+                        'cancellation_reason' => null,
+                        'completed_at' => (clone $startsAt)->addMinutes($offer->duration_minutes),
+                        'cancelled_at' => null,
+                        'no_show_marked_at' => null,
+                    ],
+                );
+
+                ClassSessionAttendee::updateOrCreate(
+                    [
+                        'class_session_id' => $session->id,
+                        'user_id' => $student->id,
+                    ],
+                    [
+                        'application_id' => null,
+                        'status' => ClassSessionAttendee::STATUS_ATTENDED,
+                        'joined_at' => $startsAt,
+                        'cancelled_at' => null,
+                        'no_show_at' => null,
+                    ],
+                );
+
+                $status = match (true) {
+                    $index < 5 => TeacherReview::STATUS_HIDDEN,
+                    $index >= 5 && $index < 8 => TeacherReview::STATUS_FLAGGED,
+                    default => TeacherReview::STATUS_PUBLISHED,
+                };
+
+                $review = TeacherReview::create([
+                    'teacher_user_id' => $teacher->id,
+                    'student_user_id' => $student->id,
+                    'class_session_id' => $session->id,
+                    'teaching_offer_id' => $offer->id,
+                    'rating' => $rating,
+                    'title' => $reviewTitles[$index % count($reviewTitles)],
+                    'comment' => $rating <= 2
+                        ? 'The session happened, but this review records a concrete issue for moderation and quality testing.'
+                        : $reviewComments[$index % count($reviewComments)],
+                    'teacher_response' => $index % 4 === 0 ? 'Thank you for the thoughtful feedback. I will keep improving the free sessions.' : null,
+                    'teacher_responded_at' => $index % 4 === 0 ? now()->subDays($index % 15) : null,
+                    'status' => $status,
+                    'hidden_at' => $status === TeacherReview::STATUS_HIDDEN ? now()->subDays($index + 1) : null,
+                    'hidden_by' => $status === TeacherReview::STATUS_HIDDEN ? $admin->id : null,
+                    'hidden_reason' => $status === TeacherReview::STATUS_HIDDEN ? 'Demo hidden review for moderation testing.' : null,
+                    'admin_notes' => $index < 8 ? 'Demo moderation note for review workflows.' : null,
+                    'created_at' => now()->subDays($index % 50),
+                    'updated_at' => now()->subDays($index % 50),
+                ]);
+
+                $createdReviews->push($review);
+            }
+
+            if (Schema::hasTable('review_reports')) {
+                $reviewReportTypes = [
+                    ReviewReport::TYPE_ABUSIVE_LANGUAGE,
+                    ReviewReport::TYPE_FALSE_INFORMATION,
+                    ReviewReport::TYPE_HARASSMENT,
+                    ReviewReport::TYPE_SPAM,
+                    ReviewReport::TYPE_MALICIOUS_REVIEW,
+                    ReviewReport::TYPE_PRIVACY_ISSUE,
+                    ReviewReport::TYPE_OTHER,
+                    ReviewReport::TYPE_FALSE_INFORMATION,
+                    ReviewReport::TYPE_MALICIOUS_REVIEW,
+                    ReviewReport::TYPE_ABUSIVE_LANGUAGE,
+                ];
+
+                foreach ($createdReviews->take(10)->values() as $index => $review) {
+                    $reporter = $allLearners[($index + 9) % $allLearners->count()];
+                    if ($reporter->id === $review->student_user_id) {
+                        $reporter = $allLearners[($index + 10) % $allLearners->count()];
+                    }
+
+                    $type = $reviewReportTypes[$index];
+                    $status = ReviewReport::STATUSES[$index % count(ReviewReport::STATUSES)];
+                    $resolved = in_array($status, [ReviewReport::STATUS_RESOLVED, ReviewReport::STATUS_DISMISSED], true);
+
+                    ReviewReport::create([
+                        'teacher_review_id' => $review->id,
+                        'reporter_user_id' => $reporter->id,
+                        'type' => $type,
+                        'description' => 'Demo review report for moderation queue testing.',
+                        'status' => $status,
+                        'priority' => ReviewReport::defaultPriorityFor($type),
+                        'admin_notes' => $index % 3 === 0 ? 'Demo admin note for review report.' : null,
+                        'resolved_by' => $resolved ? $admin->id : null,
+                        'resolved_at' => $resolved ? now()->subDays(1) : null,
+                        'created_at' => now()->subDays($index),
+                        'updated_at' => now()->subDays($index),
+                    ]);
+
+                    $review->forceFill([
+                        'reported_count' => $review->reports()->count(),
+                    ])->save();
+                }
+            }
+        }
+
+        $this->seedReputationDemoData($password, $admin, $allLearners, $languages, $subjects);
+
         if (Schema::hasTable('notifications')) {
             DB::table('notifications')->where('type', 'demo.admin_seed')->delete();
             foreach ($allLearners->take(8) as $index => $notifiable) {
@@ -871,6 +1030,347 @@ class DatabaseSeeder extends Seeder
                 ]);
 
                 $conversation->forceFill(['status' => Conversation::STATUS_REPORTED])->save();
+            }
+        }
+    }
+
+    private function seedReputationDemoData(string $password, User $admin, $allLearners, $languages, $subjects): void
+    {
+        if (! Schema::hasTable('teacher_reviews')) {
+            return;
+        }
+
+        $scenarios = [
+            'excellent' => [
+                'email' => 'reputation.excellent@example.com',
+                'name' => 'Reputation Excellent Teacher',
+                'city' => 'Madrid',
+                'country_code' => 'ES',
+                'headline' => 'Consistently excellent free sessions',
+                'ratings' => [5, 5, 5, 5, 5, 5, 5, 4],
+                'cancelled' => 0,
+                'no_show' => 0,
+            ],
+            'reliable' => [
+                'email' => 'reputation.reliable@example.com',
+                'name' => 'Reputation Reliable Teacher',
+                'city' => 'Lyon',
+                'country_code' => 'FR',
+                'headline' => 'Reliable community mentor',
+                'ratings' => [4, 4, 5, 4, 4, 4],
+                'cancelled' => 1,
+                'no_show' => 0,
+            ],
+            'new' => [
+                'email' => 'reputation.new@example.com',
+                'name' => 'Reputation New Teacher',
+                'city' => 'Austin',
+                'country_code' => 'US',
+                'headline' => 'New teacher building a history',
+                'ratings' => [5],
+                'cancelled' => 0,
+                'no_show' => 0,
+            ],
+            'attention' => [
+                'email' => 'reputation.attention@example.com',
+                'name' => 'Reputation Attention Teacher',
+                'city' => 'Berlin',
+                'country_code' => 'DE',
+                'headline' => 'Demo profile for admin reliability review',
+                'ratings' => [3, 3, 2, 4],
+                'cancelled' => 2,
+                'no_show' => 2,
+                'hidden_rating' => 1,
+            ],
+        ];
+
+        $scenarioUsers = User::query()
+            ->whereIn('email', collect($scenarios)->pluck('email'))
+            ->get();
+        $scenarioIds = $scenarioUsers->pluck('id');
+
+        if ($scenarioIds->isNotEmpty()) {
+            if (Schema::hasTable('review_reports')) {
+                ReviewReport::query()
+                    ->whereHas('review', fn ($query) => $query->whereIn('teacher_user_id', $scenarioIds))
+                    ->delete();
+            }
+
+            TeacherReview::query()->whereIn('teacher_user_id', $scenarioIds)->delete();
+            ClassSessionAttendee::query()
+                ->whereHas('session', fn ($query) => $query->whereIn('teacher_user_id', $scenarioIds))
+                ->delete();
+            ClassSession::query()->whereIn('teacher_user_id', $scenarioIds)->delete();
+            TeachingOfferApplication::query()->whereIn('teacher_user_id', $scenarioIds)->delete();
+        }
+
+        $subject = $subjects['laravel'] ?? $subjects->first();
+
+        foreach ($scenarios as $key => $scenario) {
+            $teacher = User::updateOrCreate(
+                ['email' => $scenario['email']],
+                [
+                    'name' => $scenario['name'],
+                    'password' => $password,
+                    'preferred_locale' => 'en',
+                    'timezone' => 'Europe/Madrid',
+                    'country_code' => $scenario['country_code'],
+                    'city' => $scenario['city'],
+                    'bio' => 'Demo teacher profile for the reputation overview.',
+                    'is_public' => true,
+                    'learning_interests' => null,
+                    'teaching_interests' => 'Free teaching reputation demo.',
+                    'role' => User::ROLE_USER,
+                    'email_verified_at' => now(),
+                ],
+            );
+
+            $profile = TeacherProfile::updateOrCreate(
+                ['user_id' => $teacher->id],
+                [
+                    'headline' => $scenario['headline'],
+                    'teaching_bio' => 'This demo teacher exists so local seed data shows clear reputation states.',
+                    'experience_summary' => 'Reputation demo profile with realistic completed, cancelled and no-show sessions.',
+                    'preferred_teaching_mode' => TeacherProfile::MODE_SMALL_GROUP,
+                    'max_students_per_session' => 6,
+                    'default_session_duration_minutes' => 60,
+                    'meeting_tool' => TeacherProfile::TOOL_JITSI,
+                    'meeting_url' => 'https://meet.jit.si/teach4free-reputation-'.$key,
+                    'is_active' => true,
+                    'is_accepting_requests' => true,
+                    'is_verified' => $key === 'excellent',
+                    'activated_at' => now()->subDays($key === 'new' ? 2 : 40),
+                    'paused_at' => null,
+                ],
+            );
+
+            UserLanguage::updateOrCreate(
+                [
+                    'user_id' => $teacher->id,
+                    'language_id' => $languages['en']->id,
+                ],
+                [
+                    'understands' => true,
+                    'speaks' => true,
+                    'teaches' => true,
+                    'level' => UserLanguage::LEVEL_ADVANCED,
+                ],
+            );
+
+            $offer = TeachingOffer::updateOrCreate(
+                ['slug' => 'reputation-demo-'.$key],
+                [
+                    'user_id' => $teacher->id,
+                    'teacher_profile_id' => $profile->id,
+                    'teaching_category_id' => $subject->teaching_category_id,
+                    'teaching_subject_id' => $subject->id,
+                    'title' => 'Reputation demo '.ucfirst($key).' free session',
+                    'summary' => 'A free seeded offer used to demonstrate teacher reputation.',
+                    'description' => 'This offer keeps demo reputation data visible while respecting the no-payment rule.',
+                    'level' => TeachingOffer::LEVEL_BEGINNER,
+                    'teaching_mode' => TeachingOffer::MODE_SMALL_GROUP,
+                    'session_type' => TeachingOffer::SESSION_SCHEDULED_GROUP,
+                    'max_students' => 6,
+                    'duration_minutes' => 60,
+                    'meeting_tool' => TeachingOffer::TOOL_JITSI,
+                    'meeting_url' => 'https://meet.jit.si/teach4free-reputation-'.$key,
+                    'timezone' => 'Europe/Madrid',
+                    'availability_summary' => 'Weekday evenings.',
+                    'requirements' => 'A free Teach4Free account.',
+                    'materials_summary' => 'Free notes only.',
+                    'is_public' => true,
+                    'is_active' => true,
+                    'is_accepting_applications' => true,
+                    'allow_waiting_list' => true,
+                    'waiting_list_limit' => 12,
+                    'published_at' => now()->subDays(3),
+                ],
+            );
+            $offer->languages()->sync([$languages['en']->id]);
+
+            $this->seedReputationScenarioSessions($teacher, $offer, $allLearners, $scenario, $key, $admin);
+        }
+
+        $attentionTeacher = User::query()->where('email', $scenarios['attention']['email'])->first();
+        if ($attentionTeacher) {
+            Incident::updateOrCreate(
+                ['subject' => 'Reputation demo reliability concern'],
+                [
+                    'reporter_user_id' => $allLearners->first()?->id,
+                    'reported_user_id' => $attentionTeacher->id,
+                    'type' => Incident::TYPE_SESSION,
+                    'status' => Incident::STATUS_OPEN,
+                    'priority' => Incident::PRIORITY_NORMAL,
+                    'description' => 'Demo incident connected to a teacher with reliability signals that need admin review.',
+                    'admin_notes' => null,
+                    'public_response' => null,
+                    'public_response_by' => null,
+                    'public_response_sent_at' => null,
+                    'resolved_by' => null,
+                    'resolved_at' => null,
+                ],
+            );
+        }
+    }
+
+    private function seedReputationScenarioSessions(User $teacher, TeachingOffer $offer, $learners, array $scenario, string $key, User $admin): void
+    {
+        $createdReviews = collect();
+
+        foreach ($scenario['ratings'] as $index => $rating) {
+            $student = $learners[($index + strlen($key)) % $learners->count()];
+            if ((int) $student->id === (int) $teacher->id) {
+                $student = $learners[($index + strlen($key) + 1) % $learners->count()];
+            }
+
+            $startsAt = now()->subDays(60 - $index)->setTime(18, 0);
+            $session = ClassSession::create([
+                'teaching_offer_id' => $offer->id,
+                'teacher_user_id' => $teacher->id,
+                'application_id' => null,
+                'title' => 'Reputation demo '.$key.' completed '.($index + 1),
+                'description' => 'Completed session for reputation demo data.',
+                'starts_at' => $startsAt,
+                'ends_at' => (clone $startsAt)->addMinutes(60),
+                'timezone' => 'Europe/Madrid',
+                'capacity' => 6,
+                'meeting_tool' => $offer->meeting_tool,
+                'meeting_url' => $offer->meeting_url,
+                'status' => ClassSession::STATUS_COMPLETED,
+                'completed_at' => (clone $startsAt)->addMinutes(60),
+            ]);
+
+            ClassSessionAttendee::create([
+                'class_session_id' => $session->id,
+                'user_id' => $student->id,
+                'application_id' => null,
+                'status' => ClassSessionAttendee::STATUS_ATTENDED,
+                'joined_at' => $startsAt,
+            ]);
+
+            $createdReviews->push(TeacherReview::create([
+                'teacher_user_id' => $teacher->id,
+                'student_user_id' => $student->id,
+                'class_session_id' => $session->id,
+                'teaching_offer_id' => $offer->id,
+                'rating' => $rating,
+                'title' => 'Reputation demo review',
+                'comment' => $rating <= 2
+                    ? 'The completed free session had reliability problems that are useful for admin testing.'
+                    : 'The completed free session was helpful and stayed fully free.',
+                'teacher_response' => $rating >= 4 ? 'Thank you for helping build trust on Teach4Free.' : null,
+                'teacher_responded_at' => $rating >= 4 ? now()->subDays(2) : null,
+                'status' => TeacherReview::STATUS_PUBLISHED,
+                'created_at' => now()->subDays(30 - $index),
+                'updated_at' => now()->subDays(30 - $index),
+            ]));
+        }
+
+        if (isset($scenario['hidden_rating'])) {
+            $student = $learners[(strlen($key) + 9) % $learners->count()];
+            $startsAt = now()->subDays(18)->setTime(18, 0);
+            $session = ClassSession::create([
+                'teaching_offer_id' => $offer->id,
+                'teacher_user_id' => $teacher->id,
+                'application_id' => null,
+                'title' => 'Reputation demo '.$key.' hidden review session',
+                'description' => 'Completed session with hidden review for moderation testing.',
+                'starts_at' => $startsAt,
+                'ends_at' => (clone $startsAt)->addMinutes(60),
+                'timezone' => 'Europe/Madrid',
+                'capacity' => 6,
+                'meeting_tool' => $offer->meeting_tool,
+                'meeting_url' => $offer->meeting_url,
+                'status' => ClassSession::STATUS_COMPLETED,
+                'completed_at' => (clone $startsAt)->addMinutes(60),
+            ]);
+
+            ClassSessionAttendee::create([
+                'class_session_id' => $session->id,
+                'user_id' => $student->id,
+                'status' => ClassSessionAttendee::STATUS_ATTENDED,
+                'joined_at' => $startsAt,
+            ]);
+
+            TeacherReview::create([
+                'teacher_user_id' => $teacher->id,
+                'student_user_id' => $student->id,
+                'class_session_id' => $session->id,
+                'teaching_offer_id' => $offer->id,
+                'rating' => $scenario['hidden_rating'],
+                'title' => 'Hidden reputation demo review',
+                'comment' => 'Hidden demo review that should not count publicly.',
+                'status' => TeacherReview::STATUS_HIDDEN,
+                'hidden_at' => now()->subDays(3),
+                'hidden_by' => $admin->id,
+                'hidden_reason' => 'Demo hidden review for reputation calculations.',
+            ]);
+        }
+
+        for ($index = 0; $index < $scenario['cancelled']; $index++) {
+            $startsAt = now()->subDays(12 - $index)->setTime(18, 0);
+            ClassSession::create([
+                'teaching_offer_id' => $offer->id,
+                'teacher_user_id' => $teacher->id,
+                'application_id' => null,
+                'title' => 'Reputation demo '.$key.' cancelled '.($index + 1),
+                'description' => 'Cancelled session for reputation demo data.',
+                'starts_at' => $startsAt,
+                'ends_at' => (clone $startsAt)->addMinutes(60),
+                'timezone' => 'Europe/Madrid',
+                'capacity' => 6,
+                'meeting_tool' => $offer->meeting_tool,
+                'meeting_url' => $offer->meeting_url,
+                'status' => ClassSession::STATUS_CANCELLED,
+                'cancellation_reason' => 'Demo cancellation for reputation metrics.',
+                'cancelled_at' => now()->subDays(10 - $index),
+            ]);
+        }
+
+        for ($index = 0; $index < $scenario['no_show']; $index++) {
+            $student = $learners[($index + strlen($key) + 15) % $learners->count()];
+            $startsAt = now()->subDays(8 - $index)->setTime(18, 0);
+            $session = ClassSession::create([
+                'teaching_offer_id' => $offer->id,
+                'teacher_user_id' => $teacher->id,
+                'application_id' => null,
+                'title' => 'Reputation demo '.$key.' no-show '.($index + 1),
+                'description' => 'No-show session for reputation demo data.',
+                'starts_at' => $startsAt,
+                'ends_at' => (clone $startsAt)->addMinutes(60),
+                'timezone' => 'Europe/Madrid',
+                'capacity' => 6,
+                'meeting_tool' => $offer->meeting_tool,
+                'meeting_url' => $offer->meeting_url,
+                'status' => ClassSession::STATUS_NO_SHOW,
+                'no_show_marked_at' => now()->subDays(6 - $index),
+            ]);
+
+            ClassSessionAttendee::create([
+                'class_session_id' => $session->id,
+                'user_id' => $student->id,
+                'application_id' => null,
+                'status' => ClassSessionAttendee::STATUS_NO_SHOW,
+                'joined_at' => $startsAt,
+                'no_show_at' => $session->no_show_marked_at,
+            ]);
+        }
+
+        if ($key === 'attention' && Schema::hasTable('review_reports')) {
+            foreach ($createdReviews->take(2) as $reviewIndex => $review) {
+                $reporter = $learners[($reviewIndex + 20) % $learners->count()];
+                ReviewReport::create([
+                    'teacher_review_id' => $review->id,
+                    'reporter_user_id' => $reporter->id,
+                    'type' => ReviewReport::TYPE_FALSE_INFORMATION,
+                    'description' => 'Demo report connected to reputation attention state.',
+                    'status' => ReviewReport::STATUS_OPEN,
+                    'priority' => ReviewReport::PRIORITY_NORMAL,
+                ]);
+
+                $review->forceFill([
+                    'reported_count' => $review->reports()->count(),
+                ])->save();
             }
         }
     }

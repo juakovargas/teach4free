@@ -21,6 +21,7 @@ import {
     ScrollText,
     Settings,
     ShieldAlert,
+    ShieldCheck,
     SlidersHorizontal,
     Star,
     TrendingUp,
@@ -57,7 +58,7 @@ type AdminNavItem = {
     badgeKey?: AdminModerationKey;
 };
 
-type AdminModerationKey = 'open_incidents' | 'open_conversation_reports' | 'pending_moderation' | 'reports_awaiting_response';
+type AdminModerationKey = 'open_incidents' | 'open_conversation_reports' | 'open_review_reports' | 'pending_moderation' | 'reports_awaiting_response';
 
 type AdminNavGroup = {
     labelKey: string;
@@ -80,6 +81,7 @@ const groups: AdminNavGroup[] = [
         items: [
             { labelKey: 'admin_sections.users', href: '/admin/users', icon: Users },
             { labelKey: 'admin_sections.teachers', href: '/admin/teachers', icon: Presentation },
+            { labelKey: 'admin_sections.reputation', href: '/admin/reputation', icon: ShieldCheck },
             { labelKey: 'admin_sections.students', href: '/admin/students', icon: GraduationCap },
         ],
     },
@@ -111,7 +113,8 @@ const groups: AdminNavGroup[] = [
             { labelKey: 'admin_sections.incidents', href: '/admin/incidents', icon: ShieldAlert, badgeKey: 'open_incidents' },
             { labelKey: 'admin_sections.conversations', href: '/admin/conversations', icon: MessagesSquare },
             { labelKey: 'admin_sections.conversation_reports', href: '/admin/conversation-reports', icon: MessageSquareWarning, badgeKey: 'open_conversation_reports' },
-            { labelKey: 'admin_sections.reviews_moderation', href: '/admin/reviews-moderation', icon: Star },
+            { labelKey: 'admin_sections.reviews_moderation', href: '/admin/reviews', icon: Star, badgeKey: 'open_review_reports' },
+            { labelKey: 'admin_sections.review_reports', href: '/admin/review-reports', icon: MessageSquareWarning, badgeKey: 'open_review_reports' },
         ],
     },
     {

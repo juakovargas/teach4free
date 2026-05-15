@@ -3,17 +3,23 @@
 namespace App\Http\Controllers;
 
 use App\Models\Language;
+use App\Models\ReviewReport;
+use App\Models\TeacherReview;
 use App\Models\TeachingCategory;
 use App\Models\TeachingOffer;
 use App\Models\TeachingSubject;
 use App\Models\User;
+use App\Services\TeacherReputationService;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class PublicTeacherController extends Controller
 {
+    public function __construct(private readonly TeacherReputationService $reputations) {}
+
     public function index(Request $request): Response
     {
         $filters = [
@@ -23,12 +29,13 @@ class PublicTeacherController extends Controller
             'subject' => $request->string('subject')->toString(),
             'country' => $request->string('country')->toString(),
             'availability' => $request->string('availability')->toString(),
+            'sort' => $request->string('sort')->toString(),
         ];
 
         $teachers = User::query()
             ->whereHas('teacherProfile', fn (Builder $query) => $query->where('is_active', true))
             ->with([
-                'teacherProfile:id,user_id,headline,teaching_bio,experience_summary,preferred_teaching_mode,is_verified,is_accepting_requests,banner_path',
+                'teacherProfile:id,user_id,headline,teaching_bio,experience_summary,preferred_teaching_mode,is_verified,is_accepting_requests,banner_path,activated_at',
                 'userLanguages' => fn ($query) => $query
                     ->where('teaches', true)
                     ->with('language:id,code,name,native_name'),
@@ -81,10 +88,18 @@ class PublicTeacherController extends Controller
             })
             ->orderByDesc('active_offers_count')
             ->orderBy('name')
-            ->get(['id', 'name', 'avatar_path', 'avatar_url', 'city', 'country_code']);
+            ->get(['id', 'name', 'avatar_path', 'avatar_url', 'city', 'country_code', 'created_at']);
+
+        $reputationSummaries = $this->reputations->forTeachers($teachers);
+        $teachers = $this->sortTeachers($teachers, $reputationSummaries, $filters['sort']);
 
         return Inertia::render('teachers/index', [
-            'teachers' => $teachers->map(fn (User $teacher): array => $this->teacherCardPayload($teacher))->values(),
+            'teachers' => $teachers
+                ->map(fn (User $teacher): array => $this->teacherCardPayload(
+                    $teacher,
+                    $reputationSummaries[$teacher->id] ?? null,
+                ))
+                ->values(),
             'filters' => $filters,
             'categories' => TeachingCategory::query()
                 ->where('is_active', true)
@@ -111,7 +126,7 @@ class PublicTeacherController extends Controller
         ]);
     }
 
-    public function show(User $user): Response
+    public function show(Request $request, User $user): Response
     {
         abort_unless($user->teacherProfile?->is_active, 404);
 
@@ -130,9 +145,11 @@ class PublicTeacherController extends Controller
                 ->latest('published_at'),
         ]);
 
+        $reputation = $this->reputations->forTeacher($user);
+
         return Inertia::render('teachers/show', [
             'teacher' => [
-                ...$this->teacherCardPayload($user),
+                ...$this->teacherCardPayload($user, $reputation),
                 'banner' => $user->teacherProfile?->banner,
                 'teaching_bio' => $user->teacherProfile?->teaching_bio,
                 'experience_summary' => $user->teacherProfile?->experience_summary,
@@ -148,12 +165,44 @@ class PublicTeacherController extends Controller
                     'notes' => $availability->notes,
                 ])->values(),
             ],
+            'reputationSummary' => $reputation,
+            'reviewSummary' => $this->ratingSummaryForTeacher($user, $reputation),
+            'reviews' => TeacherReview::query()
+                ->publiclyVisible()
+                ->where('teacher_user_id', $user->id)
+                ->with(['student:id,name,avatar_path,avatar_url', 'session:id,title,starts_at', 'offer:id,title,slug'])
+                ->latest()
+                ->limit(12)
+                ->get()
+                ->map(fn (TeacherReview $review): array => [
+                    'id' => $review->id,
+                    'rating' => $review->rating,
+                    'title' => $review->title,
+                    'comment' => $review->comment,
+                    'teacher_response' => $review->teacher_response,
+                    'teacher_responded_at' => $review->teacher_responded_at,
+                    'created_at' => $review->created_at,
+                    'can_report' => $request->user() && (int) $request->user()->id !== (int) $review->student_user_id,
+                    'student' => [
+                        'name' => $review->student?->name,
+                        'avatar' => $review->student?->avatar,
+                    ],
+                    'session' => $review->session ? [
+                        'title' => $review->session->title,
+                        'starts_at' => $review->session->starts_at,
+                    ] : null,
+                    'offer' => $review->offer ? [
+                        'title' => $review->offer->title,
+                        'slug' => $review->offer->slug,
+                    ] : null,
+                ])->values(),
+            'reviewReportTypes' => ReviewReport::TYPES,
             'offers' => $user->teachingOffers
-                ->map(fn (TeachingOffer $offer): array => $this->offerPayload($offer))
+                ->map(fn (TeachingOffer $offer): array => $this->offerPayload($offer, $reputation))
                 ->values(),
             'openOffers' => $user->teachingOffers
                 ->where('session_type', TeachingOffer::SESSION_OPEN_PUBLIC)
-                ->map(fn (TeachingOffer $offer): array => $this->offerPayload($offer))
+                ->map(fn (TeachingOffer $offer): array => $this->offerPayload($offer, $reputation))
                 ->values(),
         ]);
     }
@@ -161,9 +210,10 @@ class PublicTeacherController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function teacherCardPayload(User $teacher): array
+    private function teacherCardPayload(User $teacher, ?array $reputation = null): array
     {
         $offers = $teacher->teachingOffers;
+        $reputation ??= $this->reputations->forTeacher($teacher);
 
         return [
             'id' => $teacher->id,
@@ -176,6 +226,11 @@ class PublicTeacherController extends Controller
             'country_code' => $teacher->country_code,
             'is_verified' => (bool) $teacher->teacherProfile?->is_verified,
             'active_offers_count' => (int) ($teacher->active_offers_count ?? $offers->count()),
+            'rating_summary' => [
+                'average' => $reputation['average_rating'],
+                'count' => $reputation['published_review_count'],
+            ],
+            'reputation_summary' => $reputation,
             'languages' => $teacher->userLanguages
                 ->map(fn ($userLanguage): array => [
                     'code' => $userLanguage->language->code,
@@ -213,8 +268,10 @@ class PublicTeacherController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function offerPayload(TeachingOffer $offer): array
+    private function offerPayload(TeachingOffer $offer, ?array $reputation = null): array
     {
+        $reputation ??= $this->reputations->forTeacher($offer->user);
+
         return [
             'id' => $offer->id,
             'slug' => $offer->slug,
@@ -232,11 +289,73 @@ class PublicTeacherController extends Controller
                 'city' => $offer->user->city,
                 'country_code' => $offer->user->country_code,
                 'profile_url' => route('teachers.show', $offer->user),
+                'rating_summary' => [
+                    'average' => $reputation['average_rating'],
+                    'count' => $reputation['published_review_count'],
+                ],
+                'reputation_summary' => $reputation,
             ],
             'category' => $offer->category,
             'subject' => $offer->subject,
             'languages' => $offer->languages,
             'url' => route('offers.show', $offer),
         ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function ratingSummaryForTeacher(User $teacher, ?array $reputation = null): array
+    {
+        $reputation ??= $this->reputations->forTeacher($teacher);
+        $baseQuery = TeacherReview::query()
+            ->publiclyVisible()
+            ->where('teacher_user_id', $teacher->id);
+
+        $count = (int) $reputation['published_review_count'];
+
+        return [
+            'average' => $reputation['average_rating'],
+            'count' => $count,
+            'distribution' => collect([5, 4, 3, 2, 1])
+                ->mapWithKeys(fn (int $rating): array => [
+                    $rating => (clone $baseQuery)->where('rating', $rating)->count(),
+                ]),
+        ];
+    }
+
+    /**
+     * @param  Collection<int, User>  $teachers
+     * @param  array<int, array<string, mixed>>  $reputationSummaries
+     * @return Collection<int, User>
+     */
+    private function sortTeachers($teachers, array $reputationSummaries, string $sort)
+    {
+        return match ($sort) {
+            'highest_rated' => $teachers->sort(function (User $first, User $second) use ($reputationSummaries): int {
+                $firstSummary = $reputationSummaries[$first->id] ?? [];
+                $secondSummary = $reputationSummaries[$second->id] ?? [];
+
+                return (($secondSummary['average_rating'] ?? -1) <=> ($firstSummary['average_rating'] ?? -1))
+                    ?: (($secondSummary['published_review_count'] ?? 0) <=> ($firstSummary['published_review_count'] ?? 0))
+                    ?: strcasecmp($first->name, $second->name);
+            }),
+            'most_reviewed' => $teachers->sort(function (User $first, User $second) use ($reputationSummaries): int {
+                return (($reputationSummaries[$second->id]['published_review_count'] ?? 0) <=> ($reputationSummaries[$first->id]['published_review_count'] ?? 0))
+                    ?: strcasecmp($first->name, $second->name);
+            }),
+            'most_sessions' => $teachers->sort(function (User $first, User $second) use ($reputationSummaries): int {
+                return (($reputationSummaries[$second->id]['completed_sessions_count'] ?? 0) <=> ($reputationSummaries[$first->id]['completed_sessions_count'] ?? 0))
+                    ?: strcasecmp($first->name, $second->name);
+            }),
+            'new_teachers' => $teachers->sort(function (User $first, User $second): int {
+                $firstDate = $first->teacherProfile?->activated_at ?? $first->created_at;
+                $secondDate = $second->teacherProfile?->activated_at ?? $second->created_at;
+
+                return ($secondDate?->timestamp ?? 0) <=> ($firstDate?->timestamp ?? 0)
+                    ?: strcasecmp($first->name, $second->name);
+            }),
+            default => $teachers,
+        };
     }
 }

@@ -1680,3 +1680,232 @@ Manual verification checklist:
 19. Confirm report detail shows the public response.
 
 20. Confirm user cannot see private admin notes.
+
+Reviews and ratings system - 2026-05-14
+---------------------------------------
+
+PHPUnit tests were not executed for this task.
+
+Reason:
+
+- This branch implemented the first reviews and ratings system across migrations, models, controllers, Inertia pages, translations, notifications, admin moderation and seed data.
+- Verification was done with PHP syntax checks, route checks, a migration SQL preview and a production frontend build.
+
+Commands executed:
+
+- php -l app\Models\TeacherReview.php; php -l app\Models\ReviewReport.php; php -l app\Services\ReviewEligibilityService.php; php -l app\Notifications\TeacherReviewNotification.php; php -l app\Notifications\ReviewReportSubmittedNotification.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l app\Http\Controllers\ReviewController.php; php -l app\Http\Controllers\TeacherReviewController.php; php -l app\Http\Controllers\ReviewReportController.php; php -l app\Http\Controllers\Admin\ReviewController.php; php -l app\Http\Controllers\Admin\ReviewReportController.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l app\Http\Controllers\MySessionController.php; php -l app\Http\Controllers\PublicTeacherController.php; php -l app\Http\Controllers\PublicOfferController.php; php -l app\Http\Controllers\DashboardController.php; php -l app\Http\Controllers\AdminDashboardController.php; php -l app\Http\Middleware\HandleInertiaRequests.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l app\Models\User.php; php -l app\Models\ClassSession.php; php -l app\Models\TeachingOffer.php; php -l database\seeders\DatabaseSeeder.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l database\migrations\2026_05_14_160000_create_teacher_reviews_table.php; php -l database\migrations\2026_05_14_160001_create_review_reports_table.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l lang\en\ui.php; php -l lang\es\ui.php; php -l lang\fr\ui.php
+- Result: Passed. No PHP syntax errors in translation files.
+
+- php artisan route:list --name=reviews
+- Result: Passed. Review-related named routes rendered successfully.
+
+- php artisan route:list --path=review
+- Result: Passed. Review and admin review routes rendered successfully.
+
+- php artisan migrate --pretend
+- Result: Passed. Laravel generated SQL for the new teacher_reviews and review_reports migrations without errors.
+
+- npm run build
+- Result: Passed. Vite production build completed.
+- Note: Vite printed plugin timing warnings, but the build succeeded.
+
+Implementation notes:
+
+- Added teacher_reviews and review_reports tables.
+- Reviews are tied to completed class sessions.
+- A learner can review only a completed session they attended or joined through an accepted application.
+- A learner can submit only one review per session.
+- Low ratings require a comment.
+- Reviews publish automatically when valid.
+- Teachers can respond publicly from /teacher/reviews.
+- Public teacher profiles show rating summary, distribution and recent public reviews.
+- Public offer pages show compact teacher rating summary.
+- Hidden and removed reviews do not count in public averages or public review lists.
+- Flagged reviews remain visible until admin hides or removes them.
+- Users can report reviews through a discreet public review action menu.
+- Admins can moderate reviews at /admin/reviews.
+- Admins can moderate review reports at /admin/review-reports.
+- Admin review moderation includes simple abuse signals for repeated one-star, hidden and reported reviews.
+- Internal notifications are created for new reviews, teacher responses, hidden reviews and new review reports.
+- Demo seed data includes realistic reviews, teacher responses, hidden/flagged reviews and review reports.
+
+Manual verification checklist:
+
+1. Run:
+   php artisan migrate:fresh --seed
+
+2. Login as a student with completed sessions.
+
+3. Open My Sessions.
+
+4. Find a completed session.
+
+5. Click Leave a review.
+
+6. Submit a 5-star review.
+
+7. Confirm review appears on teacher public profile.
+
+8. Submit or test a 1-star review and confirm comment is required.
+
+9. Login as the teacher.
+
+10. Open teacher reviews page.
+
+11. Respond to the review.
+
+12. Confirm response appears publicly.
+
+13. Login as another user.
+
+14. Open public teacher profile.
+
+15. Report a review.
+
+16. Login as admin.
+
+17. Open /admin/reviews.
+
+18. Confirm reviews appear.
+
+19. Open a review detail.
+
+20. Hide a review with reason.
+
+21. Confirm hidden review disappears from public profile and no longer counts in average.
+
+22. Restore the review.
+
+23. Confirm review appears again and average updates.
+
+24. Check admin review abuse signals if implemented.
+
+Basic teacher reputation system - 2026-05-15
+--------------------------------------------
+
+PHPUnit tests were executed for the focused reputation service tests.
+
+Commands executed:
+
+- php -l app\Services\TeacherReputationService.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l app\Http\Controllers\PublicTeacherController.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l app\Http\Controllers\PublicOfferController.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l app\Http\Controllers\HomeController.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l app\Http\Controllers\TeacherReviewController.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l app\Http\Controllers\Admin\ReputationController.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l database\seeders\DatabaseSeeder.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l tests\Feature\TeacherReputationServiceTest.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l lang\en\ui.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l lang\es\ui.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l lang\fr\ui.php
+- Result: Passed. No PHP syntax errors.
+
+- php artisan route:list --path=admin/reputation
+- Result: Passed. Admin reputation routes are registered:
+  GET|HEAD admin/reputation
+  GET|HEAD admin/reputation/teachers
+
+- php artisan test tests\Feature\TeacherReputationServiceTest.php
+- Result: Passed. 2 tests, 11 assertions.
+
+- npm run types:check
+- Result: Passed. TypeScript reported no errors.
+
+- npm run lint:check
+- Result: Passed. ESLint reported no errors.
+
+- composer run lint:check
+- Result: Passed. Pint reported no required changes after formatting touched files.
+
+- npm run build
+- Result: Passed. Vite production build completed.
+- Note: Vite printed plugin timing warnings, but the build succeeded.
+
+Implementation notes:
+
+- Added TeacherReputationService for dynamic reputation calculation.
+- No cached teacher reputation table or reputation migration was added.
+- Reputation uses published/public teacher reviews only; hidden and removed reviews do not count.
+- Reputation includes average rating, public review count, completed sessions, students helped, teaching hours, cancellation rate, no-show rate, reliability label and enough-data state.
+- Public teacher profile pages now include a reputation summary.
+- Teacher cards, home featured teachers, offer cards and offer detail teacher boxes now show compact trust indicators where appropriate.
+- Teachers can see their own reputation summary from /teacher/reviews.
+- Admins can review reputation at /admin/reputation and /admin/reputation/teachers.
+- Public teacher directory sorting now includes highest rated, most reviewed, most sessions and new teachers.
+- Public offers can optionally sort by teacher rating.
+- Demo seed data includes excellent, reliable, new and attention-needed reputation scenarios.
+- No payment, subscription, credit, wallet, commission, paid plan, premium visibility, paid ranking or sponsored teacher logic was added.
+
+Manual verification checklist:
+
+1. Run:
+   php artisan migrate:fresh --seed
+
+2. Open public teachers page.
+
+3. Confirm teacher cards show rating/reputation indicators.
+
+4. Open a public teacher profile.
+
+5. Confirm reputation summary appears.
+
+6. Confirm hidden reviews do not appear or count.
+
+7. Login as teacher.
+
+8. Open teacher dashboard or teacher reviews page.
+
+9. Confirm personal reputation summary appears.
+
+10. Login as admin:
+    admin@example.com
+    password
+
+11. Open admin reputation page.
+
+12. Confirm teachers are listed with reputation metrics.
+
+13. Filter by reliability label.
+
+14. Check a teacher with high rating and completed sessions.
+
+15. Check a new teacher with little data.
+
+16. Check a teacher needing attention.
+
+17. Confirm no payment/premium ranking exists.

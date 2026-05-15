@@ -10,6 +10,7 @@ import {
     Presentation,
     Settings2,
     ShieldAlert,
+    Star,
 } from 'lucide-react';
 import { ContextualHelp } from '@/components/contextual-help';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,12 @@ type Summary = {
     unread_notifications_count: number;
     open_reports_count: number;
     reports_with_response_count: number;
+    reviewable_sessions_count: number;
+    reviews_submitted_count: number;
+    teacher_average_rating: number | null;
+    teacher_published_reviews_count: number;
+    teacher_pending_review_responses_count: number;
+    teacher_hidden_reviews_count: number;
     student_status: 'active' | 'inactive';
     teacher_status: 'active' | 'paused' | 'not_activated';
     teacher_accepting_requests: boolean;
@@ -115,12 +122,23 @@ export default function Dashboard({ summary }: Props) {
         },
         {
             title: t('dashboard.my_sessions'),
-            body: t('dashboard.my_sessions_body'),
-            status: t('dashboard.upcoming_sessions_count', {
-                count: summary.upcoming_student_sessions_count,
+            body: t('dashboard.my_sessions_body_with_reviews', {
+                reviews: summary.reviewable_sessions_count,
             }),
+            status: t('dashboard.upcoming_sessions_count', { count: summary.upcoming_student_sessions_count }),
             href: '/my-sessions',
             icon: CalendarDays,
+        },
+        {
+            title: t('dashboard.reviews_to_write'),
+            body: t('dashboard.reviews_to_write_body', {
+                submitted: summary.reviews_submitted_count,
+            }),
+            status: t('dashboard.reviewable_sessions_count', {
+                count: summary.reviewable_sessions_count,
+            }),
+            href: '/my-sessions',
+            icon: Star,
         },
         {
             title: t('dashboard.teacher_sessions'),
@@ -130,6 +148,21 @@ export default function Dashboard({ summary }: Props) {
             }),
             href: '/teacher/sessions',
             icon: CalendarDays,
+        },
+        {
+            title: t('dashboard.teacher_reviews'),
+            body: t('dashboard.teacher_reviews_body', {
+                pending: summary.teacher_pending_review_responses_count,
+            }),
+            status:
+                summary.teacher_published_reviews_count > 0
+                    ? t('dashboard.teacher_rating_status', {
+                          rating: summary.teacher_average_rating ?? '-',
+                          count: summary.teacher_published_reviews_count,
+                      })
+                    : t('reviews.no_reviews_short'),
+            href: '/teacher/reviews',
+            icon: Star,
         },
         {
             title: t('dashboard.requests_to_my_offers'),

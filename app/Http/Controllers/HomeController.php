@@ -8,6 +8,7 @@ use App\Models\StudentProfile;
 use App\Models\TeacherProfile;
 use App\Models\TeachingOffer;
 use App\Models\User;
+use App\Services\TeacherReputationService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -16,6 +17,8 @@ use Laravel\Fortify\Features;
 
 class HomeController extends Controller
 {
+    public function __construct(private readonly TeacherReputationService $reputations) {}
+
     public function __invoke(Request $request): Response
     {
         $locale = app()->getLocale();
@@ -80,7 +83,14 @@ class HomeController extends Controller
             $matchingOffers = $matchingOffers->merge($fallbackOffers);
         }
 
-        return $matchingOffers->map(fn (TeachingOffer $offer): array => $this->offerPayload($offer))->values();
+        $reputationSummaries = $this->reputations->forTeachers($matchingOffers->pluck('user')->filter()->unique('id'));
+
+        return $matchingOffers
+            ->map(fn (TeachingOffer $offer): array => $this->offerPayload(
+                $offer,
+                $reputationSummaries[$offer->user_id] ?? null,
+            ))
+            ->values();
     }
 
     /**
@@ -110,7 +120,14 @@ class HomeController extends Controller
             $openOffers = $openOffers->merge($fallbackOffers);
         }
 
-        return $openOffers->map(fn (TeachingOffer $offer): array => $this->offerPayload($offer))->values();
+        $reputationSummaries = $this->reputations->forTeachers($openOffers->pluck('user')->filter()->unique('id'));
+
+        return $openOffers
+            ->map(fn (TeachingOffer $offer): array => $this->offerPayload(
+                $offer,
+                $reputationSummaries[$offer->user_id] ?? null,
+            ))
+            ->values();
     }
 
     /**
@@ -134,10 +151,12 @@ class HomeController extends Controller
             ->orderByDesc('active_offers_count')
             ->limit(6)
             ->get();
+        $reputationSummaries = $this->reputations->forTeachers($teachers);
 
-        return $teachers->map(function (User $teacher): array {
+        return $teachers->map(function (User $teacher) use ($reputationSummaries): array {
             /** @var Collection<int, TeachingOffer> $offers */
             $offers = $teacher->teachingOffers;
+            $reputation = $reputationSummaries[$teacher->id] ?? $this->reputations->forTeacher($teacher);
 
             return [
                 'id' => $teacher->id,
@@ -149,6 +168,11 @@ class HomeController extends Controller
                 'country_code' => $teacher->country_code,
                 'is_verified' => (bool) $teacher->teacherProfile?->is_verified,
                 'active_offers_count' => (int) $teacher->active_offers_count,
+                'rating_summary' => [
+                    'average' => $reputation['average_rating'],
+                    'count' => $reputation['published_review_count'],
+                ],
+                'reputation_summary' => $reputation,
                 'teaching_bio_excerpt' => str($teacher->teacherProfile?->teaching_bio ?? '')->limit(180)->toString(),
                 'languages' => $teacher->userLanguages
                     ->map(fn ($userLanguage): array => [
@@ -188,8 +212,10 @@ class HomeController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function offerPayload(TeachingOffer $offer): array
+    private function offerPayload(TeachingOffer $offer, ?array $reputation = null): array
     {
+        $reputation ??= $this->reputations->forTeacher($offer->user);
+
         return [
             'id' => $offer->id,
             'slug' => $offer->slug,
@@ -207,6 +233,11 @@ class HomeController extends Controller
                 'city' => $offer->user->city,
                 'country_code' => $offer->user->country_code,
                 'profile_url' => $offer->user->teacherProfile?->is_active ? route('teachers.show', $offer->user) : null,
+                'rating_summary' => [
+                    'average' => $reputation['average_rating'],
+                    'count' => $reputation['published_review_count'],
+                ],
+                'reputation_summary' => $reputation,
             ],
             'category' => $offer->category,
             'subject' => $offer->subject,

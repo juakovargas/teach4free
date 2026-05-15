@@ -6,6 +6,7 @@ use App\Models\ClassSession;
 use App\Models\ClassSessionAttendee;
 use App\Models\ConversationReport;
 use App\Models\Incident;
+use App\Models\TeacherReview;
 use App\Models\TeachingOfferApplication;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -76,6 +77,27 @@ class DashboardController extends Controller
                             ->whereNotNull('public_response')
                             ->count()
                     : 0,
+                'reviewable_sessions_count' => $user->sessionAttendances()
+                    ->whereIn('status', [ClassSessionAttendee::STATUS_ATTENDED, ClassSessionAttendee::STATUS_ENROLLED])
+                    ->whereHas('session', fn ($query) => $query
+                        ->where('status', ClassSession::STATUS_COMPLETED)
+                        ->where('teacher_user_id', '!=', $user->id)
+                        ->whereDoesntHave('teacherReviews', fn ($query) => $query->where('student_user_id', $user->id)))
+                    ->count(),
+                'reviews_submitted_count' => $user->submittedTeacherReviews()->count(),
+                'teacher_average_rating' => $user->receivedTeacherReviews()
+                    ->publiclyVisible()
+                    ->avg('rating'),
+                'teacher_published_reviews_count' => $user->receivedTeacherReviews()
+                    ->publiclyVisible()
+                    ->count(),
+                'teacher_pending_review_responses_count' => $user->receivedTeacherReviews()
+                    ->publiclyVisible()
+                    ->whereNull('teacher_response')
+                    ->count(),
+                'teacher_hidden_reviews_count' => $user->receivedTeacherReviews()
+                    ->where('status', TeacherReview::STATUS_HIDDEN)
+                    ->count(),
                 'student_status' => $user->studentProfile?->is_active ? 'active' : 'inactive',
                 'teacher_status' => match (true) {
                     $user->teacherProfile?->is_active => 'active',

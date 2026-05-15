@@ -3760,6 +3760,465 @@ Demo users have a mix of:
 - resolved reports with public response.
 - dismissed reports with public response.
 
+Reviews and ratings system - 2026-05-14
+---------------------------------------
+
+Teach4Free now includes the first complete reviews and ratings system for completed classes.
+
+The purpose is to help learners understand which teachers are reliable and helpful while keeping the platform safe from abusive, false or malicious reviews.
+
+The free-product rule remains unchanged:
+
+- No payments.
+- No subscriptions.
+- No credits.
+- No wallets.
+- No paid plans.
+- No commissions.
+- No premium visibility.
+
+Review database
+---------------
+
+Reviews use these tables:
+
+- teacher_reviews
+- review_reports
+
+Teacher reviews are linked to concrete completed class sessions. A review stores:
+
+- reviewed teacher.
+- reviewing student.
+- class session.
+- related teaching offer when available.
+- rating from 1 to 5.
+- optional title and comment.
+- optional public teacher response.
+- moderation status.
+- hidden metadata when an admin hides a review.
+- reported count.
+- private admin notes.
+
+Review reports store review-specific moderation reports with:
+
+- reported review.
+- reporter.
+- report type.
+- optional description.
+- status.
+- priority.
+- private admin notes.
+- resolver and resolved timestamp.
+
+Review eligibility
+------------------
+
+A learner can review a teacher only when all required conditions are true:
+
+- the user is authenticated.
+- the user is not restricted, blocked or banned.
+- the session is completed.
+- the session is not cancelled or no-show.
+- the reviewer is not the teacher.
+- the reviewer attended the session or is linked through an accepted application.
+- the reviewer has not already reviewed that session.
+
+The review is tied to the class session, not just to a teacher profile. This prevents random public reviews from people who never attended a class.
+
+Low ratings of 1 or 2 require a written comment so the feedback has enough context.
+
+Student review flow
+-------------------
+
+Students can leave a review from My Sessions when a completed session is eligible.
+
+Routes:
+
+- GET /my-sessions/{session}/review
+- POST /my-sessions/{session}/review
+
+The review form includes:
+
+- star rating.
+- optional title.
+- optional comment.
+- a responsible-review reminder.
+
+Reviews are published automatically when valid. A teacher receives an internal notification when a new review is submitted.
+
+Teacher response to reviews
+---------------------------
+
+Teachers can manage received reviews at:
+
+- GET /teacher/reviews
+
+Teachers can add or update a public response at:
+
+- PATCH /teacher/reviews/{review}/response
+
+Only the reviewed teacher can respond. Hidden and removed reviews cannot be answered from the normal teacher UI. The teacher response is public and should remain professional.
+
+When a teacher responds, the student receives an internal notification.
+
+Public teacher rating summary
+-----------------------------
+
+Public teacher profiles now show:
+
+- average rating.
+- number of public reviews.
+- rating distribution.
+- recent public reviews.
+- teacher responses when available.
+- empty state when there are no reviews yet.
+
+Hidden and removed reviews do not count in public rating averages, review counts or public review lists.
+
+Flagged reviews remain visible and continue to count until an admin hides or removes them. This keeps post-publication moderation separate from automatic censorship.
+
+Public offer rating summary
+---------------------------
+
+Public offer detail pages show a compact teacher rating summary near the teacher information:
+
+- average rating.
+- review count.
+- link back to the teacher profile.
+
+The offer page does not duplicate the full teacher review list.
+
+Review reporting
+----------------
+
+Users can report public reviews through a discreet review action menu on public teacher profiles.
+
+Supported review report types:
+
+- abusive_language
+- false_information
+- harassment
+- spam
+- malicious_review
+- privacy_issue
+- other
+
+Rules:
+
+- users cannot report their own reviews.
+- duplicate open or in-review reports by the same user for the same review are blocked.
+- reported reviews remain visible unless an admin hides or removes them.
+- report counts are updated on the review.
+- admins receive an internal moderation notification when a review report is created.
+
+Admin review moderation
+-----------------------
+
+Admin review moderation routes:
+
+- GET /admin/reviews
+- GET /admin/reviews/{review}
+- PATCH /admin/reviews/{review}
+- GET /admin/review-reports
+- GET /admin/review-reports/{report}
+- PATCH /admin/review-reports/{report}
+
+The admin review list supports filters for:
+
+- status.
+- rating.
+- reported/unreported reviews.
+- low ratings.
+- search by teacher, student, title or comment.
+
+The admin review detail page shows:
+
+- full review content.
+- teacher response.
+- session context.
+- offer context.
+- teacher and student.
+- linked review reports.
+- private admin notes.
+
+Admin actions include:
+
+- publish or restore a review.
+- hide a review with a required reason.
+- mark a review as flagged.
+- mark a review as removed for severe cases.
+- update private admin notes.
+
+When a review is hidden, it stops counting toward public aggregates and the student receives an internal notification.
+
+Review reports moderation
+-------------------------
+
+The admin review reports queue shows:
+
+- reporter.
+- review excerpt.
+- teacher.
+- student.
+- type.
+- priority.
+- translated status.
+- created date.
+
+Admins can update review report status, priority and private admin notes.
+
+Malicious review handling
+-------------------------
+
+The system does not automatically punish reviewers.
+
+The admin reviews page includes simple abuse signals so moderators can investigate patterns:
+
+- reviewers with 3 or more one-star reviews.
+- reviewers with 2 or more hidden reviews.
+- reviewers with 3 or more reported reviews.
+
+Admins can then use existing user restriction, block or ban tools manually if abuse is confirmed.
+
+Responsible review copy
+-----------------------
+
+The review form includes a calm reminder:
+
+- Reviews should be honest and respectful.
+- Malicious or abusive reviews may lead to account restrictions.
+
+The goal is to keep reviews useful without making the platform feel hostile.
+
+Review notifications
+--------------------
+
+Internal notifications are created for:
+
+- teacher receives a new review.
+- teacher responds to a student's review.
+- admin hides a student's review.
+- admins receive a new review report.
+
+External review email delivery was not added in this branch.
+
+Dashboard review updates
+------------------------
+
+The user dashboard now includes review-oriented cards:
+
+- sessions waiting for review.
+- reviews submitted by the student.
+- teacher average rating.
+- published teacher reviews.
+- pending teacher responses.
+- hidden teacher reviews.
+
+The admin dashboard includes moderation counters for:
+
+- open review reports.
+- reported reviews.
+- hidden reviews.
+- low-rated reviews.
+
+Demo review data
+----------------
+
+After:
+
+- php artisan migrate:fresh --seed
+
+the local demo database includes realistic review data:
+
+- at least 80 teacher reviews.
+- reviews across multiple teachers.
+- ratings from 1 to 5.
+- mostly positive or neutral ratings, with some low ratings.
+- at least 15 teacher responses.
+- at least 10 review reports.
+- hidden and flagged reviews for moderation testing.
+- reviews linked to completed demo sessions.
+- no self-reviews.
+
+Basic teacher reputation system
+-------------------------------
+
+Teach4Free now has the first basic teacher reputation system.
+
+This version is intentionally simple, transparent and non-gamified. It does not add payments, subscriptions, credits, commissions, premium visibility, sponsored teachers or paid ranking. Reputation is earned from real platform activity, public reviews and reliability signals.
+
+Storage and calculation strategy:
+
+- Reputation is computed dynamically with TeacherReputationService.
+- No teacher_reputation_summaries cache table was added in this version.
+- No new migration was needed for reputation summaries.
+- The service returns a structured summary for one teacher or a batch of teachers.
+- Public pages use the same metrics as the service, with softer public wording where needed.
+
+Reputation metrics
+------------------
+
+The reputation summary includes:
+
+- average_rating.
+- published_review_count.
+- completed_sessions_count.
+- students_helped_count.
+- teaching_hours.
+- cancellation_rate.
+- no_show_rate.
+- reliability_label.
+- has_enough_data.
+
+Average rating and published review count use only public teacher reviews. Hidden and removed reviews do not count in public rating averages, public review counts or reputation summaries. Flagged reviews continue to count while they remain publicly visible.
+
+Completed sessions count only teacher sessions with completed status.
+
+Students helped is based on attended class_session_attendees for completed sessions when available. Accepted applications are used as a fallback for completed sessions that do not have attendee records.
+
+Teaching hours are calculated from completed sessions with starts_at and ends_at and are displayed as rounded hours.
+
+Cancellation rate is calculated from cancelled teacher sessions divided by completed, cancelled and no-show teacher sessions. Division by zero is avoided.
+
+No-show rate is calculated from no-show teacher sessions and no-show attendee data divided by the same relevant session total. Division by zero is avoided.
+
+Reliability labels
+------------------
+
+The first version supports these reliability labels:
+
+- new_teacher.
+- excellent.
+- reliable.
+- needs_attention.
+
+Initial rules:
+
+- If completed_sessions_count is lower than 3 and published_review_count is lower than 3, the label is new_teacher.
+- Otherwise, if average_rating is at least 4.7, cancellation_rate is at most 5 percent and no_show_rate is at most 3 percent, the label is excellent.
+- Otherwise, if average_rating is at least 4.0, cancellation_rate is at most 15 percent and no_show_rate is at most 10 percent, the label is reliable.
+- Otherwise, the label is needs_attention.
+
+The public UI avoids shaming teachers. A teacher with the internal needs_attention label is shown with neutral public wording such as limited reliability data instead of harsh warning copy.
+
+Public reputation display
+-------------------------
+
+Public teacher profiles now include a reputation summary section with:
+
+- average rating.
+- review count.
+- completed sessions.
+- students helped.
+- teaching hours.
+- cancellation rate.
+- no-show rate.
+- reliability label.
+
+If a teacher does not have enough history yet, the public page shows the new teacher state and explains that the teacher is still building their Teach4Free history.
+
+Teacher cards in public areas now show compact trust indicators where they fit:
+
+- average rating and review count when reviews exist.
+- New teacher label when there are not yet reviews.
+- completed sessions.
+- students helped.
+- compact reliability label.
+
+The compact indicators are used on:
+
+- public teachers directory cards.
+- home featured teacher cards.
+- public offer cards.
+- public offer detail teacher box.
+
+Teacher dashboard reputation summary
+------------------------------------
+
+Teachers can see their own reputation summary from the teacher reviews area at:
+
+- GET /teacher/reviews
+
+The teacher-facing summary shows:
+
+- average rating.
+- review count.
+- completed sessions.
+- students helped.
+- teaching hours.
+- cancellation rate.
+- no-show rate.
+- reliability label.
+
+The page explains that reputation is based on completed sessions, public reviews and reliability signals, and that it cannot be bought.
+
+Admin reputation overview
+-------------------------
+
+Admins can review teacher reputation at:
+
+- GET /admin/reputation
+- GET /admin/reputation/teachers
+
+The admin reputation table shows:
+
+- teacher.
+- average rating.
+- review count.
+- completed sessions.
+- students helped.
+- teaching hours.
+- cancellation rate.
+- no-show rate.
+- reliability label.
+- reported reviews count.
+- hidden reviews count.
+- incidents count.
+- last session date.
+
+Filters include:
+
+- reliability label.
+- minimum completed sessions.
+- low rating.
+- high cancellation rate.
+- high no-show rate.
+- new teachers.
+- text search.
+
+The admin page is informational only in this branch. It does not automatically ban, restrict, penalize, rank or promote teachers.
+
+Reputation sorting and filtering
+--------------------------------
+
+The public teachers directory now supports simple reputation-aware sort options:
+
+- newest/default order.
+- highest rated.
+- most reviewed.
+- most sessions.
+- new teachers.
+
+Highest rated sorts by average rating first and then review count so a teacher with one high rating is not unfairly favored over teachers with a stronger review history.
+
+The public offers page includes an optional teacher rating sort. It sorts offers by the teacher's average rating and then review count while keeping the existing public offer filters intact.
+
+Demo reputation data
+--------------------
+
+After:
+
+- php artisan migrate:fresh --seed
+
+the demo database includes reputation-oriented teachers with different patterns:
+
+- an excellent reputation teacher with high ratings, completed sessions, multiple students helped and no reliability problems.
+- a reliable teacher with good ratings, completed sessions and a small amount of cancellation history.
+- a new teacher with little history.
+- a teacher needing admin attention with low ratings, cancellations, no-shows, a hidden review, review reports and an incident.
+
+The demo data is still free-platform data only. It does not add payments, premium placement or sponsored visibility.
+
 What remains pending
 --------------------
 
@@ -3771,6 +4230,17 @@ What remains pending
 - Report analytics.
 - Full moderation audit UI.
 - External report response emails if ever needed.
+- Advanced reputation rules.
+- Reputation rule admin configuration.
+- Advanced recommendation/ranking engine.
+- Badges.
+- Review analytics.
+- Advanced review abuse detection.
+- External review emails if ever needed.
+- Teacher verification workflow.
+- Public SEO.
+- Public open sessions calendar.
+- Favorites and alerts.
 - Real-time chat.
 - Typing indicators.
 - Attachments.
@@ -3779,8 +4249,7 @@ What remains pending
 - Advanced user blocking.
 - AI-assisted moderation.
 - More advanced reply/thread UI if conversation threading becomes necessary.
-- Reviews moderation after reviews exist.
-- Badges and reputation rules after reputation exists.
+- Badges and reputation rule admin screens after basic reputation.
 - Rich calendar charts or heatmaps if the statistics page needs them later.
 - More precise non-paid region detection only if ever needed.
 - Full cookie audit table for each third-party script.

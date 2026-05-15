@@ -46,13 +46,12 @@ Current priority order
 ----------------------
 
 1. Session reminders
-2. Reviews and ratings
-3. Basic reputation system
-4. Badges
-5. Teacher verification workflow
-6. Public SEO
-7. Public open sessions calendar
-8. Favorites and alerts
+2. Badges
+3. Teacher verification workflow
+4. Public SEO
+5. Public open sessions calendar
+6. Favorites and alerts
+7. Advanced recommendation/ranking engine
 
 Implemented - Internal messaging / chat first version
 -----------------------------------------------------
@@ -126,6 +125,46 @@ Future report follow-up improvements:
 - Full moderation audit UI.
 - External report response emails if ever needed.
 
+Implemented - Review system after completed classes
+---------------------------------------------------
+
+Teach4Free now has the first complete reviews and ratings system.
+
+Implemented:
+
+- Teacher reviews tied to completed class sessions.
+- Review eligibility checks for attended sessions and accepted application participants.
+- One review per student per session.
+- No self-reviews.
+- Automatic publication for valid reviews.
+- Low ratings require a written comment.
+- Student review form from My Sessions.
+- Teacher reviews management page.
+- Public teacher response to reviews.
+- Public teacher profile rating summary.
+- Public offer teacher rating summary.
+- Review reporting through a discreet action menu.
+- Admin review moderation at /admin/reviews.
+- Admin review reports queue at /admin/review-reports.
+- Hidden and removed reviews excluded from public averages.
+- Flagged reviews remain visible until hidden or removed by admin.
+- Simple admin abuse signals for repeated one-star, hidden and reported reviews.
+- Internal notifications for new reviews, teacher responses, hidden reviews and review reports.
+- Demo reviews, responses, hidden/flagged reviews and review reports.
+
+Future reviews and reputation improvements:
+
+- Advanced reputation rules.
+- Reputation rule admin configuration.
+- Badges.
+- Review analytics.
+- Advanced review abuse detection.
+- External review emails if ever needed.
+- Teacher verification workflow.
+- Public SEO.
+- Public open sessions calendar.
+- Favorites and alerts.
+
 Session reminders
 -----------------
 
@@ -138,24 +177,39 @@ Session reminders
 Reviews and ratings
 -------------------
 
-- Review system after completed classes.
-- Student rates teacher after completed session.
-- Stars and optional written comment.
-- Review moderation.
-- Teacher review summary on public profiles.
-- Reviews moderation after reviews exist.
+- Advanced review analytics.
+- Advanced review abuse detection.
+- Better review moderation queues.
+- Optional external review email preferences and delivery.
+- Review reminder notifications after completed sessions.
 
 Basic reputation system
 -----------------------
+
+Implemented in the basic reputation branch:
 
 - Completed sessions count.
 - Students helped count.
 - Teaching hours count.
 - Average rating.
+- Published review count.
 - Cancellation rate.
 - No-show rate.
 - Reliability indicators.
+- Public reputation display.
+- Teacher self reputation summary.
+- Admin reputation overview.
+- Public teachers reputation sorting.
+- Public offers teacher rating sort.
 - Reputation should never be purchasable.
+
+Future reputation work:
+
+- Advanced reputation rules.
+- Reputation rule admin configuration.
+- Badges.
+- Teacher verification workflow.
+- Advanced recommendation/ranking engine.
 
 Badges
 ------
@@ -166,7 +220,7 @@ Badges
 - Reliable teacher.
 - Open knowledge contributor.
 - Subject/category-specific badges.
-- Badge and reputation rule admin screens after reputation exists.
+- Badge and reputation rule admin screens after basic reputation.
 
 Teacher verification workflow
 -----------------------------
@@ -206,6 +260,15 @@ Favorites and alerts
 - Alerts when a favorite teacher opens new classes.
 - Alerts for new offers by language/category/subject.
 - Notification preferences for alerts.
+
+Advanced recommendation/ranking engine
+--------------------------------------
+
+- Advanced non-paid teacher recommendation rules.
+- Fairness safeguards for new teachers.
+- Abuse-resistant ranking signals.
+- Transparent ranking explanations where useful.
+- No paid ranking, sponsored teachers or premium visibility.
 
 Other pending platform work
 ---------------------------

@@ -6,6 +6,7 @@ import {
     Compass,
     MapPin,
     ShieldCheck,
+    Star,
 } from 'lucide-react';
 import type { ComponentType, ReactNode } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -19,6 +20,22 @@ export type PublicLanguage = {
     code: string;
     name: string;
     native_name: string;
+};
+
+export type PublicReputationSummary = {
+    average_rating: number | null;
+    published_review_count: number;
+    completed_sessions_count: number;
+    students_helped_count: number;
+    teaching_hours: number;
+    cancellation_rate: number;
+    no_show_rate: number;
+    reliability_label:
+        | 'new_teacher'
+        | 'excellent'
+        | 'reliable'
+        | 'needs_attention';
+    has_enough_data: boolean;
 };
 
 export type PublicTeacher = {
@@ -37,6 +54,11 @@ export type PublicTeacher = {
     subjects: { name: string; slug: string }[];
     profile_url: string;
     offers_url: string;
+    rating_summary?: {
+        average: number | null;
+        count: number;
+    };
+    reputation_summary?: PublicReputationSummary;
 };
 
 export type PublicOffer = {
@@ -56,6 +78,11 @@ export type PublicOffer = {
         city: string | null;
         country_code: string | null;
         profile_url?: string | null;
+        rating_summary?: {
+            average: number | null;
+            count: number;
+        };
+        reputation_summary?: PublicReputationSummary;
     };
     category: { name: string; slug: string; color: string | null };
     subject: { name: string; slug: string } | null;
@@ -213,10 +240,42 @@ export function TeacherCard({ teacher }: { teacher: PublicTeacher }) {
                                     .join(', ')}
                             </p>
                         )}
+                        {teacher.rating_summary && teacher.rating_summary.count > 0 && (
+                            <p className="mt-1 flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-300">
+                                <Star className="size-3 fill-current" />
+                                {t('reviews.rating_summary_short', {
+                                    rating: teacher.rating_summary.average ?? '-',
+                                    count: teacher.rating_summary.count,
+                                })}
+                            </p>
+                        )}
                     </div>
                 </div>
                 <FreeBadge />
             </div>
+            {teacher.reputation_summary && (
+                <div className="mt-4 flex flex-wrap gap-2 text-xs">
+                    <Badge variant="outline" className="rounded-full">
+                        {t(
+                            `reputation.public_labels.${teacher.reputation_summary.reliability_label}`,
+                        )}
+                    </Badge>
+                    {teacher.reputation_summary.completed_sessions_count > 0 && (
+                        <Badge variant="secondary" className="rounded-full">
+                            {t('reputation.card_completed_sessions', {
+                                count: teacher.reputation_summary.completed_sessions_count,
+                            })}
+                        </Badge>
+                    )}
+                    {teacher.reputation_summary.students_helped_count > 0 && (
+                        <Badge variant="secondary" className="rounded-full">
+                            {t('reputation.card_students_helped', {
+                                count: teacher.reputation_summary.students_helped_count,
+                            })}
+                        </Badge>
+                    )}
+                </div>
+            )}
             <p className="mt-4 line-clamp-2 text-sm leading-6 text-muted-foreground">
                 {teacher.headline ?? teacher.teaching_bio_excerpt ?? t('home.teacher_default_headline')}
             </p>
@@ -303,10 +362,35 @@ export function OfferCard({
                         <p className="truncate text-xs text-muted-foreground">
                             {offer.category.name}
                         </p>
+                        {offer.teacher.rating_summary && offer.teacher.rating_summary.count > 0 && (
+                            <p className="mt-0.5 flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-300">
+                                <Star className="size-3 fill-current" />
+                                {t('reviews.rating_summary_short', {
+                                    rating: offer.teacher.rating_summary.average ?? '-',
+                                    count: offer.teacher.rating_summary.count,
+                                })}
+                            </p>
+                        )}
                     </div>
                 </Link>
                 <FreeBadge />
             </div>
+            {offer.teacher.reputation_summary && (
+                <div className="-mt-1 mb-3 flex flex-wrap gap-2">
+                    <Badge variant="outline" className="rounded-full text-[0.7rem]">
+                        {t(
+                            `reputation.public_labels.${offer.teacher.reputation_summary.reliability_label}`,
+                        )}
+                    </Badge>
+                    {offer.teacher.reputation_summary.completed_sessions_count > 0 && (
+                        <Badge variant="secondary" className="rounded-full text-[0.7rem]">
+                            {t('reputation.card_completed_sessions', {
+                                count: offer.teacher.reputation_summary.completed_sessions_count,
+                            })}
+                        </Badge>
+                    )}
+                </div>
+            )}
             <div className="mb-3 flex flex-wrap gap-2">
                 {offer.subject && (
                     <Badge variant="outline" className="rounded-full">

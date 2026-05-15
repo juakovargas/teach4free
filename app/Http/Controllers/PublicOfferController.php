@@ -9,12 +9,15 @@ use App\Models\TeachingOffer;
 use App\Models\TeachingOfferApplication;
 use App\Models\TeachingSubject;
 use App\Models\User;
+use App\Services\TeacherReputationService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class PublicOfferController extends Controller
 {
+    public function __construct(private readonly TeacherReputationService $reputations) {}
+
     public function index(Request $request): Response
     {
         $filters = [
@@ -28,6 +31,7 @@ class PublicOfferController extends Controller
             'availability' => $request->string('availability')->toString(),
             'teacher' => $request->string('teacher')->toString(),
             'accepting' => $request->boolean('accepting'),
+            'sort' => $request->string('sort')->toString(),
         ];
 
         $offers = TeachingOffer::query()
@@ -59,8 +63,16 @@ class PublicOfferController extends Controller
             ->latest('published_at')
             ->get();
 
+        $reputationSummaries = $this->reputations->forTeachers($offers->pluck('user')->filter()->unique('id'));
+        $offers = $this->sortOffers($offers, $reputationSummaries, $filters['sort']);
+
         return Inertia::render('offers/index', [
-            'offers' => $offers->map(fn (TeachingOffer $offer): array => $this->offerIndexPayload($offer))->values(),
+            'offers' => $offers
+                ->map(fn (TeachingOffer $offer): array => $this->offerIndexPayload(
+                    $offer,
+                    $reputationSummaries[$offer->user_id] ?? null,
+                ))
+                ->values(),
             'filters' => $filters,
             'filteredTeacher' => $filters['teacher']
                 ? User::query()->find($filters['teacher'], ['id', 'name'])
@@ -179,8 +191,10 @@ class PublicOfferController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function offerIndexPayload(TeachingOffer $offer): array
+    private function offerIndexPayload(TeachingOffer $offer, ?array $reputation = null): array
     {
+        $reputation ??= $this->reputations->forTeacher($offer->user);
+
         return [
             'id' => $offer->id,
             'slug' => $offer->slug,
@@ -199,6 +213,11 @@ class PublicOfferController extends Controller
                 'city' => $offer->user->city,
                 'country_code' => $offer->user->country_code,
                 'profile_url' => $offer->user->teacherProfile?->is_active ? route('teachers.show', $offer->user) : null,
+                'rating_summary' => [
+                    'average' => $reputation['average_rating'],
+                    'count' => $reputation['published_review_count'],
+                ],
+                'reputation_summary' => $reputation,
             ],
             'category' => $offer->category,
             'subject' => $offer->subject,
@@ -211,6 +230,8 @@ class PublicOfferController extends Controller
      */
     private function offerShowPayload(TeachingOffer $offer): array
     {
+        $reputation = $this->reputations->forTeacher($offer->user);
+
         return [
             ...$offer->only([
                 'id',
@@ -239,6 +260,11 @@ class PublicOfferController extends Controller
                 'country_code' => $offer->user->country_code,
                 'profile_url' => $offer->user->teacherProfile?->is_active ? route('teachers.show', $offer->user) : null,
                 'headline' => $offer->user->teacherProfile?->headline,
+                'rating_summary' => [
+                    'average' => $reputation['average_rating'],
+                    'count' => $reputation['published_review_count'],
+                ],
+                'reputation_summary' => $reputation,
                 'languages' => $offer->user->userLanguages->map(fn ($userLanguage): array => [
                     'id' => $userLanguage->language->id,
                     'code' => $userLanguage->language->code,
@@ -250,5 +276,21 @@ class PublicOfferController extends Controller
             'subject' => $offer->subject,
             'languages' => $offer->languages,
         ];
+    }
+
+    private function sortOffers($offers, array $reputationSummaries, string $sort)
+    {
+        if ($sort !== 'teacher_rating') {
+            return $offers;
+        }
+
+        return $offers->sort(function (TeachingOffer $first, TeachingOffer $second) use ($reputationSummaries): int {
+            $firstSummary = $reputationSummaries[$first->user_id] ?? [];
+            $secondSummary = $reputationSummaries[$second->user_id] ?? [];
+
+            return (($secondSummary['average_rating'] ?? -1) <=> ($firstSummary['average_rating'] ?? -1))
+                ?: (($secondSummary['published_review_count'] ?? 0) <=> ($firstSummary['published_review_count'] ?? 0))
+                ?: (($second->published_at?->timestamp ?? 0) <=> ($first->published_at?->timestamp ?? 0));
+        });
     }
 }

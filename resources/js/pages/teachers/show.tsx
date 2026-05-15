@@ -1,17 +1,23 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import {
     ArrowLeft,
     CalendarClock,
     Clock,
+    EllipsisVertical,
+    Flag,
     Globe2,
     GraduationCap,
     HandHeart,
     Languages,
     MapPin,
     ShieldCheck,
+    Star,
     Users,
 } from 'lucide-react';
+import type { FormEvent } from 'react';
 import type { ComponentType } from 'react';
+import { useState } from 'react';
+import InputError from '@/components/input-error';
 import {
     EmptyState,
     LanguageBadge,
@@ -20,11 +26,30 @@ import {
 import type {
     PublicLanguage,
     PublicOffer,
+    PublicReputationSummary,
     PublicTeacher,
 } from '@/components/public/public-identity';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/hooks/use-translation';
 
 type Availability = {
@@ -46,13 +71,37 @@ type Teacher = PublicTeacher & {
     availability: Availability[];
 };
 
+type ReviewSummary = {
+    average: number | null;
+    count: number;
+    distribution: Record<string, number>;
+};
+
+type Review = {
+    id: number;
+    rating: number;
+    title: string | null;
+    comment: string | null;
+    teacher_response: string | null;
+    teacher_responded_at: string | null;
+    created_at: string | null;
+    can_report: boolean;
+    student: { name: string | null; avatar?: string | null };
+    session: { title: string; starts_at: string | null } | null;
+    offer: { title: string; slug: string } | null;
+};
+
 type Props = {
     teacher: Teacher;
+    reputationSummary: PublicReputationSummary;
+    reviewSummary: ReviewSummary;
+    reviews: Review[];
+    reviewReportTypes: string[];
     offers: PublicOffer[];
     openOffers: PublicOffer[];
 };
 
-export default function TeacherShow({ teacher, offers, openOffers }: Props) {
+export default function TeacherShow({ teacher, reputationSummary, reviewSummary, reviews, reviewReportTypes, offers, openOffers }: Props) {
     const { t } = useTranslation();
     const location = [teacher.city, teacher.country_code].filter(Boolean).join(', ');
 
@@ -141,6 +190,18 @@ export default function TeacherShow({ teacher, offers, openOffers }: Props) {
 
                     <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                         <InfoCard
+                            icon={Star}
+                            label={t('reviews.average_rating')}
+                            value={
+                                reviewSummary.count > 0
+                                    ? t('reviews.rating_summary_short', {
+                                          rating: reviewSummary.average ?? '-',
+                                          count: reviewSummary.count,
+                                      })
+                                    : t('reviews.no_reviews_short')
+                            }
+                        />
+                        <InfoCard
                             icon={Languages}
                             label={t('teachers.teaching_languages')}
                             value={teacher.languages
@@ -173,6 +234,8 @@ export default function TeacherShow({ teacher, offers, openOffers }: Props) {
                             value={String(teacher.active_offers_count)}
                         />
                     </section>
+
+                    <ReputationSummaryPanel summary={reputationSummary} />
 
                     <section className="grid gap-6 lg:grid-cols-[1fr_22rem]">
                         <article className="space-y-6 rounded-lg border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
@@ -290,6 +353,34 @@ export default function TeacherShow({ teacher, offers, openOffers }: Props) {
                     )}
 
                     <section className="space-y-6">
+                        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                            <div>
+                                <p className="text-sm font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
+                                    {t('reviews.public_eyebrow')}
+                                </p>
+                                <h2 className="mt-2 text-2xl font-semibold">
+                                    {t('reviews.public_title')}
+                                </h2>
+                                <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
+                                    {t('reviews.public_intro')}
+                                </p>
+                            </div>
+                            <RatingSummary summary={reviewSummary} />
+                        </div>
+                        {reviews.length === 0 ? (
+                            <EmptyState title={t('reviews.no_reviews_title')}>
+                                {t('reviews.no_reviews_body')}
+                            </EmptyState>
+                        ) : (
+                            <div className="grid gap-4 lg:grid-cols-2">
+                                {reviews.map((review) => (
+                                    <ReviewCard key={review.id} review={review} reportTypes={reviewReportTypes} />
+                                ))}
+                            </div>
+                        )}
+                    </section>
+
+                    <section className="space-y-6">
                         <div>
                             <p className="text-sm font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
                                 {t('teachers.offers_eyebrow')}
@@ -313,6 +404,257 @@ export default function TeacherShow({ teacher, offers, openOffers }: Props) {
                 </div>
             </div>
         </>
+    );
+}
+
+function ReputationSummaryPanel({ summary }: { summary: PublicReputationSummary }) {
+    const { t } = useTranslation();
+    const metrics = [
+        {
+            icon: Star,
+            label: t('reputation.average_rating'),
+            value:
+                summary.published_review_count > 0
+                    ? t('reviews.rating_summary_short', {
+                          rating: summary.average_rating ?? '-',
+                          count: summary.published_review_count,
+                      })
+                    : t('reviews.no_reviews_short'),
+        },
+        {
+            icon: CalendarClock,
+            label: t('reputation.completed_sessions'),
+            value: String(summary.completed_sessions_count),
+        },
+        {
+            icon: Users,
+            label: t('reputation.students_helped'),
+            value: String(summary.students_helped_count),
+        },
+        {
+            icon: Clock,
+            label: t('reputation.teaching_hours'),
+            value: t('reputation.hours_value', {
+                count: summary.teaching_hours,
+            }),
+        },
+        {
+            icon: ShieldCheck,
+            label: t('reputation.cancellation_rate'),
+            value: t('reputation.percentage_value', {
+                value: summary.cancellation_rate,
+            }),
+        },
+        {
+            icon: ShieldCheck,
+            label: t('reputation.no_show_rate'),
+            value: t('reputation.percentage_value', {
+                value: summary.no_show_rate,
+            }),
+        },
+    ];
+
+    return (
+        <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div>
+                    <p className="text-sm font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
+                        {t('reputation.public_eyebrow')}
+                    </p>
+                    <h2 className="mt-2 text-2xl font-semibold">
+                        {t('reputation.public_title')}
+                    </h2>
+                    <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
+                        {summary.has_enough_data
+                            ? t('reputation.public_intro')
+                            : t('reputation.new_teacher_public_body')}
+                    </p>
+                </div>
+                <Badge variant="outline" className="w-fit rounded-full px-3 py-1 text-sm">
+                    {t(`reputation.public_labels.${summary.reliability_label}`)}
+                </Badge>
+            </div>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {metrics.map((metric) => (
+                    <div
+                        key={metric.label}
+                        className="rounded-md border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950"
+                    >
+                        <metric.icon className="mb-3 size-4 text-emerald-700 dark:text-emerald-300" />
+                        <p className="text-xs font-medium uppercase text-muted-foreground">
+                            {metric.label}
+                        </p>
+                        <p className="mt-1 text-sm font-semibold">{metric.value}</p>
+                    </div>
+                ))}
+            </div>
+            <p className="mt-4 text-xs leading-5 text-muted-foreground">
+                {t('reputation.public_help_body')}
+            </p>
+        </section>
+    );
+}
+
+function RatingSummary({ summary }: { summary: ReviewSummary }) {
+    const { t } = useTranslation();
+
+    return (
+        <div className="min-w-64 rounded-lg border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex items-center gap-3">
+                <div className="flex size-11 items-center justify-center rounded-lg bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
+                    <Star className="size-5 fill-current" />
+                </div>
+                <div>
+                    <p className="text-2xl font-semibold">{summary.average ?? '-'}</p>
+                    <p className="text-xs text-muted-foreground">{t('reviews.review_count', { count: summary.count })}</p>
+                </div>
+            </div>
+            <div className="mt-4 grid gap-1">
+                {[5, 4, 3, 2, 1].map((rating) => (
+                    <div key={rating} className="grid grid-cols-[2.5rem_1fr_2rem] items-center gap-2 text-xs text-muted-foreground">
+                        <span>{rating} <Star className="inline size-3 fill-current text-amber-500" /></span>
+                        <span className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                            <span
+                                className="block h-full rounded-full bg-amber-500"
+                                style={{ width: `${summary.count > 0 ? ((summary.distribution[String(rating)] ?? 0) / summary.count) * 100 : 0}%` }}
+                            />
+                        </span>
+                        <span className="text-right">{summary.distribution[String(rating)] ?? 0}</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function ReviewCard({ review, reportTypes }: { review: Review; reportTypes: string[] }) {
+    const { t } = useTranslation();
+    const [reportOpen, setReportOpen] = useState(false);
+
+    return (
+        <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+            <ReportReviewDialog reviewId={review.id} open={reportOpen} reportTypes={reportTypes} onOpenChange={setReportOpen} />
+            <div className="flex items-start justify-between gap-4">
+                <div>
+                    <div className="flex gap-1 text-amber-500">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                            <Star key={star} className={`size-4 ${star <= review.rating ? 'fill-current' : ''}`} />
+                        ))}
+                    </div>
+                    <h3 className="mt-2 font-semibold">{review.title ?? t('reviews.untitled_review')}</h3>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                        {review.student.name ?? t('common.not_applicable')} / {review.created_at ? new Date(review.created_at).toLocaleDateString() : '-'}
+                    </p>
+                </div>
+                {review.can_report && (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" aria-label={t('reviews.review_actions')}>
+                                <EllipsisVertical className="size-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                                onSelect={(event) => {
+                                    event.preventDefault();
+                                    setReportOpen(true);
+                                }}
+                            >
+                                <Flag />
+                                {t('reviews.report_review')}
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )}
+            </div>
+            {review.comment && (
+                <p className="mt-4 whitespace-pre-line text-sm leading-6 text-muted-foreground">{review.comment}</p>
+            )}
+            {review.offer && (
+                <Link href={`/offers/${review.offer.slug}`} className="mt-3 inline-block text-xs font-medium text-emerald-700 hover:underline dark:text-emerald-300">
+                    {review.offer.title}
+                </Link>
+            )}
+            {review.teacher_response && (
+                <div className="mt-4 rounded-lg border border-emerald-100 bg-emerald-50/70 p-4 text-sm leading-6 text-emerald-950 dark:border-emerald-900/60 dark:bg-emerald-950/20 dark:text-emerald-100">
+                    <p className="font-semibold">{t('reviews.teacher_response')}</p>
+                    <p className="mt-2 whitespace-pre-line">{review.teacher_response}</p>
+                </div>
+            )}
+        </article>
+    );
+}
+
+function ReportReviewDialog({
+    reviewId,
+    open,
+    reportTypes,
+    onOpenChange,
+}: {
+    reviewId: number;
+    open: boolean;
+    reportTypes: string[];
+    onOpenChange: (open: boolean) => void;
+}) {
+    const { t } = useTranslation();
+    const form = useForm({ type: 'abusive_language', description: '' });
+
+    const submit = (event: FormEvent) => {
+        event.preventDefault();
+        form.post(`/reviews/${reviewId}/report`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                form.reset('description');
+                onOpenChange(false);
+            },
+        });
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>{t('reviews.report_review')}</DialogTitle>
+                    <DialogDescription>{t('reviews.report_intro')}</DialogDescription>
+                </DialogHeader>
+                <form onSubmit={submit} className="grid gap-4">
+                    <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm leading-6 text-muted-foreground dark:border-slate-800 dark:bg-slate-950">
+                        {t('reviews.responsible_report_warning')}
+                    </div>
+                    <div className="grid gap-2">
+                        <Label>{t('reviews.report_type')}</Label>
+                        <Select value={form.data.type} onValueChange={(value) => form.setData('type', value)}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                {reportTypes.map((type) => (
+                                    <SelectItem key={type} value={type}>{t(`review_report_types.${type}`)}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <InputError message={form.errors.type} />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="review-report-description">{t('reviews.report_description')}</Label>
+                        <Textarea
+                            id="review-report-description"
+                            value={form.data.description}
+                            onChange={(event) => form.setData('description', event.target.value)}
+                            rows={4}
+                        />
+                        <InputError message={form.errors.description} />
+                    </div>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button type="button" variant="outline">{t('actions.cancel')}</Button>
+                        </DialogClose>
+                        <Button disabled={form.processing}>
+                            <Flag />
+                            {t('reviews.submit_report')}
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }
 

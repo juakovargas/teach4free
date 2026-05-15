@@ -3,7 +3,7 @@ import { FilterX, Search, Sparkles } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useState } from 'react';
 import { EmptyState, OfferCard } from '@/components/public/public-identity';
-import type { PublicOffer } from '@/components/public/public-identity';
+import type { PublicOffer, PublicReputationSummary } from '@/components/public/public-identity';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -50,6 +50,8 @@ type Offer = {
         city?: string | null;
         country_code?: string | null;
         profile_url?: string | null;
+        rating_summary?: { average: number | null; count: number };
+        reputation_summary?: PublicReputationSummary;
     };
     category: Category;
     subject: { name: string; slug: string } | null;
@@ -67,6 +69,7 @@ type Filters = {
     availability: string;
     teacher: string;
     accepting: boolean;
+    sort: string;
 };
 
 type Props = {
@@ -165,6 +168,7 @@ export default function PublicOffers({
                     <FilterSelect label={t('offers.level')} value={data.level} onChange={(value) => setData({ ...data, level: value === 'all' ? '' : value })} allLabel={t('offers.all_levels')} options={levels.map((level) => [level, t(`offer_levels.${level}`)])} />
                     <FilterSelect label={t('offers.mode')} value={data.teaching_mode} onChange={(value) => setData({ ...data, teaching_mode: value === 'all' ? '' : value })} allLabel={t('offers.all_modes')} options={teachingModes.map((mode) => [mode, t(`learning_modes.${mode}`)])} />
                     <FilterSelect label={t('offers.session_type')} value={data.session_type} onChange={(value) => setData({ ...data, session_type: value === 'all' ? '' : value })} allLabel={t('offers.all_session_types')} options={sessionTypes.map((type) => [type, t(`session_types.${type}`)])} />
+                    <FilterSelect label={t('offers.sort')} value={data.sort} onChange={(value) => setData({ ...data, sort: value === 'all' ? '' : value })} allLabel={t('offer_sorts.newest')} options={[['teacher_rating', t('offer_sorts.teacher_rating')]]} />
                     <div className="space-y-2">
                         <Label htmlFor="availability">{t('offers.availability')}</Label>
                         <Input id="availability" value={data.availability} onChange={(event) => setData({ ...data, availability: event.target.value })} />
@@ -214,6 +218,8 @@ function toPublicOffer(offer: Offer): PublicOffer {
             city: offer.user.city ?? null,
             country_code: offer.user.country_code ?? null,
             profile_url: offer.user.profile_url,
+            rating_summary: offer.user.rating_summary,
+            reputation_summary: offer.user.reputation_summary,
         },
         url: `/offers/${offer.slug}`,
     };

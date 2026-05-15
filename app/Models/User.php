@@ -236,6 +236,30 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * @return HasMany<TeacherReview, $this>
+     */
+    public function receivedTeacherReviews(): HasMany
+    {
+        return $this->hasMany(TeacherReview::class, 'teacher_user_id');
+    }
+
+    /**
+     * @return HasMany<TeacherReview, $this>
+     */
+    public function submittedTeacherReviews(): HasMany
+    {
+        return $this->hasMany(TeacherReview::class, 'student_user_id');
+    }
+
+    /**
+     * @return HasMany<ReviewReport, $this>
+     */
+    public function submittedReviewReports(): HasMany
+    {
+        return $this->hasMany(ReviewReport::class, 'reporter_user_id');
+    }
+
+    /**
      * @return HasMany<Incident, $this>
      */
     public function reportedIncidents(): HasMany

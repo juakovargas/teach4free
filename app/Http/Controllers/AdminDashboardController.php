@@ -6,8 +6,10 @@ use App\Models\ClassSession;
 use App\Models\ConversationReport;
 use App\Models\Incident;
 use App\Models\Language;
+use App\Models\ReviewReport;
 use App\Models\StudentProfile;
 use App\Models\TeacherProfile;
+use App\Models\TeacherReview;
 use App\Models\TeachingCategory;
 use App\Models\TeachingOffer;
 use App\Models\TeachingOfferApplication;
@@ -25,6 +27,8 @@ class AdminDashboardController extends Controller
         $lastWeek = now()->subDays(7);
         $hasConversationReports = Schema::hasTable('conversation_reports');
         $hasIncidents = Schema::hasTable('incidents');
+        $hasTeacherReviews = Schema::hasTable('teacher_reviews');
+        $hasReviewReports = Schema::hasTable('review_reports');
         $hasIncidentPublicResponses = $hasIncidents && Schema::hasColumn('incidents', 'public_response');
         $hasConversationReportPublicResponses = $hasConversationReports && Schema::hasColumn('conversation_reports', 'public_response');
         $hasNotifications = Schema::hasTable('notifications');
@@ -70,12 +74,27 @@ class AdminDashboardController extends Controller
                 'open_conversation_reports' => $hasConversationReports ? ConversationReport::query()
                     ->where('status', ConversationReport::STATUS_OPEN)
                     ->count() : 0,
+                'open_review_reports' => $hasReviewReports ? ReviewReport::query()
+                    ->where('status', ReviewReport::STATUS_OPEN)
+                    ->count() : 0,
                 'pending_moderation' => ($hasIncidents ? Incident::query()
                     ->where('status', Incident::STATUS_OPEN)
                     ->count() : 0)
                     + ($hasConversationReports ? ConversationReport::query()
                         ->where('status', ConversationReport::STATUS_OPEN)
+                        ->count() : 0)
+                    + ($hasReviewReports ? ReviewReport::query()
+                        ->where('status', ReviewReport::STATUS_OPEN)
                         ->count() : 0),
+                'reported_reviews' => $hasTeacherReviews ? TeacherReview::query()
+                    ->where('reported_count', '>', 0)
+                    ->count() : 0,
+                'hidden_reviews' => $hasTeacherReviews ? TeacherReview::query()
+                    ->where('status', TeacherReview::STATUS_HIDDEN)
+                    ->count() : 0,
+                'low_rated_reviews' => $hasTeacherReviews ? TeacherReview::query()
+                    ->whereIn('rating', [1, 2])
+                    ->count() : 0,
                 'reports_awaiting_response' => ($hasIncidentPublicResponses ? Incident::query()
                     ->whereNotNull('reporter_user_id')
                     ->whereIn('status', Incident::STATUSES)
@@ -103,7 +122,7 @@ class AdminDashboardController extends Controller
                     ->whereBetween('starts_at', [now(), now()->addWeek()])
                     ->count() : 0,
                 'reports' => $hasIncidents ? Incident::query()->count() : 0,
-                'reviews' => 0,
+                'reviews' => $hasTeacherReviews ? TeacherReview::query()->count() : 0,
             ],
             'growth' => [
                 'new_users' => User::query()->where('created_at', '>=', $lastWeek)->count(),

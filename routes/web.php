@@ -11,6 +11,9 @@ use App\Http\Controllers\Admin\IncidentController as AdminIncidentController;
 use App\Http\Controllers\Admin\LanguageController as AdminLanguageController;
 use App\Http\Controllers\Admin\PlaceholderController as AdminPlaceholderController;
 use App\Http\Controllers\Admin\PlatformSettingsController as AdminPlatformSettingsController;
+use App\Http\Controllers\Admin\ReputationController as AdminReputationController;
+use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
+use App\Http\Controllers\Admin\ReviewReportController as AdminReviewReportController;
 use App\Http\Controllers\Admin\SessionController as AdminSessionController;
 use App\Http\Controllers\Admin\StudentController as AdminStudentController;
 use App\Http\Controllers\Admin\SubjectProposalController as AdminSubjectProposalController;
@@ -35,6 +38,8 @@ use App\Http\Controllers\NotificationPreferenceController;
 use App\Http\Controllers\ProfilePreferencesController;
 use App\Http\Controllers\PublicOfferController;
 use App\Http\Controllers\PublicTeacherController;
+use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\ReviewReportController;
 use App\Http\Controllers\StudentApplicationController;
 use App\Http\Controllers\StudentProfileController;
 use App\Http\Controllers\SupportReportController;
@@ -44,6 +49,7 @@ use App\Http\Controllers\TeacherAvailabilityController;
 use App\Http\Controllers\TeacherOfferController;
 use App\Http\Controllers\TeacherProfileController;
 use App\Http\Controllers\TeacherProposalController;
+use App\Http\Controllers\TeacherReviewController;
 use App\Http\Controllers\TeacherSessionController;
 use Illuminate\Support\Facades\Route;
 
@@ -77,6 +83,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('my-applications/{application}/cancel', [StudentApplicationController::class, 'cancel'])->name('my-applications.cancel');
     Route::get('my-sessions', [MySessionController::class, 'index'])->name('my-sessions.index');
     Route::patch('my-sessions/{session}/cancel', [MySessionController::class, 'cancel'])->name('my-sessions.cancel');
+    Route::get('my-sessions/{session}/review', [ReviewController::class, 'create'])->name('my-sessions.review.create');
+    Route::post('my-sessions/{session}/review', [ReviewController::class, 'store'])->name('my-sessions.review.store');
     Route::get('my-reports', [MyReportController::class, 'index'])->name('my-reports.index');
     Route::get('my-reports/incidents/{incident}', [MyReportController::class, 'showIncident'])->name('my-reports.incidents.show');
     Route::get('my-reports/conversation-reports/{report}', [MyReportController::class, 'showConversationReport'])->name('my-reports.conversation-reports.show');
@@ -91,6 +99,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('messages/{conversation}/archive', [ConversationController::class, 'archive'])->name('messages.archive');
     Route::post('messages/{conversation}/report', [ConversationController::class, 'report'])->name('messages.report');
     Route::post('messages/{conversation}/messages/{message}/report', [ConversationController::class, 'reportMessage'])->name('messages.messages.report');
+    Route::post('reviews/{review}/report', [ReviewReportController::class, 'store'])->name('reviews.report');
     Route::post('admin/impersonation/stop', [AdminImpersonationController::class, 'stop'])->name('admin.impersonation.stop');
 
     Route::get('profile/preferences', [ProfilePreferencesController::class, 'edit'])->name('profile.preferences.edit');
@@ -127,6 +136,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch('sessions/{session}/complete', [TeacherSessionController::class, 'complete'])->name('sessions.complete');
         Route::patch('sessions/{session}/cancel', [TeacherSessionController::class, 'cancel'])->name('sessions.cancel');
         Route::patch('sessions/{session}/no-show', [TeacherSessionController::class, 'noShow'])->name('sessions.no-show');
+        Route::get('reviews', [TeacherReviewController::class, 'index'])->name('reviews.index');
+        Route::patch('reviews/{review}/response', [TeacherReviewController::class, 'updateResponse'])->name('reviews.response.update');
         Route::resource('offers', TeacherOfferController::class)
             ->except(['show', 'destroy'])
             ->parameters(['offers' => 'offer']);
@@ -152,6 +163,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('cookie-settings', [AdminCookieSettingsController::class, 'edit'])->name('cookie-settings.edit');
             Route::put('cookie-settings', [AdminCookieSettingsController::class, 'update'])->name('cookie-settings.update');
             Route::get('teachers', [AdminTeacherController::class, 'index'])->name('teachers.index');
+            Route::get('reputation', [AdminReputationController::class, 'index'])->name('reputation.index');
+            Route::get('reputation/teachers', [AdminReputationController::class, 'index'])->name('reputation.teachers');
             Route::get('students', [AdminStudentController::class, 'index'])->name('students.index');
             Route::resource('users', AdminUserController::class)
                 ->only(['index', 'show', 'update']);
@@ -169,6 +182,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('conversation-reports', [AdminConversationReportController::class, 'index'])->name('conversation-reports.index');
             Route::get('conversation-reports/{report}', [AdminConversationReportController::class, 'show'])->name('conversation-reports.show');
             Route::patch('conversation-reports/{report}', [AdminConversationReportController::class, 'update'])->name('conversation-reports.update');
+            Route::get('reviews', [AdminReviewController::class, 'index'])->name('reviews.index');
+            Route::get('reviews/{review}', [AdminReviewController::class, 'show'])->name('reviews.show');
+            Route::patch('reviews/{review}', [AdminReviewController::class, 'update'])->name('reviews.update');
+            Route::get('review-reports', [AdminReviewReportController::class, 'index'])->name('review-reports.index');
+            Route::get('review-reports/{report}', [AdminReviewReportController::class, 'show'])->name('review-reports.show');
+            Route::patch('review-reports/{report}', [AdminReviewReportController::class, 'update'])->name('review-reports.update');
             Route::resource('languages', AdminLanguageController::class)
                 ->except(['show', 'destroy']);
             Route::resource('categories', AdminTeachingCategoryController::class)

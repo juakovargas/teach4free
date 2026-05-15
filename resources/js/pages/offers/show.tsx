@@ -1,8 +1,9 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { ArrowLeft, CalendarClock, Clock, ExternalLink, GraduationCap, Languages, Users } from 'lucide-react';
+import { ArrowLeft, CalendarClock, Clock, ExternalLink, GraduationCap, Languages, Star, Users } from 'lucide-react';
 import type { FormEvent } from 'react';
 import type { ComponentType } from 'react';
 import InputError from '@/components/input-error';
+import type { PublicReputationSummary } from '@/components/public/public-identity';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -39,6 +40,8 @@ type Offer = {
         country_code?: string | null;
         profile_url?: string | null;
         headline?: string | null;
+        rating_summary?: { average: number | null; count: number };
+        reputation_summary?: PublicReputationSummary;
         languages?: { id: number; code: string; name: string }[];
     };
     category: { name: string; color: string | null };
@@ -140,6 +143,29 @@ export default function PublicOfferShow({ offer, seatSummary, currentApplication
                                 <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">
                                     {offer.user.headline ?? t('home.teacher_default_headline')}
                                 </p>
+                                {offer.user.rating_summary && offer.user.rating_summary.count > 0 && (
+                                    <p className="mt-1 flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-300">
+                                        <Star className="size-3 fill-current" />
+                                        {t('reviews.rating_summary_short', {
+                                            rating: offer.user.rating_summary.average ?? '-',
+                                            count: offer.user.rating_summary.count,
+                                        })}
+                                    </p>
+                                )}
+                                {offer.user.reputation_summary && (
+                                    <div className="mt-2 flex flex-wrap gap-1">
+                                        <Badge variant="outline" className="text-[0.7rem]">
+                                            {t(`reputation.public_labels.${offer.user.reputation_summary.reliability_label}`)}
+                                        </Badge>
+                                        {offer.user.reputation_summary.completed_sessions_count > 0 && (
+                                            <Badge variant="secondary" className="text-[0.7rem]">
+                                                {t('reputation.card_completed_sessions', {
+                                                    count: offer.user.reputation_summary.completed_sessions_count,
+                                                })}
+                                            </Badge>
+                                        )}
+                                    </div>
+                                )}
                                 {teacherLocation && <p className="mt-1 text-xs text-muted-foreground">{teacherLocation}</p>}
                                 {offer.user.languages && offer.user.languages.length > 0 && (
                                     <div className="mt-2 flex flex-wrap gap-1">

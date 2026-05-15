@@ -12,6 +12,7 @@ import {
     Settings,
     ShieldAlert,
     Shield,
+    Star,
 } from 'lucide-react';
 import {
     DropdownMenuGroup,
@@ -146,6 +147,17 @@ export function UserMenuContent({ user }: Props) {
                     >
                         <CalendarDays className="mr-2" />
                         {t('navigation.teacher_sessions')}
+                    </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                    <Link
+                        className="block w-full cursor-pointer"
+                        href="/teacher/reviews"
+                        prefetch
+                        onClick={cleanup}
+                    >
+                        <Star className="mr-2" />
+                        {t('navigation.teacher_reviews')}
                     </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>

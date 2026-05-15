@@ -84,6 +84,14 @@ class ClassSession extends Model
     }
 
     /**
+     * @return HasMany<TeacherReview, $this>
+     */
+    public function teacherReviews(): HasMany
+    {
+        return $this->hasMany(TeacherReview::class);
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array

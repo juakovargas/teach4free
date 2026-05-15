@@ -180,6 +180,14 @@ class TeachingOffer extends Model
         return $this->hasMany(ClassSession::class);
     }
 
+    /**
+     * @return HasMany<TeacherReview, $this>
+     */
+    public function teacherReviews(): HasMany
+    {
+        return $this->hasMany(TeacherReview::class);
+    }
+
     public function acceptedApplicationsCount(): int
     {
         return $this->applications()

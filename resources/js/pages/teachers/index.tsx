@@ -43,6 +43,7 @@ type Filters = {
     subject: string;
     country: string;
     availability: string;
+    sort: string;
 };
 
 type Props = {
@@ -202,6 +203,23 @@ export default function TeachersIndex({
                                 }
                             />
                         </div>
+                        <FilterSelect
+                            label={t('teachers.sort')}
+                            value={data.sort}
+                            onChange={(value) =>
+                                setData({
+                                    ...data,
+                                    sort: value === 'all' ? '' : value,
+                                })
+                            }
+                            allLabel={t('teacher_sorts.featured')}
+                            options={[
+                                ['highest_rated', t('teacher_sorts.highest_rated')],
+                                ['most_reviewed', t('teacher_sorts.most_reviewed')],
+                                ['most_sessions', t('teacher_sorts.most_sessions')],
+                                ['new_teachers', t('teacher_sorts.new_teachers')],
+                            ]}
+                        />
                         <div className="flex items-end gap-2 md:col-span-4">
                             <Button>
                                 <Search />

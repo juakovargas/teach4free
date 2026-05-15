@@ -34,6 +34,7 @@ declare module '@inertiajs/core' {
             admin_moderation: {
                 open_incidents: number;
                 open_conversation_reports: number;
+                open_review_reports: number;
                 pending_moderation: number;
                 reports_awaiting_response: number;
             };

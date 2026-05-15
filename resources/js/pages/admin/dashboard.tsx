@@ -37,8 +37,12 @@ type Stats = {
     open_incidents: number;
     incidents_pending_review: number;
     open_conversation_reports: number;
+    open_review_reports: number;
     pending_moderation: number;
     reports_awaiting_response: number;
+    reported_reviews: number;
+    hidden_reviews: number;
+    low_rated_reviews: number;
     banned_users: number;
     blocked_users: number;
     active_languages: number;
@@ -136,6 +140,10 @@ export default function AdminDashboard({ stats, growth, activity, world }: Props
         { label: t('admin.pending_moderation'), value: stats.pending_moderation, icon: ShieldAlert, href: '/admin/incidents?status=open' },
         { label: t('admin.open_incidents'), value: stats.open_incidents, icon: ShieldAlert, href: '/admin/incidents?status=open' },
         { label: t('admin.open_reports'), value: stats.open_conversation_reports, icon: MessageSquareWarning, href: '/admin/conversation-reports?status=open' },
+        { label: t('admin.open_review_reports'), value: stats.open_review_reports, icon: MessageSquareWarning, href: '/admin/review-reports?status=open' },
+        { label: t('admin.reported_reviews'), value: stats.reported_reviews, icon: Flag, href: '/admin/reviews?reported=reported' },
+        { label: t('admin.hidden_reviews'), value: stats.hidden_reviews, icon: Flag, href: '/admin/reviews?status=hidden' },
+        { label: t('admin.low_rated_reviews'), value: stats.low_rated_reviews, icon: Flag, href: '/admin/reviews?low=1' },
         { label: t('admin.reports'), value: stats.reports, icon: MessageSquareWarning, href: '/admin/reports' },
         { label: t('admin.incidents_pending_review'), value: stats.incidents_pending_review, icon: ShieldAlert, href: '/admin/incidents' },
         { label: t('admin.reports_awaiting_response'), value: stats.reports_awaiting_response, icon: MessageSquareWarning, href: '/admin/incidents' },

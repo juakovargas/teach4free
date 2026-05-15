@@ -1,5 +1,5 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { CalendarDays, ExternalLink, XCircle } from 'lucide-react';
+import { CalendarDays, ExternalLink, Star, XCircle } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { ContextualHelp } from '@/components/contextual-help';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -24,6 +24,13 @@ type SessionRow = {
         conversation_id: number | null;
         offer: { title: string; slug: string };
         teacher: { name: string; email: string; avatar?: string | null };
+    };
+    review: {
+        can_review: boolean;
+        submitted: boolean;
+        id: number | null;
+        status: string | null;
+        rating: number | null;
     };
 };
 
@@ -58,7 +65,7 @@ export default function MySessions({ sessions }: Props) {
 
                 <section className="grid gap-4">
                     {sessions.length === 0 && <Empty>{t('sessions.empty_student')}</Empty>}
-                    {sessions.map(({ session, attendance_status, can_cancel }) => (
+                    {sessions.map(({ session, attendance_status, can_cancel, review }) => (
                         <article key={session.id} className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
                             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                                 <div className="space-y-3">
@@ -101,6 +108,20 @@ export default function MySessions({ sessions }: Props) {
                                                 {t('messages.open_session_conversation')}
                                             </Link>
                                         </Button>
+                                    )}
+                                    {review.can_review && (
+                                        <Button asChild>
+                                            <Link href={`/my-sessions/${session.id}/review`}>
+                                                <Star />
+                                                {t('reviews.leave_review')}
+                                            </Link>
+                                        </Button>
+                                    )}
+                                    {review.submitted && (
+                                        <Badge variant="outline" className="h-10 px-3 py-2">
+                                            <Star className="mr-1 size-3 fill-current text-amber-500" />
+                                            {t('reviews.review_submitted')}
+                                        </Badge>
                                     )}
                                     {can_cancel && (
                                         <Button variant="outline" onClick={() => router.patch(`/my-sessions/${session.id}/cancel`, {}, { preserveScroll: true })}>

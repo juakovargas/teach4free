@@ -6,6 +6,7 @@ use App\Models\ConversationReport;
 use App\Models\CookieSetting;
 use App\Models\Incident;
 use App\Models\PlatformTrackingSetting;
+use App\Models\ReviewReport;
 use App\Models\User;
 use App\Services\ConversationService;
 use Illuminate\Http\Request;
@@ -137,6 +138,7 @@ class HandleInertiaRequests extends Middleware
             return [
                 'open_incidents' => 0,
                 'open_conversation_reports' => 0,
+                'open_review_reports' => 0,
                 'pending_moderation' => 0,
                 'reports_awaiting_response' => 0,
             ];
@@ -144,11 +146,15 @@ class HandleInertiaRequests extends Middleware
 
         $hasIncidents = Schema::hasTable('incidents');
         $hasConversationReports = Schema::hasTable('conversation_reports');
+        $hasReviewReports = Schema::hasTable('review_reports');
         $openIncidents = $hasIncidents
             ? Incident::query()->where('status', Incident::STATUS_OPEN)->count()
             : 0;
         $openConversationReports = $hasConversationReports
             ? ConversationReport::query()->where('status', ConversationReport::STATUS_OPEN)->count()
+            : 0;
+        $openReviewReports = $hasReviewReports
+            ? ReviewReport::query()->where('status', ReviewReport::STATUS_OPEN)->count()
             : 0;
         $reportsAwaitingResponse = ($hasIncidents && Schema::hasColumn('incidents', 'public_response')
             ? Incident::query()
@@ -168,7 +174,8 @@ class HandleInertiaRequests extends Middleware
         return [
             'open_incidents' => $openIncidents,
             'open_conversation_reports' => $openConversationReports,
-            'pending_moderation' => $openIncidents + $openConversationReports,
+            'open_review_reports' => $openReviewReports,
+            'pending_moderation' => $openIncidents + $openConversationReports + $openReviewReports,
             'reports_awaiting_response' => $reportsAwaitingResponse,
         ];
     }
