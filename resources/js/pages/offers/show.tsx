@@ -2,6 +2,8 @@ import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, CalendarClock, Clock, ExternalLink, GraduationCap, Languages, Star, Users } from 'lucide-react';
 import type { FormEvent } from 'react';
 import type { ComponentType } from 'react';
+import { EarnedBadgePill } from '@/components/badges/badge-display';
+import type { PublicBadge } from '@/components/badges/badge-display';
 import InputError from '@/components/input-error';
 import type { PublicReputationSummary } from '@/components/public/public-identity';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -42,6 +44,8 @@ type Offer = {
         headline?: string | null;
         rating_summary?: { average: number | null; count: number };
         reputation_summary?: PublicReputationSummary;
+        featured_badges?: PublicBadge[];
+        visible_badges_count?: number;
         languages?: { id: number; code: string; name: string }[];
     };
     category: { name: string; color: string | null };
@@ -164,6 +168,13 @@ export default function PublicOfferShow({ offer, seatSummary, currentApplication
                                                 })}
                                             </Badge>
                                         )}
+                                    </div>
+                                )}
+                                {offer.user.featured_badges && offer.user.featured_badges.length > 0 && (
+                                    <div className="mt-2 flex flex-wrap gap-1">
+                                        {offer.user.featured_badges.slice(0, 3).map((badge) => (
+                                            <EarnedBadgePill key={badge.id} badge={badge} />
+                                        ))}
                                     </div>
                                 )}
                                 {teacherLocation && <p className="mt-1 text-xs text-muted-foreground">{teacherLocation}</p>}

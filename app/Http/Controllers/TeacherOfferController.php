@@ -9,6 +9,7 @@ use App\Models\TeacherProfile;
 use App\Models\TeachingCategory;
 use App\Models\TeachingOffer;
 use App\Models\UserLanguage;
+use App\Services\BadgeAwardingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -52,7 +53,7 @@ class TeacherOfferController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, BadgeAwardingService $badges): RedirectResponse
     {
         $teacherProfile = $this->activeTeacherProfile($request);
 
@@ -70,6 +71,7 @@ class TeacherOfferController extends Controller
 
         $offer = TeachingOffer::create($data);
         $offer->languages()->sync($languageIds);
+        $badges->awardForTeacher($request->user());
 
         return redirect()->route('teacher.offers.index')->with('status', __('ui.teacher_offers.created'));
     }
@@ -88,7 +90,7 @@ class TeacherOfferController extends Controller
         ]);
     }
 
-    public function update(Request $request, TeachingOffer $offer): RedirectResponse
+    public function update(Request $request, TeachingOffer $offer, BadgeAwardingService $badges): RedirectResponse
     {
         $this->authorizeOwner($request, $offer);
 
@@ -109,11 +111,12 @@ class TeacherOfferController extends Controller
 
         $offer->update($data);
         $offer->languages()->sync($languageIds);
+        $badges->awardForTeacher($request->user());
 
         return redirect()->route('teacher.offers.index')->with('status', __('ui.teacher_offers.updated'));
     }
 
-    public function publish(Request $request, TeachingOffer $offer): RedirectResponse
+    public function publish(Request $request, TeachingOffer $offer, BadgeAwardingService $badges): RedirectResponse
     {
         $this->authorizeOwner($request, $offer);
 
@@ -126,6 +129,7 @@ class TeacherOfferController extends Controller
             'is_active' => true,
             'published_at' => $offer->published_at ?? now(),
         ])->save();
+        $badges->awardForTeacher($request->user());
 
         return back()->with('status', __('ui.teacher_offers.published'));
     }

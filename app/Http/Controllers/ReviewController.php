@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ClassSession;
 use App\Models\TeacherReview;
 use App\Notifications\TeacherReviewNotification;
+use App\Services\BadgeAwardingService;
 use App\Services\ReviewEligibilityService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -37,7 +38,7 @@ class ReviewController extends Controller
         ]);
     }
 
-    public function store(Request $request, ClassSession $session, ReviewEligibilityService $eligibility): RedirectResponse
+    public function store(Request $request, ClassSession $session, ReviewEligibilityService $eligibility, BadgeAwardingService $badges): RedirectResponse
     {
         $session->load(['offer', 'teacher', 'attendees', 'application']);
 
@@ -69,6 +70,7 @@ class ReviewController extends Controller
             $review,
             TeacherReviewNotification::EVENT_REVIEW_RECEIVED,
         ));
+        $badges->awardForTeacher($session->teacher);
 
         return redirect()->route('my-sessions.index')->with('status', __('ui.reviews.created'));
     }

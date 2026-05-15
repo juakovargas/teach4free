@@ -46,12 +46,15 @@ Current priority order
 ----------------------
 
 1. Session reminders
-2. Badges
+2. Advanced badge/reputation rule configuration
 3. Teacher verification workflow
 4. Public SEO
 5. Public open sessions calendar
 6. Favorites and alerts
-7. Advanced recommendation/ranking engine
+7. Mobile readiness/PWA foundation
+8. Push notifications
+9. Real-time chat
+10. Advanced recommendation/ranking engine
 
 Implemented - Internal messaging / chat first version
 -----------------------------------------------------
@@ -156,7 +159,7 @@ Future reviews and reputation improvements:
 
 - Advanced reputation rules.
 - Reputation rule admin configuration.
-- Badges.
+- Advanced badge/reputation rule configuration.
 - Review analytics.
 - Advanced review abuse detection.
 - External review emails if ever needed.
@@ -207,20 +210,55 @@ Future reputation work:
 
 - Advanced reputation rules.
 - Reputation rule admin configuration.
-- Badges.
+- Advanced badge/reputation rule configuration.
 - Teacher verification workflow.
 - Advanced recommendation/ranking engine.
 
 Badges
 ------
 
-- First class completed.
-- 10 students helped.
-- 50 teaching hours.
-- Reliable teacher.
-- Open knowledge contributor.
-- Subject/category-specific badges.
-- Badge and reputation rule admin screens after basic reputation.
+Implemented:
+
+- badges table.
+- user_badges table.
+- Badge and UserBadge models.
+- First class completed badge.
+- 10 students helped badge.
+- 50 teaching hours badge.
+- Reliable teacher badge.
+- Excellent reviews badge.
+- Open knowledge contributor badge.
+- Programming mentor badge.
+- Language mentor badge.
+- Community helper badge.
+- New teacher badge.
+- Automatic BadgeAwardingService.
+- teach4free:award-badges recalculation command.
+- Internal notification when a badge is first awarded.
+- Teacher badge management page.
+- Teacher control over badge visibility.
+- Up to 3 featured visible badges.
+- Public teacher profile badge section.
+- Compact featured badges on teacher cards and offer teacher boxes.
+- Admin badge definition management.
+- Admin user badge overview.
+- Admin badge revoke/restore moderation.
+- Admin dashboard badge/reputation summary.
+- Demo badge data with featured, hidden and revoked examples.
+- No paid badges, sponsored badges or paid ranking.
+
+Pending:
+
+- Advanced badge/reputation rule configuration.
+- Manual badge awarding with admin reason and audit log if ever needed.
+- Teacher verification workflow.
+- Public SEO.
+- Public open sessions calendar.
+- Favorites and alerts.
+- Mobile readiness/PWA foundation.
+- Push notifications.
+- Real-time chat.
+- Advanced recommendation/ranking engine.
 
 Teacher verification workflow
 -----------------------------

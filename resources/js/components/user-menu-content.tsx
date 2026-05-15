@@ -1,5 +1,6 @@
 import { Link, router } from '@inertiajs/react';
 import {
+    Award,
     BookOpenCheck,
     CalendarClock,
     CalendarDays,
@@ -158,6 +159,17 @@ export function UserMenuContent({ user }: Props) {
                     >
                         <Star className="mr-2" />
                         {t('navigation.teacher_reviews')}
+                    </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                    <Link
+                        className="block w-full cursor-pointer"
+                        href="/profile/teacher/badges"
+                        prefetch
+                        onClick={cleanup}
+                    >
+                        <Award className="mr-2" />
+                        {t('navigation.teacher_badges')}
                     </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>

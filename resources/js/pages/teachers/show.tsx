@@ -17,6 +17,8 @@ import {
 import type { FormEvent } from 'react';
 import type { ComponentType } from 'react';
 import { useState } from 'react';
+import { EarnedBadgeCard } from '@/components/badges/badge-display';
+import type { PublicBadge } from '@/components/badges/badge-display';
 import InputError from '@/components/input-error';
 import {
     EmptyState,
@@ -64,11 +66,24 @@ type Teacher = PublicTeacher & {
     banner: string | null;
     teaching_bio: string | null;
     experience_summary: string | null;
+    public_intro: string | null;
+    profile_accent_color: string | null;
     preferred_teaching_mode: string | null;
     max_students_per_session: number | null;
     default_session_duration_minutes: number | null;
     is_accepting_requests: boolean;
     availability: Availability[];
+    badges: PublicBadge[];
+    visibility: {
+        show_badges: boolean;
+        show_reviews: boolean;
+        show_reputation_summary: boolean;
+        show_completed_sessions_count: boolean;
+        show_students_helped_count: boolean;
+        show_teaching_hours: boolean;
+        show_location: boolean;
+        show_availability_summary: boolean;
+    };
 };
 
 type ReviewSummary = {
@@ -104,6 +119,54 @@ type Props = {
 export default function TeacherShow({ teacher, reputationSummary, reviewSummary, reviews, reviewReportTypes, offers, openOffers }: Props) {
     const { t } = useTranslation();
     const location = [teacher.city, teacher.country_code].filter(Boolean).join(', ');
+    const accentColor = /^#[0-9a-fA-F]{6}$/.test(teacher.profile_accent_color ?? '')
+        ? teacher.profile_accent_color
+        : '#0f766e';
+    const infoCards = [
+        teacher.visibility.show_reviews
+            ? {
+                  icon: Star,
+                  label: t('reviews.average_rating'),
+                  value:
+                      reviewSummary.count > 0
+                          ? t('reviews.rating_summary_short', {
+                                rating: reviewSummary.average ?? '-',
+                                count: reviewSummary.count,
+                            })
+                          : t('reviews.no_reviews_short'),
+              }
+            : null,
+        {
+            icon: Languages,
+            label: t('teachers.teaching_languages'),
+            value: teacher.languages.map((language) => language.name).join(', '),
+        },
+        {
+            icon: Users,
+            label: t('teachers.preferred_mode'),
+            value: teacher.preferred_teaching_mode
+                ? t(`learning_modes.${teacher.preferred_teaching_mode}`)
+                : t('common.not_applicable'),
+        },
+        {
+            icon: Clock,
+            label: t('teachers.default_duration'),
+            value: teacher.default_session_duration_minutes
+                ? t('offers.duration_value', {
+                      minutes: teacher.default_session_duration_minutes,
+                  })
+                : t('common.not_applicable'),
+        },
+        {
+            icon: CalendarClock,
+            label: t('teachers.active_free_classes'),
+            value: String(teacher.active_offers_count),
+        },
+    ].filter(Boolean) as {
+        icon: ComponentType<{ className?: string }>;
+        label: string;
+        value: string;
+    }[];
 
     return (
         <>
@@ -128,7 +191,12 @@ export default function TeacherShow({ teacher, reputationSummary, reviewSummary,
                                     className="h-full w-full object-cover"
                                 />
                             ) : (
-                                <div className="h-full w-full bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.35),transparent_18rem),radial-gradient(circle_at_82%_10%,rgba(245,158,11,0.30),transparent_18rem),linear-gradient(135deg,#064e3b_0%,#0f766e_48%,#78350f_100%)]">
+                                <div
+                                    className="h-full w-full"
+                                    style={{
+                                        background: `radial-gradient(circle at 20% 20%, ${accentColor}55, transparent 18rem), radial-gradient(circle at 82% 10%, rgba(245,158,11,0.30), transparent 18rem), linear-gradient(135deg, #064e3b 0%, ${accentColor} 48%, #78350f 100%)`,
+                                    }}
+                                >
                                     <div className="h-full w-full opacity-25 [background-image:linear-gradient(90deg,rgba(255,255,255,.45)_1px,transparent_1px),linear-gradient(0deg,rgba(255,255,255,.45)_1px,transparent_1px)] [background-size:44px_44px]" />
                                 </div>
                             )}
@@ -161,6 +229,11 @@ export default function TeacherShow({ teacher, reputationSummary, reviewSummary,
                                             {teacher.headline}
                                         </p>
                                     )}
+                                    {teacher.public_intro && (
+                                        <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-300">
+                                            {teacher.public_intro}
+                                        </p>
+                                    )}
                                     {location && (
                                         <p className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
                                             <MapPin className="size-4" />
@@ -189,53 +262,18 @@ export default function TeacherShow({ teacher, reputationSummary, reviewSummary,
                     </section>
 
                     <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                        <InfoCard
-                            icon={Star}
-                            label={t('reviews.average_rating')}
-                            value={
-                                reviewSummary.count > 0
-                                    ? t('reviews.rating_summary_short', {
-                                          rating: reviewSummary.average ?? '-',
-                                          count: reviewSummary.count,
-                                      })
-                                    : t('reviews.no_reviews_short')
-                            }
-                        />
-                        <InfoCard
-                            icon={Languages}
-                            label={t('teachers.teaching_languages')}
-                            value={teacher.languages
-                                .map((language) => language.name)
-                                .join(', ')}
-                        />
-                        <InfoCard
-                            icon={Users}
-                            label={t('teachers.preferred_mode')}
-                            value={
-                                teacher.preferred_teaching_mode
-                                    ? t(`learning_modes.${teacher.preferred_teaching_mode}`)
-                                    : t('common.not_applicable')
-                            }
-                        />
-                        <InfoCard
-                            icon={Clock}
-                            label={t('teachers.default_duration')}
-                            value={
-                                teacher.default_session_duration_minutes
-                                    ? t('offers.duration_value', {
-                                          minutes: teacher.default_session_duration_minutes,
-                                      })
-                                    : t('common.not_applicable')
-                            }
-                        />
-                        <InfoCard
-                            icon={CalendarClock}
-                            label={t('teachers.active_free_classes')}
-                            value={String(teacher.active_offers_count)}
-                        />
+                        {infoCards.map((card) => (
+                            <InfoCard key={card.label} icon={card.icon} label={card.label} value={card.value} />
+                        ))}
                     </section>
 
-                    <ReputationSummaryPanel summary={reputationSummary} />
+                    {teacher.visibility.show_badges && (
+                        <TeacherBadgesSection badges={teacher.badges} />
+                    )}
+
+                    {teacher.visibility.show_reputation_summary && (
+                        <ReputationSummaryPanel summary={reputationSummary} visibility={teacher.visibility} />
+                    )}
 
                     <section className="grid gap-6 lg:grid-cols-[1fr_22rem]">
                         <article className="space-y-6 rounded-lg border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
@@ -292,41 +330,43 @@ export default function TeacherShow({ teacher, reputationSummary, reviewSummary,
                         </article>
 
                         <aside className="space-y-4">
-                            <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-                                <h2 className="font-semibold">
-                                    {t('teachers.availability')}
-                                </h2>
-                                <div className="mt-3 grid gap-2 text-sm">
-                                    {teacher.availability.length === 0 && (
-                                        <p className="text-muted-foreground">
-                                            {t('teachers.no_availability')}
-                                        </p>
-                                    )}
-                                    {teacher.availability.map((block, index) => (
-                                        <div
-                                            key={`${block.day_of_week}-${block.starts_at}-${index}`}
-                                            className="rounded-md bg-slate-50 px-3 py-2 dark:bg-slate-950"
-                                        >
-                                            <div className="flex justify-between gap-3">
-                                                <span>
-                                                    {t(`weekdays.${block.day_of_week}`)}
-                                                </span>
-                                                <span>
-                                                    {block.starts_at} - {block.ends_at}
-                                                </span>
-                                            </div>
-                                            <p className="mt-1 text-xs text-muted-foreground">
-                                                {block.timezone}
+                            {teacher.visibility.show_availability_summary && (
+                                <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+                                    <h2 className="font-semibold">
+                                        {t('teachers.availability')}
+                                    </h2>
+                                    <div className="mt-3 grid gap-2 text-sm">
+                                        {teacher.availability.length === 0 && (
+                                            <p className="text-muted-foreground">
+                                                {t('teachers.no_availability')}
                                             </p>
-                                            {block.notes && (
+                                        )}
+                                        {teacher.availability.map((block, index) => (
+                                            <div
+                                                key={`${block.day_of_week}-${block.starts_at}-${index}`}
+                                                className="rounded-md bg-slate-50 px-3 py-2 dark:bg-slate-950"
+                                            >
+                                                <div className="flex justify-between gap-3">
+                                                    <span>
+                                                        {t(`weekdays.${block.day_of_week}`)}
+                                                    </span>
+                                                    <span>
+                                                        {block.starts_at} - {block.ends_at}
+                                                    </span>
+                                                </div>
                                                 <p className="mt-1 text-xs text-muted-foreground">
-                                                    {block.notes}
+                                                    {block.timezone}
                                                 </p>
-                                            )}
-                                        </div>
-                                    ))}
+                                                {block.notes && (
+                                                    <p className="mt-1 text-xs text-muted-foreground">
+                                                        {block.notes}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                             <div className="rounded-lg border border-emerald-100 bg-emerald-50/70 p-5 text-sm leading-6 text-emerald-950 dark:border-emerald-900/70 dark:bg-emerald-950/20 dark:text-emerald-100">
                                 <Globe2 className="mb-3 size-5" />
                                 {t('teachers.free_rule_note')}
@@ -352,33 +392,35 @@ export default function TeacherShow({ teacher, reputationSummary, reviewSummary,
                         </section>
                     )}
 
-                    <section className="space-y-6">
-                        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-                            <div>
-                                <p className="text-sm font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
-                                    {t('reviews.public_eyebrow')}
-                                </p>
-                                <h2 className="mt-2 text-2xl font-semibold">
-                                    {t('reviews.public_title')}
-                                </h2>
-                                <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-                                    {t('reviews.public_intro')}
-                                </p>
+                    {teacher.visibility.show_reviews && (
+                        <section className="space-y-6">
+                            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                                <div>
+                                    <p className="text-sm font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
+                                        {t('reviews.public_eyebrow')}
+                                    </p>
+                                    <h2 className="mt-2 text-2xl font-semibold">
+                                        {t('reviews.public_title')}
+                                    </h2>
+                                    <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
+                                        {t('reviews.public_intro')}
+                                    </p>
+                                </div>
+                                <RatingSummary summary={reviewSummary} />
                             </div>
-                            <RatingSummary summary={reviewSummary} />
-                        </div>
-                        {reviews.length === 0 ? (
-                            <EmptyState title={t('reviews.no_reviews_title')}>
-                                {t('reviews.no_reviews_body')}
-                            </EmptyState>
-                        ) : (
-                            <div className="grid gap-4 lg:grid-cols-2">
-                                {reviews.map((review) => (
-                                    <ReviewCard key={review.id} review={review} reportTypes={reviewReportTypes} />
-                                ))}
-                            </div>
-                        )}
-                    </section>
+                            {reviews.length === 0 ? (
+                                <EmptyState title={t('reviews.no_reviews_title')}>
+                                    {t('reviews.no_reviews_body')}
+                                </EmptyState>
+                            ) : (
+                                <div className="grid gap-4 lg:grid-cols-2">
+                                    {reviews.map((review) => (
+                                        <ReviewCard key={review.id} review={review} reportTypes={reviewReportTypes} />
+                                    ))}
+                                </div>
+                            )}
+                        </section>
+                    )}
 
                     <section className="space-y-6">
                         <div>
@@ -407,7 +449,58 @@ export default function TeacherShow({ teacher, reputationSummary, reviewSummary,
     );
 }
 
-function ReputationSummaryPanel({ summary }: { summary: PublicReputationSummary }) {
+function TeacherBadgesSection({ badges }: { badges: PublicBadge[] }) {
+    const { t } = useTranslation();
+    const featured = badges.filter((badge) => badge.is_featured);
+    const regular = badges.filter((badge) => !badge.is_featured);
+
+    return (
+        <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                <div>
+                    <p className="text-sm font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
+                        {t('badges.public_eyebrow')}
+                    </p>
+                    <h2 className="mt-2 text-2xl font-semibold">
+                        {t('badges.public_title')}
+                    </h2>
+                    <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
+                        {t('badges.public_intro')}
+                    </p>
+                </div>
+                {featured.length > 0 && (
+                    <Badge variant="outline" className="w-fit rounded-full">
+                        {t('badges.featured_count', { count: featured.length })}
+                    </Badge>
+                )}
+            </div>
+            {badges.length === 0 ? (
+                <div className="mt-5">
+                    <EmptyState title={t('badges.public_empty_title')}>
+                        {t('badges.public_empty_body')}
+                    </EmptyState>
+                </div>
+            ) : (
+                <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {[...featured, ...regular].map((badge) => (
+                        <EarnedBadgeCard key={badge.id} badge={badge} />
+                    ))}
+                </div>
+            )}
+            <p className="mt-4 text-xs leading-5 text-muted-foreground">
+                {t('badges.public_help_body')}
+            </p>
+        </section>
+    );
+}
+
+function ReputationSummaryPanel({
+    summary,
+    visibility,
+}: {
+    summary: PublicReputationSummary;
+    visibility: Teacher['visibility'];
+}) {
     const { t } = useTranslation();
     const metrics = [
         {
@@ -420,16 +513,19 @@ function ReputationSummaryPanel({ summary }: { summary: PublicReputationSummary 
                           count: summary.published_review_count,
                       })
                     : t('reviews.no_reviews_short'),
+            visible: visibility.show_reviews,
         },
         {
             icon: CalendarClock,
             label: t('reputation.completed_sessions'),
             value: String(summary.completed_sessions_count),
+            visible: visibility.show_completed_sessions_count,
         },
         {
             icon: Users,
             label: t('reputation.students_helped'),
             value: String(summary.students_helped_count),
+            visible: visibility.show_students_helped_count,
         },
         {
             icon: Clock,
@@ -437,6 +533,7 @@ function ReputationSummaryPanel({ summary }: { summary: PublicReputationSummary 
             value: t('reputation.hours_value', {
                 count: summary.teaching_hours,
             }),
+            visible: visibility.show_teaching_hours,
         },
         {
             icon: ShieldCheck,
@@ -444,6 +541,7 @@ function ReputationSummaryPanel({ summary }: { summary: PublicReputationSummary 
             value: t('reputation.percentage_value', {
                 value: summary.cancellation_rate,
             }),
+            visible: true,
         },
         {
             icon: ShieldCheck,
@@ -451,8 +549,9 @@ function ReputationSummaryPanel({ summary }: { summary: PublicReputationSummary 
             value: t('reputation.percentage_value', {
                 value: summary.no_show_rate,
             }),
+            visible: true,
         },
-    ];
+    ].filter((metric) => metric.visible !== false);
 
     return (
         <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">

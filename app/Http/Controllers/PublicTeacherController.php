@@ -35,10 +35,15 @@ class PublicTeacherController extends Controller
         $teachers = User::query()
             ->whereHas('teacherProfile', fn (Builder $query) => $query->where('is_active', true))
             ->with([
-                'teacherProfile:id,user_id,headline,teaching_bio,experience_summary,preferred_teaching_mode,is_verified,is_accepting_requests,banner_path,activated_at',
+                'teacherProfile:id,user_id,headline,teaching_bio,experience_summary,preferred_teaching_mode,is_verified,is_accepting_requests,banner_path,activated_at,show_badges,show_location',
                 'userLanguages' => fn ($query) => $query
                     ->where('teaches', true)
                     ->with('language:id,code,name,native_name'),
+                'userBadges' => fn ($query) => $query
+                    ->publiclyVisible()
+                    ->with('badge')
+                    ->orderByDesc('is_featured')
+                    ->orderBy('featured_sort_order'),
                 'teachingOffers' => fn ($query) => $query
                     ->publiclyVisible()
                     ->with(['category:id,name,slug,color', 'subject:id,name,slug'])
@@ -131,10 +136,16 @@ class PublicTeacherController extends Controller
         abort_unless($user->teacherProfile?->is_active, 404);
 
         $user->load([
-            'teacherProfile:id,user_id,headline,teaching_bio,experience_summary,preferred_teaching_mode,max_students_per_session,default_session_duration_minutes,is_verified,is_accepting_requests,banner_path',
+            'teacherProfile:id,user_id,headline,teaching_bio,experience_summary,public_intro,preferred_teaching_mode,max_students_per_session,default_session_duration_minutes,is_verified,is_accepting_requests,banner_path,profile_accent_color,show_badges,show_reviews,show_reputation_summary,show_completed_sessions_count,show_students_helped_count,show_teaching_hours,show_location,show_availability_summary',
             'userLanguages' => fn ($query) => $query
                 ->where('teaches', true)
                 ->with('language:id,code,name,native_name'),
+            'userBadges' => fn ($query) => $query
+                ->publiclyVisible()
+                ->with('badge')
+                ->orderByDesc('is_featured')
+                ->orderBy('featured_sort_order')
+                ->latest('awarded_at'),
             'teacherAvailabilities' => fn ($query) => $query
                 ->where('is_active', true)
                 ->orderBy('day_of_week')
@@ -146,6 +157,8 @@ class PublicTeacherController extends Controller
         ]);
 
         $reputation = $this->reputations->forTeacher($user);
+        $profile = $user->teacherProfile;
+        $showReviews = (bool) $profile?->show_reviews;
 
         return Inertia::render('teachers/show', [
             'teacher' => [
@@ -153,10 +166,23 @@ class PublicTeacherController extends Controller
                 'banner' => $user->teacherProfile?->banner,
                 'teaching_bio' => $user->teacherProfile?->teaching_bio,
                 'experience_summary' => $user->teacherProfile?->experience_summary,
+                'public_intro' => $user->teacherProfile?->public_intro,
+                'profile_accent_color' => $user->teacherProfile?->profile_accent_color,
                 'preferred_teaching_mode' => $user->teacherProfile?->preferred_teaching_mode,
                 'max_students_per_session' => $user->teacherProfile?->max_students_per_session,
                 'default_session_duration_minutes' => $user->teacherProfile?->default_session_duration_minutes,
                 'is_accepting_requests' => (bool) $user->teacherProfile?->is_accepting_requests,
+                'visibility' => [
+                    'show_badges' => (bool) $profile?->show_badges,
+                    'show_reviews' => $showReviews,
+                    'show_reputation_summary' => (bool) $profile?->show_reputation_summary,
+                    'show_completed_sessions_count' => (bool) $profile?->show_completed_sessions_count,
+                    'show_students_helped_count' => (bool) $profile?->show_students_helped_count,
+                    'show_teaching_hours' => (bool) $profile?->show_teaching_hours,
+                    'show_location' => (bool) $profile?->show_location,
+                    'show_availability_summary' => (bool) $profile?->show_availability_summary,
+                ],
+                'badges' => $this->badgePayloads($user),
                 'availability' => $user->teacherAvailabilities->map(fn ($availability): array => [
                     'day_of_week' => $availability->day_of_week,
                     'starts_at' => substr((string) $availability->starts_at, 0, 5),
@@ -167,7 +193,7 @@ class PublicTeacherController extends Controller
             ],
             'reputationSummary' => $reputation,
             'reviewSummary' => $this->ratingSummaryForTeacher($user, $reputation),
-            'reviews' => TeacherReview::query()
+            'reviews' => $showReviews ? TeacherReview::query()
                 ->publiclyVisible()
                 ->where('teacher_user_id', $user->id)
                 ->with(['student:id,name,avatar_path,avatar_url', 'session:id,title,starts_at', 'offer:id,title,slug'])
@@ -195,7 +221,7 @@ class PublicTeacherController extends Controller
                         'title' => $review->offer->title,
                         'slug' => $review->offer->slug,
                     ] : null,
-                ])->values(),
+                ])->values() : [],
             'reviewReportTypes' => ReviewReport::TYPES,
             'offers' => $user->teachingOffers
                 ->map(fn (TeachingOffer $offer): array => $this->offerPayload($offer, $reputation))
@@ -222,8 +248,8 @@ class PublicTeacherController extends Controller
             'initials' => $teacher->initials,
             'headline' => $teacher->teacherProfile?->headline,
             'teaching_bio_excerpt' => str($teacher->teacherProfile?->teaching_bio ?? '')->limit(180)->toString(),
-            'city' => $teacher->city,
-            'country_code' => $teacher->country_code,
+            'city' => $teacher->teacherProfile?->show_location ? $teacher->city : null,
+            'country_code' => $teacher->teacherProfile?->show_location ? $teacher->country_code : null,
             'is_verified' => (bool) $teacher->teacherProfile?->is_verified,
             'active_offers_count' => (int) ($teacher->active_offers_count ?? $offers->count()),
             'rating_summary' => [
@@ -231,6 +257,8 @@ class PublicTeacherController extends Controller
                 'count' => $reputation['published_review_count'],
             ],
             'reputation_summary' => $reputation,
+            'featured_badges' => $this->badgePayloads($teacher, true, 3),
+            'visible_badges_count' => $teacher->teacherProfile?->show_badges ? $teacher->userBadges->count() : 0,
             'languages' => $teacher->userLanguages
                 ->map(fn ($userLanguage): array => [
                     'code' => $userLanguage->language->code,
@@ -322,6 +350,42 @@ class PublicTeacherController extends Controller
                     $rating => (clone $baseQuery)->where('rating', $rating)->count(),
                 ]),
         ];
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, array<string, mixed>>
+     */
+    private function badgePayloads(User $teacher, bool $featuredOnly = false, ?int $limit = null)
+    {
+        if (! $teacher->teacherProfile?->show_badges) {
+            return collect();
+        }
+
+        $badges = $teacher->relationLoaded('userBadges')
+            ? $teacher->userBadges
+            : $teacher->userBadges()
+                ->publiclyVisible()
+                ->with('badge')
+                ->orderByDesc('is_featured')
+                ->orderBy('featured_sort_order')
+                ->latest('awarded_at')
+                ->get();
+
+        $badges = $badges
+            ->when($featuredOnly, fn ($badges) => $badges->where('is_featured', true))
+            ->sortBy([
+                ['is_featured', 'desc'],
+                ['featured_sort_order', 'asc'],
+                ['awarded_at', 'desc'],
+            ]);
+
+        if ($limit !== null) {
+            $badges = $badges->take($limit);
+        }
+
+        return $badges
+            ->map(fn ($badge): array => $badge->publicPayload())
+            ->values();
     }
 
     /**

@@ -121,6 +121,7 @@ const groups: AdminNavGroup[] = [
         labelKey: 'admin_sidebar.gamification',
         items: [
             { labelKey: 'admin_sections.badges', href: '/admin/badges', icon: BadgeCheck },
+            { labelKey: 'admin_sections.user_badges', href: '/admin/user-badges', icon: UserCheck },
             { labelKey: 'admin_sections.reputation_rules', href: '/admin/reputation-rules', icon: UserCheck },
         ],
     },

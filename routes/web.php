@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AnalyticsController as AdminAnalyticsController;
+use App\Http\Controllers\Admin\BadgeController as AdminBadgeController;
 use App\Http\Controllers\Admin\CalendarOverviewController as AdminCalendarOverviewController;
 use App\Http\Controllers\Admin\CategoryProposalController as AdminCategoryProposalController;
 use App\Http\Controllers\Admin\ConversationController as AdminConversationController;
@@ -22,6 +23,7 @@ use App\Http\Controllers\Admin\TeachingCategoryController as AdminTeachingCatego
 use App\Http\Controllers\Admin\TeachingOfferApplicationController as AdminTeachingOfferApplicationController;
 use App\Http\Controllers\Admin\TeachingOfferController as AdminTeachingOfferController;
 use App\Http\Controllers\Admin\TeachingSubjectController as AdminTeachingSubjectController;
+use App\Http\Controllers\Admin\UserBadgeController as AdminUserBadgeController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\WorldMapController as AdminWorldMapController;
 use App\Http\Controllers\AdminDashboardController;
@@ -46,6 +48,7 @@ use App\Http\Controllers\SupportReportController;
 use App\Http\Controllers\TeacherApplicationController;
 use App\Http\Controllers\TeacherApplicationSessionController;
 use App\Http\Controllers\TeacherAvailabilityController;
+use App\Http\Controllers\TeacherBadgeController;
 use App\Http\Controllers\TeacherOfferController;
 use App\Http\Controllers\TeacherProfileController;
 use App\Http\Controllers\TeacherProposalController;
@@ -116,6 +119,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('profile/teacher', [TeacherProfileController::class, 'update'])->name('profile.teacher.update');
     Route::post('profile/teacher/banner', [TeacherProfileController::class, 'updateBanner'])->name('profile.teacher.banner.update');
     Route::delete('profile/teacher/banner', [TeacherProfileController::class, 'destroyBanner'])->name('profile.teacher.banner.destroy');
+    Route::get('profile/teacher/badges', [TeacherBadgeController::class, 'edit'])->name('profile.teacher.badges.edit');
+    Route::put('profile/teacher/badges', [TeacherBadgeController::class, 'update'])->name('profile.teacher.badges.update');
     Route::post('profile/teacher/activate', [TeacherProfileController::class, 'activate'])->name('profile.teacher.activate');
     Route::post('profile/teacher/pause', [TeacherProfileController::class, 'pause'])->name('profile.teacher.pause');
 
@@ -165,6 +170,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('teachers', [AdminTeacherController::class, 'index'])->name('teachers.index');
             Route::get('reputation', [AdminReputationController::class, 'index'])->name('reputation.index');
             Route::get('reputation/teachers', [AdminReputationController::class, 'index'])->name('reputation.teachers');
+            Route::resource('badges', AdminBadgeController::class)
+                ->except(['show', 'destroy']);
+            Route::get('user-badges', [AdminUserBadgeController::class, 'index'])->name('user-badges.index');
+            Route::get('users/{user}/badges', [AdminUserBadgeController::class, 'user'])->name('users.badges.index');
+            Route::post('users/{user}/badges/{badge}/revoke', [AdminUserBadgeController::class, 'revoke'])->name('users.badges.revoke');
+            Route::post('users/{user}/badges/{badge}/restore', [AdminUserBadgeController::class, 'restore'])->name('users.badges.restore');
             Route::get('students', [AdminStudentController::class, 'index'])->name('students.index');
             Route::resource('users', AdminUserController::class)
                 ->only(['index', 'show', 'update']);

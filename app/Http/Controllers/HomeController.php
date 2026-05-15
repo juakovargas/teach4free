@@ -65,7 +65,18 @@ class HomeController extends Controller
     {
         $matchingOffers = TeachingOffer::query()
             ->publiclyVisible()
-            ->with(['user:id,name,avatar_path,avatar_url,city,country_code', 'user.teacherProfile:id,user_id,is_active', 'category:id,name,slug,color', 'subject:id,name,slug', 'languages:id,code,name,native_name'])
+            ->with([
+                'user:id,name,avatar_path,avatar_url,city,country_code',
+                'user.teacherProfile:id,user_id,is_active,show_badges,show_location',
+                'user.userBadges' => fn ($query) => $query
+                    ->publiclyVisible()
+                    ->with('badge')
+                    ->orderByDesc('is_featured')
+                    ->orderBy('featured_sort_order'),
+                'category:id,name,slug,color',
+                'subject:id,name,slug',
+                'languages:id,code,name,native_name',
+            ])
             ->whereHas('languages', fn ($query) => $query->where('code', $locale))
             ->latest('published_at')
             ->limit(6)
@@ -74,7 +85,18 @@ class HomeController extends Controller
         if ($matchingOffers->count() < 6) {
             $fallbackOffers = TeachingOffer::query()
                 ->publiclyVisible()
-                ->with(['user:id,name,avatar_path,avatar_url,city,country_code', 'user.teacherProfile:id,user_id,is_active', 'category:id,name,slug,color', 'subject:id,name,slug', 'languages:id,code,name,native_name'])
+                ->with([
+                    'user:id,name,avatar_path,avatar_url,city,country_code',
+                    'user.teacherProfile:id,user_id,is_active,show_badges,show_location',
+                    'user.userBadges' => fn ($query) => $query
+                        ->publiclyVisible()
+                        ->with('badge')
+                        ->orderByDesc('is_featured')
+                        ->orderBy('featured_sort_order'),
+                    'category:id,name,slug,color',
+                    'subject:id,name,slug',
+                    'languages:id,code,name,native_name',
+                ])
                 ->whereNotIn('id', $matchingOffers->pluck('id'))
                 ->latest('published_at')
                 ->limit(6 - $matchingOffers->count())
@@ -100,7 +122,18 @@ class HomeController extends Controller
     {
         $openOffers = TeachingOffer::query()
             ->publiclyVisible()
-            ->with(['user:id,name,avatar_path,avatar_url,city,country_code', 'user.teacherProfile:id,user_id,is_active', 'category:id,name,slug,color', 'subject:id,name,slug', 'languages:id,code,name,native_name'])
+            ->with([
+                'user:id,name,avatar_path,avatar_url,city,country_code',
+                'user.teacherProfile:id,user_id,is_active,show_badges,show_location',
+                'user.userBadges' => fn ($query) => $query
+                    ->publiclyVisible()
+                    ->with('badge')
+                    ->orderByDesc('is_featured')
+                    ->orderBy('featured_sort_order'),
+                'category:id,name,slug,color',
+                'subject:id,name,slug',
+                'languages:id,code,name,native_name',
+            ])
             ->where('session_type', TeachingOffer::SESSION_OPEN_PUBLIC)
             ->whereHas('languages', fn ($query) => $query->where('code', $locale))
             ->latest('published_at')
@@ -110,7 +143,18 @@ class HomeController extends Controller
         if ($openOffers->count() < 3) {
             $fallbackOffers = TeachingOffer::query()
                 ->publiclyVisible()
-                ->with(['user:id,name,avatar_path,avatar_url,city,country_code', 'user.teacherProfile:id,user_id,is_active', 'category:id,name,slug,color', 'subject:id,name,slug', 'languages:id,code,name,native_name'])
+                ->with([
+                    'user:id,name,avatar_path,avatar_url,city,country_code',
+                    'user.teacherProfile:id,user_id,is_active,show_badges,show_location',
+                    'user.userBadges' => fn ($query) => $query
+                        ->publiclyVisible()
+                        ->with('badge')
+                        ->orderByDesc('is_featured')
+                        ->orderBy('featured_sort_order'),
+                    'category:id,name,slug,color',
+                    'subject:id,name,slug',
+                    'languages:id,code,name,native_name',
+                ])
                 ->where('session_type', TeachingOffer::SESSION_OPEN_PUBLIC)
                 ->whereNotIn('id', $openOffers->pluck('id'))
                 ->latest('published_at')
@@ -138,7 +182,12 @@ class HomeController extends Controller
         $teachers = User::query()
             ->whereHas('teacherProfile', fn ($query) => $query->where('is_active', true))
             ->with([
-                'teacherProfile:id,user_id,headline,teaching_bio,is_verified,is_accepting_requests',
+                'teacherProfile:id,user_id,headline,teaching_bio,is_verified,is_accepting_requests,show_badges,show_location',
+                'userBadges' => fn ($query) => $query
+                    ->publiclyVisible()
+                    ->with('badge')
+                    ->orderByDesc('is_featured')
+                    ->orderBy('featured_sort_order'),
                 'userLanguages' => fn ($query) => $query
                     ->where('teaches', true)
                     ->with('language:id,code,name,native_name'),
@@ -164,8 +213,8 @@ class HomeController extends Controller
                 'avatar' => $teacher->avatar,
                 'initials' => $teacher->initials,
                 'headline' => $teacher->teacherProfile?->headline,
-                'city' => $teacher->city,
-                'country_code' => $teacher->country_code,
+                'city' => $teacher->teacherProfile?->show_location ? $teacher->city : null,
+                'country_code' => $teacher->teacherProfile?->show_location ? $teacher->country_code : null,
                 'is_verified' => (bool) $teacher->teacherProfile?->is_verified,
                 'active_offers_count' => (int) $teacher->active_offers_count,
                 'rating_summary' => [
@@ -173,6 +222,8 @@ class HomeController extends Controller
                     'count' => $reputation['published_review_count'],
                 ],
                 'reputation_summary' => $reputation,
+                'featured_badges' => $this->badgePayloads($teacher, 3),
+                'visible_badges_count' => $teacher->teacherProfile?->show_badges ? $teacher->userBadges->count() : 0,
                 'teaching_bio_excerpt' => str($teacher->teacherProfile?->teaching_bio ?? '')->limit(180)->toString(),
                 'languages' => $teacher->userLanguages
                     ->map(fn ($userLanguage): array => [
@@ -230,19 +281,47 @@ class HomeController extends Controller
                 'id' => $offer->user->id,
                 'name' => $offer->user->name,
                 'avatar' => $offer->user->avatar,
-                'city' => $offer->user->city,
-                'country_code' => $offer->user->country_code,
+                'city' => $offer->user->teacherProfile?->show_location ? $offer->user->city : null,
+                'country_code' => $offer->user->teacherProfile?->show_location ? $offer->user->country_code : null,
                 'profile_url' => $offer->user->teacherProfile?->is_active ? route('teachers.show', $offer->user) : null,
                 'rating_summary' => [
                     'average' => $reputation['average_rating'],
                     'count' => $reputation['published_review_count'],
                 ],
                 'reputation_summary' => $reputation,
+                'featured_badges' => $this->badgePayloads($offer->user, 2),
+                'visible_badges_count' => $offer->user->teacherProfile?->show_badges ? $offer->user->userBadges->count() : 0,
             ],
             'category' => $offer->category,
             'subject' => $offer->subject,
             'languages' => $offer->languages,
             'url' => route('offers.show', $offer),
         ];
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, array<string, mixed>>
+     */
+    private function badgePayloads(User $teacher, int $limit)
+    {
+        if (! $teacher->teacherProfile?->show_badges) {
+            return collect();
+        }
+
+        $badges = $teacher->relationLoaded('userBadges')
+            ? $teacher->userBadges
+            : $teacher->userBadges()
+                ->publiclyVisible()
+                ->with('badge')
+                ->orderByDesc('is_featured')
+                ->orderBy('featured_sort_order')
+                ->latest('awarded_at')
+                ->get();
+
+        return $badges
+            ->where('is_featured', true)
+            ->take($limit)
+            ->map(fn ($badge): array => $badge->publicPayload())
+            ->values();
     }
 }

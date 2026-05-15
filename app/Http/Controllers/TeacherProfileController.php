@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\TeacherProfile;
+use App\Services\BadgeAwardingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -21,6 +22,7 @@ class TeacherProfileController extends Controller
                 'headline' => $profile->headline,
                 'teaching_bio' => $profile->teaching_bio,
                 'experience_summary' => $profile->experience_summary,
+                'public_intro' => $profile->public_intro,
                 'preferred_teaching_mode' => $profile->preferred_teaching_mode,
                 'max_students_per_session' => $profile->max_students_per_session,
                 'default_session_duration_minutes' => $profile->default_session_duration_minutes,
@@ -28,11 +30,21 @@ class TeacherProfileController extends Controller
                 'meeting_url' => $profile->meeting_url,
                 'banner' => $profile->banner,
                 'has_banner' => $profile->banner_path !== null,
+                'profile_accent_color' => $profile->profile_accent_color,
+                'show_badges' => $profile->show_badges,
+                'show_reviews' => $profile->show_reviews,
+                'show_reputation_summary' => $profile->show_reputation_summary,
+                'show_completed_sessions_count' => $profile->show_completed_sessions_count,
+                'show_students_helped_count' => $profile->show_students_helped_count,
+                'show_teaching_hours' => $profile->show_teaching_hours,
+                'show_location' => $profile->show_location,
+                'show_availability_summary' => $profile->show_availability_summary,
                 'is_active' => $profile->is_active,
                 'is_accepting_requests' => $profile->is_accepting_requests,
                 'is_verified' => $profile->is_verified,
                 'activated_at' => $profile->activated_at?->toISOString(),
                 'paused_at' => $profile->paused_at?->toISOString(),
+                'public_profile_url' => $profile->is_active ? route('teachers.show', $request->user()) : null,
             ],
             'modes' => TeacherProfile::MODES,
             'meetingTools' => TeacherProfile::MEETING_TOOLS,
@@ -43,8 +55,10 @@ class TeacherProfileController extends Controller
     {
         $validated = $request->validate([
             'headline' => ['nullable', 'string', 'max:255'],
+            'public_intro' => ['nullable', 'string', 'max:800'],
             'teaching_bio' => ['nullable', 'string', 'max:4000'],
             'experience_summary' => ['nullable', 'string', 'max:4000'],
+            'profile_accent_color' => ['nullable', 'string', 'max:20', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'preferred_teaching_mode' => ['required', 'string', Rule::in(TeacherProfile::MODES)],
             'max_students_per_session' => ['required', 'integer', 'min:1', 'max:100'],
             'default_session_duration_minutes' => ['required', 'integer', 'min:15', 'max:240'],
@@ -56,6 +70,14 @@ class TeacherProfileController extends Controller
                 'max:2048',
             ],
             'is_accepting_requests' => ['required', 'boolean'],
+            'show_badges' => ['required', 'boolean'],
+            'show_reviews' => ['required', 'boolean'],
+            'show_reputation_summary' => ['required', 'boolean'],
+            'show_completed_sessions_count' => ['required', 'boolean'],
+            'show_students_helped_count' => ['required', 'boolean'],
+            'show_teaching_hours' => ['required', 'boolean'],
+            'show_location' => ['required', 'boolean'],
+            'show_availability_summary' => ['required', 'boolean'],
         ]);
 
         $profile = $this->profileFor($request);
@@ -97,7 +119,7 @@ class TeacherProfileController extends Controller
         return back()->with('status', __('ui.teacher_profile.banner_removed'));
     }
 
-    public function activate(Request $request): RedirectResponse
+    public function activate(Request $request, BadgeAwardingService $badges): RedirectResponse
     {
         $profile = $this->profileFor($request);
 
@@ -107,6 +129,7 @@ class TeacherProfileController extends Controller
             'activated_at' => $profile->activated_at ?? now(),
             'paused_at' => null,
         ])->save();
+        $badges->awardForTeacher($request->user());
 
         return back()->with('status', __('ui.teacher_profile.activated'));
     }
@@ -134,6 +157,14 @@ class TeacherProfileController extends Controller
                 'is_active' => false,
                 'is_accepting_requests' => false,
                 'is_verified' => false,
+                'show_badges' => true,
+                'show_reviews' => true,
+                'show_reputation_summary' => true,
+                'show_completed_sessions_count' => true,
+                'show_students_helped_count' => true,
+                'show_teaching_hours' => true,
+                'show_location' => true,
+                'show_availability_summary' => true,
             ],
         );
     }

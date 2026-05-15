@@ -244,6 +244,14 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * @return HasMany<UserBadge, $this>
+     */
+    public function userBadges(): HasMany
+    {
+        return $this->hasMany(UserBadge::class);
+    }
+
+    /**
      * @return HasMany<TeacherReview, $this>
      */
     public function submittedTeacherReviews(): HasMany

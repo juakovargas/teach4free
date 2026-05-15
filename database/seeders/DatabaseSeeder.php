@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Badge;
 use App\Models\CategoryProposal;
 use App\Models\ClassSession;
 use App\Models\ClassSessionAttendee;
@@ -26,8 +27,10 @@ use App\Models\TeachingOffer;
 use App\Models\TeachingOfferApplication;
 use App\Models\TeachingSubject;
 use App\Models\User;
+use App\Models\UserBadge;
 use App\Models\UserLanguage;
 use App\Models\UserNotificationPreference;
+use App\Services\BadgeAwardingService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -814,6 +817,7 @@ class DatabaseSeeder extends Seeder
         }
 
         $this->seedReputationDemoData($password, $admin, $allLearners, $languages, $subjects);
+        $this->seedBadgeDemoData($admin);
 
         if (Schema::hasTable('notifications')) {
             DB::table('notifications')->where('type', 'demo.admin_seed')->delete();
@@ -1047,7 +1051,8 @@ class DatabaseSeeder extends Seeder
                 'city' => 'Madrid',
                 'country_code' => 'ES',
                 'headline' => 'Consistently excellent free sessions',
-                'ratings' => [5, 5, 5, 5, 5, 5, 5, 4],
+                'ratings' => [5, 5, 5, 5, 5, 5, 5, 5, 5, 4],
+                'extra_completed_sessions' => 40,
                 'cancelled' => 0,
                 'no_show' => 0,
             ],
@@ -1057,7 +1062,7 @@ class DatabaseSeeder extends Seeder
                 'city' => 'Lyon',
                 'country_code' => 'FR',
                 'headline' => 'Reliable community mentor',
-                'ratings' => [4, 4, 5, 4, 4, 4],
+                'ratings' => [4, 4, 5, 4, 4, 4, 5, 4, 4, 5],
                 'cancelled' => 1,
                 'no_show' => 0,
             ],
@@ -1131,6 +1136,13 @@ class DatabaseSeeder extends Seeder
                     'headline' => $scenario['headline'],
                     'teaching_bio' => 'This demo teacher exists so local seed data shows clear reputation states.',
                     'experience_summary' => 'Reputation demo profile with realistic completed, cancelled and no-show sessions.',
+                    'public_intro' => 'A demo public intro showing how teachers can customize their profile while keeping classes free.',
+                    'profile_accent_color' => match ($key) {
+                        'excellent' => '#0F766E',
+                        'reliable' => '#2563EB',
+                        'new' => '#64748B',
+                        default => '#EA580C',
+                    },
                     'preferred_teaching_mode' => TeacherProfile::MODE_SMALL_GROUP,
                     'max_students_per_session' => 6,
                     'default_session_duration_minutes' => 60,
@@ -1139,6 +1151,14 @@ class DatabaseSeeder extends Seeder
                     'is_active' => true,
                     'is_accepting_requests' => true,
                     'is_verified' => $key === 'excellent',
+                    'show_badges' => true,
+                    'show_reviews' => true,
+                    'show_reputation_summary' => true,
+                    'show_completed_sessions_count' => true,
+                    'show_students_helped_count' => true,
+                    'show_teaching_hours' => true,
+                    'show_location' => true,
+                    'show_availability_summary' => true,
                     'activated_at' => now()->subDays($key === 'new' ? 2 : 40),
                     'paused_at' => null,
                 ],
@@ -1307,6 +1327,34 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
+        for ($index = 0; $index < ($scenario['extra_completed_sessions'] ?? 0); $index++) {
+            $student = $learners[($index + strlen($key) + 3) % $learners->count()];
+            $startsAt = now()->subDays(120 - $index)->setTime(17, 0);
+            $session = ClassSession::create([
+                'teaching_offer_id' => $offer->id,
+                'teacher_user_id' => $teacher->id,
+                'application_id' => null,
+                'title' => 'Reputation demo '.$key.' extra completed '.($index + 1),
+                'description' => 'Extra completed session for teaching hours and badge demo data.',
+                'starts_at' => $startsAt,
+                'ends_at' => (clone $startsAt)->addMinutes(60),
+                'timezone' => 'Europe/Madrid',
+                'capacity' => 6,
+                'meeting_tool' => $offer->meeting_tool,
+                'meeting_url' => $offer->meeting_url,
+                'status' => ClassSession::STATUS_COMPLETED,
+                'completed_at' => (clone $startsAt)->addMinutes(60),
+            ]);
+
+            ClassSessionAttendee::create([
+                'class_session_id' => $session->id,
+                'user_id' => $student->id,
+                'application_id' => null,
+                'status' => ClassSessionAttendee::STATUS_ATTENDED,
+                'joined_at' => $startsAt,
+            ]);
+        }
+
         for ($index = 0; $index < $scenario['cancelled']; $index++) {
             $startsAt = now()->subDays(12 - $index)->setTime(18, 0);
             ClassSession::create([
@@ -1372,6 +1420,73 @@ class DatabaseSeeder extends Seeder
                     'reported_count' => $review->reports()->count(),
                 ])->save();
             }
+        }
+    }
+
+    private function seedBadgeDemoData(User $admin): void
+    {
+        if (! Schema::hasTable('badges') || ! Schema::hasTable('user_badges')) {
+            return;
+        }
+
+        app(BadgeAwardingService::class)->seedDefaultBadges(true);
+        app(BadgeAwardingService::class)->awardForAllTeachers();
+
+        foreach ([
+            'reputation.excellent@example.com',
+            'reputation.reliable@example.com',
+            'teacher@example.com',
+        ] as $email) {
+            $teacher = User::query()->where('email', $email)->first();
+
+            if (! $teacher) {
+                continue;
+            }
+
+            $teacher->userBadges()
+                ->active()
+                ->with('badge')
+                ->get()
+                ->sortBy(fn (UserBadge $badge): int => $badge->badge?->sort_order ?? 999)
+                ->values()
+                ->each(function (UserBadge $badge, int $index): void {
+                    $badge->forceFill([
+                        'is_visible' => true,
+                        'is_featured' => $index < UserBadge::FEATURED_LIMIT,
+                        'featured_sort_order' => $index < UserBadge::FEATURED_LIMIT ? $index + 1 : 0,
+                        'hidden_at' => null,
+                        'hidden_by_user' => false,
+                    ])->save();
+                });
+        }
+
+        $newTeacher = User::query()->where('email', 'reputation.new@example.com')->first();
+        if ($newTeacher) {
+            $newTeacher->userBadges()
+                ->whereHas('badge', fn ($query) => $query->where('key', Badge::KEY_NEW_TEACHER))
+                ->first()
+                ?->forceFill([
+                    'is_visible' => false,
+                    'is_featured' => false,
+                    'featured_sort_order' => 0,
+                    'hidden_at' => now(),
+                    'hidden_by_user' => true,
+                ])->save();
+        }
+
+        $attentionTeacher = User::query()->where('email', 'reputation.attention@example.com')->first();
+        if ($attentionTeacher) {
+            $attentionTeacher->userBadges()
+                ->whereHas('badge', fn ($query) => $query->where('key', Badge::KEY_FIRST_CLASS_COMPLETED))
+                ->first()
+                ?->forceFill([
+                    'is_visible' => false,
+                    'is_featured' => false,
+                    'featured_sort_order' => 0,
+                    'revoked_at' => now()->subDays(1),
+                    'revoked_by' => $admin->id,
+                    'revoked_reason' => 'Demo revoked badge for admin badge moderation testing.',
+                ])->save();
         }
     }
 

@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import {
+    Award,
     Ban,
     Bell,
     CalendarClock,
@@ -18,6 +19,8 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
+import type { PublicBadge } from '@/components/badges/badge-display';
+import { useBadgeText } from '@/components/badges/badge-display';
 import { ContextualHelp } from '@/components/contextual-help';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -58,6 +61,9 @@ type Stats = {
     upcoming_sessions_this_week: number;
     reports: number;
     reviews: number;
+    active_badge_definitions: number;
+    total_badges_awarded: number;
+    revoked_badges_count: number;
 };
 
 type Growth = {
@@ -111,6 +117,27 @@ type IncidentSummary = {
     reporter?: UserSummary | null;
 };
 
+type BadgeSummary = {
+    id: number;
+    key: string;
+    name: string;
+    icon?: string | null;
+    color?: string | null;
+    active_awards_count?: number;
+};
+
+type BadgeAwardSummary = {
+    id: number;
+    awarded_at?: string | null;
+    revoked_at?: string | null;
+    badge?: BadgeSummary | null;
+    user?: UserSummary | null;
+};
+
+type TeacherBadgeSummary = UserSummary & {
+    active_badges_count: number;
+};
+
 type Props = {
     stats: Stats;
     growth: Growth;
@@ -119,6 +146,9 @@ type Props = {
         latest_offers: OfferSummary[];
         latest_applications: ApplicationSummary[];
         latest_incidents: IncidentSummary[];
+        most_awarded_badges: BadgeSummary[];
+        recent_badge_awards: BadgeAwardSummary[];
+        teachers_with_most_badges: TeacherBadgeSummary[];
     };
     world: WorldSummary;
 };
@@ -126,6 +156,7 @@ type Props = {
 export default function AdminDashboard({ stats, growth, activity, world }: Props) {
     const { t } = useTranslation();
     const getInitials = useInitials();
+    const badgeText = useBadgeText();
 
     const platformHealth = [
         { label: t('admin.total_users'), value: stats.total_users, icon: Users, href: '/admin/users' },
@@ -172,6 +203,12 @@ export default function AdminDashboard({ stats, growth, activity, world }: Props
         { label: t('admin.upcoming_sessions_this_week'), value: stats.upcoming_sessions_this_week, icon: CalendarClock, href: '/admin/sessions?status=scheduled' },
     ];
 
+    const badgeCards = [
+        { label: t('admin.active_badge_definitions'), value: stats.active_badge_definitions, icon: Award, href: '/admin/badges' },
+        { label: t('admin.total_badges_awarded'), value: stats.total_badges_awarded, icon: Award, href: '/admin/user-badges' },
+        { label: t('admin.revoked_badges_count'), value: stats.revoked_badges_count, icon: ShieldAlert, href: '/admin/user-badges?status=revoked' },
+    ];
+
     const growthCards = [
         { label: t('admin.new_users_7d'), value: growth.new_users },
         { label: t('admin.new_teachers_7d'), value: growth.new_teachers },
@@ -211,6 +248,7 @@ export default function AdminDashboard({ stats, growth, activity, world }: Props
                 <DashboardSection title={t('admin.moderation')} items={moderation} />
                 <DashboardSection title={t('admin.operations')} items={operations} />
                 <DashboardSection title={t('admin.sessions')} items={sessionCards} />
+                <DashboardSection title={t('admin.badges_and_reputation')} items={badgeCards} />
 
                 <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
                     <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -328,6 +366,62 @@ export default function AdminDashboard({ stats, growth, activity, world }: Props
                             </Link>
                         ))}
                     </ActivityPanel>
+
+                    <ActivityPanel title={t('admin.most_awarded_badges')}>
+                        {activity.most_awarded_badges.map((badge) => (
+                            <Link key={badge.id} href={`/admin/badges/${badge.id}/edit`} className="flex items-center justify-between gap-3 rounded-md px-2 py-2 hover:bg-slate-50 dark:hover:bg-slate-950">
+                                <span className="min-w-0">
+                                    <span className="block truncate font-medium">
+                                        {badgeText.name(badgePayload(badge))}
+                                    </span>
+                                    <span className="block truncate text-xs text-muted-foreground">
+                                        {badge.key}
+                                    </span>
+                                </span>
+                                <Badge variant="outline">
+                                    {badge.active_awards_count ?? 0}
+                                </Badge>
+                            </Link>
+                        ))}
+                    </ActivityPanel>
+
+                    <ActivityPanel title={t('admin.recent_badge_awards')}>
+                        {activity.recent_badge_awards.map((award) => (
+                            <Link key={award.id} href="/admin/user-badges" className="block rounded-md px-2 py-2 hover:bg-slate-50 dark:hover:bg-slate-950">
+                                <div className="flex items-center justify-between gap-3">
+                                    <p className="truncate font-medium">
+                                        {award.badge ? badgeText.name(badgePayload(award.badge)) : t('common.none')}
+                                    </p>
+                                    {award.revoked_at && (
+                                        <Badge variant="destructive">
+                                            {t('badges.revoked')}
+                                        </Badge>
+                                    )}
+                                </div>
+                                <p className="mt-1 truncate text-xs text-muted-foreground">
+                                    {award.user?.name ?? award.user?.email ?? t('common.none')}
+                                </p>
+                            </Link>
+                        ))}
+                    </ActivityPanel>
+
+                    <ActivityPanel title={t('admin.teachers_with_most_badges')}>
+                        {activity.teachers_with_most_badges.map((teacher) => (
+                            <Link key={teacher.id} href={`/admin/users/${teacher.id}/badges`} className="flex items-center gap-3 rounded-md px-2 py-2 hover:bg-slate-50 dark:hover:bg-slate-950">
+                                <Avatar className="size-9">
+                                    <AvatarImage src={teacher.avatar ?? undefined} alt={teacher.name} />
+                                    <AvatarFallback>{getInitials(teacher.name || teacher.email)}</AvatarFallback>
+                                </Avatar>
+                                <div className="min-w-0">
+                                    <p className="truncate font-medium">{teacher.name || teacher.email}</p>
+                                    <p className="truncate text-xs text-muted-foreground">{teacher.email}</p>
+                                </div>
+                                <Badge className="ml-auto" variant="outline">
+                                    {teacher.active_badges_count}
+                                </Badge>
+                            </Link>
+                        ))}
+                    </ActivityPanel>
                 </section>
 
                 <ContextualHelp title={t('admin.help_title')}>
@@ -336,6 +430,19 @@ export default function AdminDashboard({ stats, growth, activity, world }: Props
             </div>
         </>
     );
+}
+
+function badgePayload(badge: BadgeSummary): PublicBadge {
+    return {
+        id: badge.id,
+        key: badge.key,
+        name: badge.name,
+        description: null,
+        icon: badge.icon ?? null,
+        color: badge.color ?? null,
+        category: null,
+        awarded_at: null,
+    };
 }
 
 function DashboardSection({

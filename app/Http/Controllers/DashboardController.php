@@ -98,6 +98,9 @@ class DashboardController extends Controller
                 'teacher_hidden_reviews_count' => $user->receivedTeacherReviews()
                     ->where('status', TeacherReview::STATUS_HIDDEN)
                     ->count(),
+                'teacher_badges_count' => Schema::hasTable('user_badges')
+                    ? $user->userBadges()->whereNull('revoked_at')->count()
+                    : 0,
                 'student_status' => $user->studentProfile?->is_active ? 'active' : 'inactive',
                 'teacher_status' => match (true) {
                     $user->teacherProfile?->is_active => 'active',

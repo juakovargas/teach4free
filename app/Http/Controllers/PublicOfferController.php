@@ -11,6 +11,7 @@ use App\Models\TeachingSubject;
 use App\Models\User;
 use App\Services\TeacherReputationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -38,7 +39,12 @@ class PublicOfferController extends Controller
             ->publiclyVisible()
             ->with([
                 'user:id,name,avatar_path,avatar_url,city,country_code',
-                'user.teacherProfile:id,user_id,is_active',
+                'user.teacherProfile:id,user_id,is_active,show_badges,show_location',
+                'user.userBadges' => fn ($query) => $query
+                    ->publiclyVisible()
+                    ->with('badge')
+                    ->orderByDesc('is_featured')
+                    ->orderBy('featured_sort_order'),
                 'category:id,name,slug,color',
                 'subject:id,name,slug',
                 'languages:id,code,name,native_name',
@@ -104,10 +110,15 @@ class PublicOfferController extends Controller
 
         $offer->load([
             'user:id,name,avatar_path,avatar_url,bio,city,country_code',
-            'user.teacherProfile:id,user_id,headline,teaching_bio,is_active,is_verified',
+            'user.teacherProfile:id,user_id,headline,teaching_bio,is_active,is_verified,show_badges,show_location',
             'user.userLanguages' => fn ($query) => $query
                 ->where('teaches', true)
                 ->with('language:id,code,name,native_name'),
+            'user.userBadges' => fn ($query) => $query
+                ->publiclyVisible()
+                ->with('badge')
+                ->orderByDesc('is_featured')
+                ->orderBy('featured_sort_order'),
             'user.teacherAvailabilities' => fn ($query) => $query->where('is_active', true)->orderBy('day_of_week')->orderBy('starts_at'),
             'category:id,name,slug,color',
             'subject:id,name,slug',
@@ -210,14 +221,16 @@ class PublicOfferController extends Controller
                 'id' => $offer->user->id,
                 'name' => $offer->user->name,
                 'avatar' => $offer->user->avatar,
-                'city' => $offer->user->city,
-                'country_code' => $offer->user->country_code,
+                'city' => $offer->user->teacherProfile?->show_location ? $offer->user->city : null,
+                'country_code' => $offer->user->teacherProfile?->show_location ? $offer->user->country_code : null,
                 'profile_url' => $offer->user->teacherProfile?->is_active ? route('teachers.show', $offer->user) : null,
                 'rating_summary' => [
                     'average' => $reputation['average_rating'],
                     'count' => $reputation['published_review_count'],
                 ],
                 'reputation_summary' => $reputation,
+                'featured_badges' => $this->badgePayloads($offer->user, 2),
+                'visible_badges_count' => $offer->user->teacherProfile?->show_badges ? $offer->user->userBadges->count() : 0,
             ],
             'category' => $offer->category,
             'subject' => $offer->subject,
@@ -256,8 +269,8 @@ class PublicOfferController extends Controller
                 'name' => $offer->user->name,
                 'bio' => $offer->user->bio,
                 'avatar' => $offer->user->avatar,
-                'city' => $offer->user->city,
-                'country_code' => $offer->user->country_code,
+                'city' => $offer->user->teacherProfile?->show_location ? $offer->user->city : null,
+                'country_code' => $offer->user->teacherProfile?->show_location ? $offer->user->country_code : null,
                 'profile_url' => $offer->user->teacherProfile?->is_active ? route('teachers.show', $offer->user) : null,
                 'headline' => $offer->user->teacherProfile?->headline,
                 'rating_summary' => [
@@ -265,6 +278,8 @@ class PublicOfferController extends Controller
                     'count' => $reputation['published_review_count'],
                 ],
                 'reputation_summary' => $reputation,
+                'featured_badges' => $this->badgePayloads($offer->user, 3),
+                'visible_badges_count' => $offer->user->teacherProfile?->show_badges ? $offer->user->userBadges->count() : 0,
                 'languages' => $offer->user->userLanguages->map(fn ($userLanguage): array => [
                     'id' => $userLanguage->language->id,
                     'code' => $userLanguage->language->code,
@@ -292,5 +307,31 @@ class PublicOfferController extends Controller
                 ?: (($secondSummary['published_review_count'] ?? 0) <=> ($firstSummary['published_review_count'] ?? 0))
                 ?: (($second->published_at?->timestamp ?? 0) <=> ($first->published_at?->timestamp ?? 0));
         });
+    }
+
+    /**
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function badgePayloads(User $teacher, int $limit)
+    {
+        if (! $teacher->teacherProfile?->show_badges) {
+            return collect();
+        }
+
+        $badges = $teacher->relationLoaded('userBadges')
+            ? $teacher->userBadges
+            : $teacher->userBadges()
+                ->publiclyVisible()
+                ->with('badge')
+                ->orderByDesc('is_featured')
+                ->orderBy('featured_sort_order')
+                ->latest('awarded_at')
+                ->get();
+
+        return $badges
+            ->where('is_featured', true)
+            ->take($limit)
+            ->map(fn ($badge): array => $badge->publicPayload())
+            ->values();
     }
 }

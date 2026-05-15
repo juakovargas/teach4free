@@ -1,5 +1,5 @@
-import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { Image, Pause, Play, Presentation, Save, Trash2 } from 'lucide-react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { BadgeCheck, Eye, Image, Palette, Pause, Play, Presentation, Save, Trash2 } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { ContextualHelp } from '@/components/contextual-help';
 import InputError from '@/components/input-error';
@@ -21,6 +21,7 @@ type TeacherProfile = {
     headline: string | null;
     teaching_bio: string | null;
     experience_summary: string | null;
+    public_intro: string | null;
     preferred_teaching_mode: string;
     max_students_per_session: number;
     default_session_duration_minutes: number;
@@ -28,11 +29,21 @@ type TeacherProfile = {
     meeting_url: string | null;
     banner: string | null;
     has_banner: boolean;
+    profile_accent_color: string | null;
+    show_badges: boolean;
+    show_reviews: boolean;
+    show_reputation_summary: boolean;
+    show_completed_sessions_count: boolean;
+    show_students_helped_count: boolean;
+    show_teaching_hours: boolean;
+    show_location: boolean;
+    show_availability_summary: boolean;
     is_active: boolean;
     is_accepting_requests: boolean;
     is_verified: boolean;
     activated_at: string | null;
     paused_at: string | null;
+    public_profile_url: string | null;
 };
 
 type Props = {
@@ -40,6 +51,16 @@ type Props = {
     modes: string[];
     meetingTools: string[];
 };
+
+type VisibilityField =
+    | 'show_badges'
+    | 'show_reviews'
+    | 'show_reputation_summary'
+    | 'show_completed_sessions_count'
+    | 'show_students_helped_count'
+    | 'show_teaching_hours'
+    | 'show_location'
+    | 'show_availability_summary';
 
 export default function TeacherProfilePage({
     profile,
@@ -52,9 +73,11 @@ export default function TeacherProfilePage({
         useForm<TeacherProfile>({
             ...profile,
             headline: profile.headline ?? '',
+            public_intro: profile.public_intro ?? '',
             teaching_bio: profile.teaching_bio ?? '',
             experience_summary: profile.experience_summary ?? '',
             meeting_url: profile.meeting_url ?? '',
+            profile_accent_color: profile.profile_accent_color ?? '#0F766E',
         });
     const bannerForm = useForm<{ banner: File | null }>({ banner: null });
 
@@ -77,6 +100,31 @@ export default function TeacherProfilePage({
             preserveScroll: true,
         });
     };
+    const visibilityFields: { field: VisibilityField; label: string }[] = [
+        { field: 'show_badges', label: t('teacher_profile.show_badges') },
+        { field: 'show_reviews', label: t('teacher_profile.show_reviews') },
+        {
+            field: 'show_reputation_summary',
+            label: t('teacher_profile.show_reputation_summary'),
+        },
+        {
+            field: 'show_completed_sessions_count',
+            label: t('teacher_profile.show_completed_sessions_count'),
+        },
+        {
+            field: 'show_students_helped_count',
+            label: t('teacher_profile.show_students_helped_count'),
+        },
+        {
+            field: 'show_teaching_hours',
+            label: t('teacher_profile.show_teaching_hours'),
+        },
+        { field: 'show_location', label: t('teacher_profile.show_location') },
+        {
+            field: 'show_availability_summary',
+            label: t('teacher_profile.show_availability_summary'),
+        },
+    ];
 
     return (
         <>
@@ -95,21 +143,31 @@ export default function TeacherProfilePage({
                                 </p>
                             </div>
                         </div>
-                        {profile.is_active ? (
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                onClick={pause}
-                            >
-                                <Pause />
-                                {t('teacher_profile.pause')}
-                            </Button>
-                        ) : (
-                            <Button type="button" onClick={activate}>
-                                <Play />
-                                {t('teacher_profile.activate')}
-                            </Button>
-                        )}
+                        <div className="flex flex-wrap gap-2">
+                            {profile.is_active && profile.public_profile_url && (
+                                <Button type="button" variant="outline" asChild>
+                                    <Link href={profile.public_profile_url}>
+                                        <Eye />
+                                        {t('teacher_profile.preview_public_profile')}
+                                    </Link>
+                                </Button>
+                            )}
+                            {profile.is_active ? (
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    onClick={pause}
+                                >
+                                    <Pause />
+                                    {t('teacher_profile.pause')}
+                                </Button>
+                            ) : (
+                                <Button type="button" onClick={activate}>
+                                    <Play />
+                                    {t('teacher_profile.activate')}
+                                </Button>
+                            )}
+                        </div>
                     </div>
                 </section>
 
@@ -118,6 +176,28 @@ export default function TeacherProfilePage({
                         {flash.status}
                     </div>
                 )}
+
+                <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                        <div className="flex items-start gap-3">
+                            <BadgeCheck className="mt-1 size-5 text-emerald-700 dark:text-emerald-300" />
+                            <div>
+                                <h2 className="font-semibold">
+                                    {t('teacher_profile.badges_title')}
+                                </h2>
+                                <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
+                                    {t('teacher_profile.badges_intro')}
+                                </p>
+                            </div>
+                        </div>
+                        <Button type="button" variant="outline" asChild>
+                            <Link href="/profile/teacher/badges">
+                                <BadgeCheck />
+                                {t('teacher_profile.manage_badges')}
+                            </Link>
+                        </Button>
+                    </div>
+                </section>
 
                 <section className="grid gap-6 rounded-lg border border-slate-200 bg-white p-6 shadow-xs lg:grid-cols-[1fr_18rem] dark:border-slate-800 dark:bg-slate-900">
                     <div>
@@ -184,6 +264,67 @@ export default function TeacherProfilePage({
                         ) : (
                             <div className="h-40 bg-[radial-gradient(circle_at_18%_20%,rgba(16,185,129,0.35),transparent_10rem),radial-gradient(circle_at_85%_10%,rgba(245,158,11,0.30),transparent_10rem),linear-gradient(135deg,#064e3b_0%,#0f766e_48%,#78350f_100%)]" />
                         )}
+                    </div>
+                </section>
+
+                <section className="grid gap-6 rounded-lg border border-slate-200 bg-white p-6 shadow-xs md:grid-cols-2 dark:border-slate-800 dark:bg-slate-900">
+                    <div className="flex items-start gap-3 md:col-span-2">
+                        <Palette className="mt-1 size-5 text-emerald-700 dark:text-emerald-300" />
+                        <div>
+                            <h2 className="font-semibold">
+                                {t('teacher_profile.customization_title')}
+                            </h2>
+                            <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
+                                {t('teacher_profile.customization_intro')}
+                            </p>
+                        </div>
+                    </div>
+                    <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="public_intro">
+                            {t('teacher_profile.public_intro')}
+                        </Label>
+                        <Textarea
+                            id="public_intro"
+                            value={data.public_intro ?? ''}
+                            onChange={(event) =>
+                                setData('public_intro', event.target.value)
+                            }
+                        />
+                        <p className="text-xs leading-5 text-muted-foreground">
+                            {t('teacher_profile.public_intro_hint')}
+                        </p>
+                        <InputError message={errors.public_intro} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="profile_accent_color">
+                            {t('teacher_profile.profile_accent_color')}
+                        </Label>
+                        <div className="flex gap-2">
+                            <Input
+                                id="profile_accent_color_picker"
+                                type="color"
+                                value={data.profile_accent_color ?? '#0F766E'}
+                                onChange={(event) =>
+                                    setData(
+                                        'profile_accent_color',
+                                        event.target.value,
+                                    )
+                                }
+                                className="h-10 w-14 p-1"
+                            />
+                            <Input
+                                id="profile_accent_color"
+                                value={data.profile_accent_color ?? ''}
+                                onChange={(event) =>
+                                    setData(
+                                        'profile_accent_color',
+                                        event.target.value,
+                                    )
+                                }
+                                placeholder="#0F766E"
+                            />
+                        </div>
+                        <InputError message={errors.profile_accent_color} />
                     </div>
                 </section>
 
@@ -349,6 +490,38 @@ export default function TeacherProfilePage({
                         <Label htmlFor="is_accepting_requests">
                             {t('teacher_profile.accepting_requests')}
                         </Label>
+                    </div>
+                </section>
+
+                <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+                    <div className="flex items-start gap-3">
+                        <Eye className="mt-1 size-5 text-emerald-700 dark:text-emerald-300" />
+                        <div>
+                            <h2 className="font-semibold">
+                                {t('teacher_profile.section_visibility_title')}
+                            </h2>
+                            <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
+                                {t('teacher_profile.section_visibility_intro')}
+                            </p>
+                        </div>
+                    </div>
+                    <div className="mt-5 grid gap-3 md:grid-cols-2">
+                        {visibilityFields.map(({ field, label }) => (
+                            <label
+                                key={field}
+                                className="flex items-center gap-3 rounded-md border border-slate-200 p-3 text-sm dark:border-slate-800"
+                                htmlFor={field}
+                            >
+                                <Checkbox
+                                    id={field}
+                                    checked={data[field]}
+                                    onCheckedChange={(checked) =>
+                                        setData(field, checked === true)
+                                    }
+                                />
+                                <span>{label}</span>
+                            </label>
+                        ))}
                     </div>
                 </section>
 

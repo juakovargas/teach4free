@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ClassSession;
 use App\Models\ClassSessionAttendee;
 use App\Notifications\ClassSessionNotification;
+use App\Services\BadgeAwardingService;
 use App\Services\ConversationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -27,7 +28,7 @@ class TeacherSessionController extends Controller
         ]);
     }
 
-    public function complete(Request $request, ClassSession $session, ConversationService $conversations): RedirectResponse
+    public function complete(Request $request, ClassSession $session, ConversationService $conversations, BadgeAwardingService $badges): RedirectResponse
     {
         $this->authorizeSession($request, $session);
 
@@ -48,6 +49,7 @@ class TeacherSessionController extends Controller
         $conversations->addSystemMessage($conversation, __('ui.messages.system.session_no_show', [
             'session' => $session->title,
         ]));
+        $badges->awardForTeacher($request->user());
 
         return back()->with('status', __('ui.sessions.completed'));
     }

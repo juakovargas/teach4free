@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Badge;
 use App\Models\ClassSession;
 use App\Models\ConversationReport;
 use App\Models\Incident;
@@ -15,6 +16,7 @@ use App\Models\TeachingOffer;
 use App\Models\TeachingOfferApplication;
 use App\Models\TeachingSubject;
 use App\Models\User;
+use App\Models\UserBadge;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
@@ -33,6 +35,8 @@ class AdminDashboardController extends Controller
         $hasConversationReportPublicResponses = $hasConversationReports && Schema::hasColumn('conversation_reports', 'public_response');
         $hasNotifications = Schema::hasTable('notifications');
         $hasSessions = Schema::hasTable('class_sessions');
+        $hasBadges = Schema::hasTable('badges');
+        $hasUserBadges = Schema::hasTable('user_badges');
         $countryRows = User::query()
             ->whereNotNull('country_code')
             ->selectRaw('country_code, count(*) as users_count')
@@ -123,6 +127,9 @@ class AdminDashboardController extends Controller
                     ->count() : 0,
                 'reports' => $hasIncidents ? Incident::query()->count() : 0,
                 'reviews' => $hasTeacherReviews ? TeacherReview::query()->count() : 0,
+                'active_badge_definitions' => $hasBadges ? Badge::query()->where('is_active', true)->count() : 0,
+                'total_badges_awarded' => $hasUserBadges ? UserBadge::query()->count() : 0,
+                'revoked_badges_count' => $hasUserBadges ? UserBadge::query()->whereNotNull('revoked_at')->count() : 0,
             ],
             'growth' => [
                 'new_users' => User::query()->where('created_at', '>=', $lastWeek)->count(),
@@ -151,6 +158,29 @@ class AdminDashboardController extends Controller
                         ->latest()
                         ->limit(5)
                         ->get(['id', 'reporter_user_id', 'type', 'status', 'priority', 'subject', 'created_at'])
+                    : [],
+                'most_awarded_badges' => $hasBadges && $hasUserBadges
+                    ? Badge::query()
+                        ->withCount(['userBadges as active_awards_count' => fn ($query) => $query->whereNull('revoked_at')])
+                        ->orderByDesc('active_awards_count')
+                        ->orderBy('sort_order')
+                        ->limit(5)
+                        ->get(['id', 'key', 'name', 'icon', 'color'])
+                    : [],
+                'recent_badge_awards' => $hasUserBadges
+                    ? UserBadge::query()
+                        ->with(['badge:id,key,name,icon,color', 'user:id,name,email,avatar_path,avatar_url'])
+                        ->latest('awarded_at')
+                        ->limit(5)
+                        ->get(['id', 'user_id', 'badge_id', 'awarded_at', 'revoked_at'])
+                    : [],
+                'teachers_with_most_badges' => $hasUserBadges
+                    ? User::query()
+                        ->whereHas('teacherProfile', fn ($query) => $query->where('is_active', true))
+                        ->withCount(['userBadges as active_badges_count' => fn ($query) => $query->whereNull('revoked_at')])
+                        ->orderByDesc('active_badges_count')
+                        ->limit(5)
+                        ->get(['id', 'name', 'email', 'avatar_path', 'avatar_url'])
                     : [],
             ],
             'world' => [

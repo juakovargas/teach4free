@@ -9,6 +9,8 @@ import {
     Star,
 } from 'lucide-react';
 import type { ComponentType, ReactNode } from 'react';
+import { EarnedBadgePill } from '@/components/badges/badge-display';
+import type { PublicBadge } from '@/components/badges/badge-display';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -59,6 +61,8 @@ export type PublicTeacher = {
         count: number;
     };
     reputation_summary?: PublicReputationSummary;
+    featured_badges?: PublicBadge[];
+    visible_badges_count?: number;
 };
 
 export type PublicOffer = {
@@ -83,6 +87,8 @@ export type PublicOffer = {
             count: number;
         };
         reputation_summary?: PublicReputationSummary;
+        featured_badges?: PublicBadge[];
+        visible_badges_count?: number;
     };
     category: { name: string; slug: string; color: string | null };
     subject: { name: string; slug: string } | null;
@@ -276,6 +282,13 @@ export function TeacherCard({ teacher }: { teacher: PublicTeacher }) {
                     )}
                 </div>
             )}
+            {teacher.featured_badges && teacher.featured_badges.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                    {teacher.featured_badges.slice(0, 3).map((badge) => (
+                        <EarnedBadgePill key={badge.id} badge={badge} />
+                    ))}
+                </div>
+            )}
             <p className="mt-4 line-clamp-2 text-sm leading-6 text-muted-foreground">
                 {teacher.headline ?? teacher.teaching_bio_excerpt ?? t('home.teacher_default_headline')}
             </p>
@@ -389,6 +402,13 @@ export function OfferCard({
                             })}
                         </Badge>
                     )}
+                </div>
+            )}
+            {offer.teacher.featured_badges && offer.teacher.featured_badges.length > 0 && (
+                <div className="-mt-1 mb-3 flex flex-wrap gap-2">
+                    {offer.teacher.featured_badges.slice(0, 2).map((badge) => (
+                        <EarnedBadgePill key={badge.id} badge={badge} />
+                    ))}
                 </div>
             )}
             <div className="mb-3 flex flex-wrap gap-2">

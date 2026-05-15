@@ -4219,6 +4219,241 @@ the demo database includes reputation-oriented teachers with different patterns:
 
 The demo data is still free-platform data only. It does not add payments, premium placement or sponsored visibility.
 
+Badge and teacher profile customization system
+----------------------------------------------
+
+Teach4Free now includes the first badges/medals system and a stronger public teacher profile customization flow.
+
+Badges are earned through real platform activity. They are not purchasable, sponsored, manually self-assigned or connected to paid ranking.
+
+Badge database structure:
+
+- badges
+- user_badges
+
+Badge definitions include:
+
+- key.
+- name.
+- description.
+- icon.
+- color.
+- category.
+- rule type.
+- threshold.
+- active/public flags.
+- sort order.
+
+User badge ownership includes:
+
+- awarded date.
+- awarded reason.
+- source metadata.
+- public visibility.
+- featured state.
+- featured sort order.
+- hidden state.
+- revocation fields.
+
+A user cannot receive the same badge twice. Hidden badges remain earned but are not shown publicly. Revoked badges are not shown publicly and remain available to admins for moderation context.
+
+Badge categories
+----------------
+
+The first badge categories are:
+
+- teaching.
+- reliability.
+- reviews.
+- community.
+- subject.
+- milestone.
+
+Initial badge definitions
+-------------------------
+
+The seeded badge definitions are:
+
+- First class completed.
+- 10 students helped.
+- 50 teaching hours.
+- Reliable teacher.
+- Excellent reviews.
+- Open knowledge contributor.
+- Programming mentor.
+- Language mentor.
+- Community helper.
+- New teacher.
+
+Badge earning rules
+-------------------
+
+Badges are awarded by BadgeAwardingService and can be recalculated with:
+
+- php artisan teach4free:award-badges
+
+The first rules are intentionally simple:
+
+- first_class_completed: completed sessions count is at least 1.
+- ten_students_helped: unique students helped is at least 10.
+- fifty_teaching_hours: completed teaching hours is at least 50.
+- reliable_teacher: at least 10 completed sessions with low cancellation and no-show rates.
+- excellent_reviews: at least 10 public reviews and average rating at least 4.7.
+- open_knowledge_contributor: several active public offers or open public learning opportunities.
+- programming_mentor: enough completed sessions or active offers in Programming.
+- language_mentor: enough completed sessions or active offers in Languages.
+- community_helper: multiple learners helped plus open public learning activity.
+- new_teacher: early public teaching history.
+
+Badge awarding is also triggered from key activity flows:
+
+- teacher profile activation.
+- session completion.
+- review creation.
+- teaching offer creation/update/publish.
+- manual admin recalculation command.
+
+When a badge is first awarded, the teacher receives an internal database notification linking to the badge management page. Recalculations do not duplicate existing awards or notifications.
+
+Teacher badge management
+------------------------
+
+Teachers can manage their earned badges at:
+
+- GET /profile/teacher/badges
+- PUT /profile/teacher/badges
+
+Teachers can:
+
+- view earned badges.
+- see award date.
+- see award reason.
+- hide or show earned badges on the public profile.
+- feature up to 3 visible badges.
+
+Teachers cannot:
+
+- create badges.
+- award badges to themselves.
+- feature more than 3 badges.
+- feature hidden badges.
+- restore revoked badges.
+
+Public badge display
+--------------------
+
+Public teacher profiles now show a professional earned badges section when the teacher allows badges to be displayed.
+
+The public display shows:
+
+- featured badges first.
+- other visible earned badges after featured badges.
+- badge icon.
+- translated badge name.
+- translated badge description.
+- awarded date when available.
+
+Hidden and revoked badges are never shown publicly.
+
+Teacher cards and public offer teacher boxes show compact featured badges where there is enough space.
+
+Teacher profile customization
+-----------------------------
+
+Teacher public profiles are now more customizable.
+
+Teacher profile settings include:
+
+- banner image upload/removal and preview.
+- public headline.
+- teaching bio.
+- experience summary.
+- public intro.
+- profile accent color.
+- badge display preferences.
+- public section visibility preferences.
+- public profile preview link.
+
+Teacher public profile section visibility
+-----------------------------------------
+
+Teachers can choose whether to show these optional public sections/signals:
+
+- badges.
+- reviews.
+- reputation summary.
+- completed sessions count.
+- students helped count.
+- teaching hours.
+- location.
+- availability summary.
+
+Active public teaching offers remain visible through offer publication status. Platform safety and no-money information remains visible where required.
+
+Admin badge management
+----------------------
+
+Admins can manage badge definitions at:
+
+- GET /admin/badges
+- GET /admin/badges/create
+- POST /admin/badges
+- GET /admin/badges/{badge}/edit
+- PATCH/PUT /admin/badges/{badge}
+
+Admins can review user badge ownership at:
+
+- GET /admin/user-badges
+- GET /admin/users/{user}/badges
+
+Admins can moderate earned badges with:
+
+- POST /admin/users/{user}/badges/{badge}/revoke
+- POST /admin/users/{user}/badges/{badge}/restore
+
+Admin badge pages show badge definitions, active/revoked award counts, user ownership, visibility, featured state, revoke reasons and restore/revoke actions.
+
+Admin dashboard badge integration
+---------------------------------
+
+The admin dashboard now includes badge/reputation summary cards and activity panels for:
+
+- active badge definitions.
+- total badges awarded.
+- revoked badges.
+- most awarded badges.
+- recently awarded badges.
+- teachers with most badges.
+
+Demo badge data
+---------------
+
+After:
+
+- php artisan migrate:fresh --seed
+
+the demo database includes:
+
+- initial badge definitions.
+- automatically awarded badges based on seeded sessions, reviews, offers and reputation.
+- teachers with several badges.
+- teachers with few badges.
+- new teachers.
+- featured badges.
+- hidden badges.
+- a revoked badge for admin moderation testing.
+- badge notifications from first-time awards.
+
+What remains pending for badges and customization
+------------------------------------------------
+
+- Advanced badge/reputation rule configuration.
+- Manual badge awarding with audit log, if it becomes necessary.
+- More advanced badge analytics.
+- More granular featured badge ordering UI.
+- Teacher verification workflow.
+- Advanced recommendation/ranking engine.
+
 What remains pending
 --------------------
 
@@ -4233,7 +4468,6 @@ What remains pending
 - Advanced reputation rules.
 - Reputation rule admin configuration.
 - Advanced recommendation/ranking engine.
-- Badges.
 - Review analytics.
 - Advanced review abuse detection.
 - External review emails if ever needed.
@@ -4249,7 +4483,7 @@ What remains pending
 - Advanced user blocking.
 - AI-assisted moderation.
 - More advanced reply/thread UI if conversation threading becomes necessary.
-- Badges and reputation rule admin screens after basic reputation.
+- Advanced badges and reputation rule configuration.
 - Rich calendar charts or heatmaps if the statistics page needs them later.
 - More precise non-paid region detection only if ever needed.
 - Full cookie audit table for each third-party script.

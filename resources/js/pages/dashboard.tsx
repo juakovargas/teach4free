@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import {
+    Award,
     BookOpenCheck,
     CalendarClock,
     CalendarDays,
@@ -38,6 +39,7 @@ type Summary = {
     teacher_published_reviews_count: number;
     teacher_pending_review_responses_count: number;
     teacher_hidden_reviews_count: number;
+    teacher_badges_count: number;
     student_status: 'active' | 'inactive';
     teacher_status: 'active' | 'paused' | 'not_activated';
     teacher_accepting_requests: boolean;
@@ -163,6 +165,15 @@ export default function Dashboard({ summary }: Props) {
                     : t('reviews.no_reviews_short'),
             href: '/teacher/reviews',
             icon: Star,
+        },
+        {
+            title: t('dashboard.teacher_badges'),
+            body: t('dashboard.teacher_badges_body'),
+            status: t('dashboard.teacher_badges_count', {
+                count: summary.teacher_badges_count,
+            }),
+            href: '/profile/teacher/badges',
+            icon: Award,
         },
         {
             title: t('dashboard.requests_to_my_offers'),

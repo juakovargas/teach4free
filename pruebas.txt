@@ -1909,3 +1909,166 @@ Manual verification checklist:
 16. Check a teacher needing attention.
 
 17. Confirm no payment/premium ranking exists.
+
+Badges, medals and teacher profile customization - 2026-05-15
+-------------------------------------------------------------
+
+Focused automated tests and build checks were executed for this task.
+
+Commands executed:
+
+- php -l app/Models/Badge.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l app/Models/UserBadge.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l app/Services/BadgeAwardingService.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l app/Http/Controllers/TeacherBadgeController.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l app/Http/Controllers/Admin/BadgeController.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l app/Http/Controllers/Admin/UserBadgeController.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l app/Http/Controllers/AdminDashboardController.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l database/seeders/DatabaseSeeder.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l tests/Feature/BadgeAwardingServiceTest.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l lang/en/ui.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l lang/es/ui.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l lang/fr/ui.php
+- Result: Passed. No PHP syntax errors.
+
+- php artisan route:list --path=profile/teacher/badges
+- Result: Passed. Teacher badge routes are registered:
+  GET|HEAD profile/teacher/badges
+  PUT profile/teacher/badges
+
+- php artisan route:list --path=admin/badges
+- Result: Passed. Admin badge definition routes are registered:
+  GET|HEAD admin/badges
+  POST admin/badges
+  GET|HEAD admin/badges/create
+  GET|HEAD admin/badges/{badge}/edit
+  PUT|PATCH admin/badges/{badge}
+
+- php artisan route:list --path=admin/user-badges
+- Result: Passed. Admin user badge index route is registered:
+  GET|HEAD admin/user-badges
+
+- php artisan route:list --path=admin/users --name=badges
+- Result: Passed. Admin per-user badge routes are registered:
+  GET|HEAD admin/users/{user}/badges
+  POST admin/users/{user}/badges/{badge}/revoke
+  POST admin/users/{user}/badges/{badge}/restore
+
+- php artisan list teach4free
+- Result: Passed. teach4free:award-badges command is registered.
+
+- php artisan test tests/Feature/BadgeAwardingServiceTest.php
+- Result: Passed. 2 tests, 10 assertions.
+
+- npm run types:check
+- Result: Passed. TypeScript reported no errors.
+
+- npm run lint:check
+- Initial result: Failed. ESLint reported import ordering in admin badge pages and an unused import in teacher badge management.
+- Fix applied: reordered imports and removed the unused import.
+
+- npm run lint:check
+- Result: Passed. ESLint reported no errors.
+
+- composer run lint:check
+- Initial result: Failed. Pint reported formatting/import ordering changes needed in PHP files.
+- Fix applied: ran vendor\bin\pint --parallel.
+
+- composer run lint:check
+- Result: Passed. Pint reported no required changes.
+
+- npm run build
+- Result: Passed. Vite production build completed.
+- Note: Vite printed plugin timing warnings, but the build succeeded.
+
+Implementation notes:
+
+- Added badges and user_badges tables.
+- Added Badge and UserBadge models.
+- Added BadgeAwardingService and teach4free:award-badges command.
+- Badge awarding is automatic from real platform activity and can also be recalculated by command.
+- Added internal database notification when a badge is first awarded.
+- Added teacher badge management at /profile/teacher/badges.
+- Teachers can hide/show earned badges and feature up to 3 visible badges.
+- Added public badge display on teacher profiles, teacher cards and public offer teacher boxes.
+- Added teacher public profile customization fields for public intro, accent color and section visibility.
+- Public teacher profile now respects badge, review, reputation, metric, location and availability visibility settings.
+- Added admin badge definition management at /admin/badges.
+- Added admin user badge moderation at /admin/user-badges and /admin/users/{user}/badges.
+- Admins can revoke and restore user badges with moderation context.
+- Admin dashboard now includes badge/reputation summary cards and badge activity panels.
+- Demo seed data includes badge definitions, automatic awards, featured badges, a hidden badge, a revoked badge and badge notifications.
+- No payment, subscription, credit, wallet, commission, paid plan, premium visibility, paid badge, sponsored badge or paid ranking logic was added.
+
+Manual verification checklist:
+
+1. Run:
+   php artisan migrate:fresh --seed
+
+2. Login as a demo teacher.
+
+3. Open teacher badge management page.
+
+4. Confirm earned badges appear.
+
+5. Hide one badge.
+
+6. Feature up to 3 badges.
+
+7. Try to feature more than 3 badges and confirm it is blocked.
+
+8. Open public teacher profile.
+
+9. Confirm visible badges appear.
+
+10. Confirm hidden badge does not appear.
+
+11. Change teacher banner.
+
+12. Change teacher public intro or customization settings.
+
+13. Hide reputation/reviews/location section if available.
+
+14. Refresh public teacher profile and confirm sections respect settings.
+
+15. Login as admin:
+    admin@example.com
+    password
+
+16. Open admin badges page.
+
+17. Confirm badge definitions appear.
+
+18. Edit a badge color/icon/name if allowed.
+
+19. Open admin user badges page.
+
+20. Revoke a badge with reason.
+
+21. Confirm revoked badge disappears from public teacher profile.
+
+22. Restore badge if implemented.
+
+23. Confirm badge notification exists when badge is first awarded.
