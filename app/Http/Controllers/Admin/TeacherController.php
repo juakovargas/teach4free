@@ -21,7 +21,7 @@ class TeacherController extends Controller
 
         $teachers = User::query()
             ->whereHas('teacherProfile')
-            ->with('teacherProfile:id,user_id,headline,is_active,is_verified,is_accepting_requests,activated_at')
+            ->with('teacherProfile:id,user_id,headline,is_active,is_verified,is_accepting_requests,activated_at,banner_path,show_badges,show_reviews,show_reputation_summary')
             ->withCount([
                 'teachingOffers as public_offers_count' => fn ($query) => $query->publiclyVisible(),
                 'teacherAvailabilities as availability_blocks_count' => fn ($query) => $query->where('is_active', true),

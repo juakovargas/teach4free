@@ -2072,3 +2072,263 @@ Manual verification checklist:
 22. Restore badge if implemented.
 
 23. Confirm badge notification exists when badge is first awarded.
+
+Teacher public profile customization completion - 2026-05-15
+------------------------------------------------------------
+
+Focused automated tests and verification checks were executed for this continuation task.
+
+Commands executed:
+
+- php -l app\Http\Controllers\PublicTeacherController.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l app\Http\Controllers\PublicOfferController.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l app\Http\Controllers\HomeController.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l app\Http\Controllers\TeacherProfileController.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l app\Http\Controllers\Admin\TeacherController.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l database\migrations\2026_05_15_100002_add_public_customization_fields_to_teacher_profiles_table.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l database\seeders\DatabaseSeeder.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l lang\es\ui.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l lang\fr\ui.php
+- Result: Passed. No PHP syntax errors.
+
+- Inline PHP translation key check for new teacher profile customization keys across en/es/fr
+- Result: Passed. Required keys were present in all three locales.
+
+- php -l tests\Feature\ProfileSetupTest.php
+- Result: Passed. No PHP syntax errors.
+
+- php artisan test tests\Feature\ProfileSetupTest.php
+- Result: Passed. 12 tests, 70 assertions.
+
+- npm run types:check
+- Initial result: Failed.
+- Error: resources/js/pages/teachers/show.tsx reported TS2322 because the accent color fallback could still be typed as null.
+- Fix applied: narrowed the accent color fallback to a non-null string.
+
+- npm run types:check
+- Result: Passed. TypeScript reported no errors.
+
+- composer run lint:check
+- Result: Passed. Pint reported no required changes.
+
+- npm run lint:check
+- Result: Passed. ESLint reported no errors.
+
+- npm run build
+- Result: Passed. Vite production build completed.
+- Note: Vite printed plugin timing warnings, but the build succeeded.
+
+- php artisan route:list --path=profile/teacher
+- Result: Passed. Teacher profile, banner, badge, activate and pause routes are registered.
+
+Implementation notes:
+
+- Reused existing teacher profile customization fields instead of duplicating them.
+- Tightened profile accent color validation to nullable #RRGGBB.
+- Teacher banner upload stores relative paths under banners/teachers on the public disk.
+- Public teacher profiles use uploaded banners when available and accent-aware CSS fallback banners otherwise.
+- Public intro is editable from /profile/teacher and appears near the top of the public profile.
+- Accent color now has picker, manual hex input, presets and live preview.
+- Public section visibility controls are available from /profile/teacher.
+- Public teacher profile, compact teacher cards, public offer teacher boxes and reputation-related sorts respect hidden review/reputation/badge/metric settings.
+- Admin teacher overview shows custom banner and hidden badge/review/reputation flags, plus a public profile link for active teachers.
+- Demo reputation teachers have varied public visibility settings.
+- No payment, subscription, credit, wallet, commission, paid plan, premium visibility, paid badge or monetization logic was added.
+
+Manual verification checklist:
+
+1. Run:
+   php artisan migrate --seed
+
+2. Login as a demo teacher.
+
+3. Open teacher profile/settings page.
+
+4. Confirm banner upload section is visible.
+
+5. Upload a JPG/PNG/WebP banner.
+
+6. Confirm banner preview appears.
+
+7. Open public teacher profile.
+
+8. Confirm uploaded banner appears.
+
+9. Remove banner.
+
+10. Confirm public teacher profile falls back to gradient banner.
+
+11. Set public intro.
+
+12. Confirm public intro appears on public profile.
+
+13. Change accent color.
+
+14. Confirm public profile uses accent color subtly.
+
+15. Hide badges section.
+
+16. Confirm badges disappear from public profile.
+
+17. Hide reviews/reputation/location/availability sections.
+
+18. Confirm hidden sections do not leave empty gaps.
+
+19. Confirm active offers remain visible.
+
+20. Confirm public profile preview link works.
+
+Public SEO foundation - 2026-05-15
+----------------------------------
+
+Focused automated tests and verification checks were executed for this task.
+
+Commands executed:
+
+- php -l app\Services\SeoService.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l app\Http\Controllers\SitemapController.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l app\Http\Controllers\RobotsController.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l app\Http\Middleware\AddNoIndexForPrivateRoutes.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l app\Http\Controllers\ContentPageController.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l app\Http\Controllers\HomeController.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l app\Http\Controllers\PublicOfferController.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l app\Http\Controllers\PublicTeacherController.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l database\migrations\2026_05_15_120000_add_seo_fields_to_platform_settings_table.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l lang\en\ui.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l lang\es\ui.php
+- Result: Passed. No PHP syntax errors.
+
+- php -l lang\fr\ui.php
+- Result: Passed. No PHP syntax errors.
+
+- php artisan test tests\Feature\PublicSeoTest.php
+- Result: Passed. 6 tests, 77 assertions.
+
+- npm run types:check
+- Result: Passed. TypeScript reported no errors.
+
+- composer run lint:check
+- Initial result: Failed. Pint reported ordered imports in bootstrap/app.php.
+- Fix applied: reordered the middleware imports.
+
+- composer run lint:check
+- Result: Passed. Pint reported no required changes.
+
+- npm run lint:check
+- Result: Passed. ESLint reported no errors.
+
+- npm run build
+- Result: Passed. Vite production build completed.
+- Note: Vite printed plugin timing warnings, but the build succeeded.
+
+- php artisan route:list --path=sitemap --no-interaction
+- Result: Passed. The GET|HEAD /sitemap.xml route is registered.
+
+- php artisan route:list --path=robots --no-interaction
+- Result: Passed. The GET|HEAD /robots.txt route is registered.
+
+- php artisan migrate --pretend --no-interaction
+- Result: Passed. Laravel inspected the pending SEO migration without errors.
+
+- php artisan migrate --no-interaction
+- Result: Passed. The SEO settings migration ran.
+
+- php artisan test tests\Feature\PublicSeoTest.php
+- Result: Passed. 6 tests, 77 assertions.
+
+- php artisan test tests\Feature\PublicPagesTest.php tests\Feature\PublicSeoTest.php
+- Result: Passed. 14 tests, 184 assertions.
+
+Implementation notes:
+
+- Added a reusable SEO metadata service and Inertia SeoHead component.
+- Public home, about, offer search, offer detail, teacher directory, teacher profile and legal/content pages now receive SEO props.
+- Public pages render title, meta description, canonical URL, robots, OpenGraph, Twitter/X and JSON-LD when appropriate.
+- Offer details use Course JSON-LD.
+- Teacher profiles use Person JSON-LD and do not expose email.
+- Home uses Organization and WebSite JSON-LD.
+- /sitemap.xml includes public indexable URLs and excludes private/admin/inactive content.
+- /robots.txt disallows private/admin/auth areas and references the sitemap.
+- Private/admin/auth pages have noindex meta through layouts and X-Robots-Tag headers through middleware.
+- Minimal admin SEO settings were added to /admin/platform-settings.
+- hreflang was not added because current locale handling is session/preference based rather than locale-specific URLs.
+- No paid SEO boosts, sponsored offers, sponsored teachers, premium visibility or monetization logic was added.
+
+Manual verification checklist:
+
+1. Run:
+   php artisan migrate --seed
+
+2. Open home page.
+
+3. Inspect page head and confirm title/meta description/canonical/OG tags.
+
+4. Open /offers.
+
+5. Confirm SEO tags are present.
+
+6. Open a public offer detail page.
+
+7. Confirm title and description use offer data.
+
+8. Confirm JSON-LD exists and is valid JSON.
+
+9. Open /teachers.
+
+10. Open a public teacher profile.
+
+11. Confirm title and description use teacher data.
+
+12. Confirm teacher JSON-LD does not include email.
+
+13. Open /sitemap.xml.
+
+14. Confirm public offers and teachers appear.
+
+15. Confirm admin/private routes do not appear.
+
+16. Open /robots.txt.
+
+17. Confirm sitemap is referenced.
+
+18. Login and open /admin/dashboard.
+
+19. Confirm admin/private page has noindex meta.
+
+20. Check that public pages still render normally.

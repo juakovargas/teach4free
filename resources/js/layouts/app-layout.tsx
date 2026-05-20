@@ -1,3 +1,5 @@
+import { Head } from '@inertiajs/react';
+
 import { ConsentAwareTrackingScripts } from '@/components/consent-aware-tracking-scripts';
 import { CookieConsentManager } from '@/components/cookie-consent-manager';
 import AppLayoutTemplate from '@/layouts/app/app-sidebar-layout';
@@ -12,6 +14,9 @@ export default function AppLayout({
 }) {
     return (
         <>
+            <Head>
+                <meta name="robots" content="noindex,nofollow" />
+            </Head>
             <ConsentAwareTrackingScripts />
             <CookieConsentManager />
 

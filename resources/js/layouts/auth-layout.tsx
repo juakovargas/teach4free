@@ -1,3 +1,5 @@
+import { Head } from '@inertiajs/react';
+
 import { ConsentAwareTrackingScripts } from '@/components/consent-aware-tracking-scripts';
 import { CookieConsentManager } from '@/components/cookie-consent-manager';
 import { useTranslation } from '@/hooks/use-translation';
@@ -16,6 +18,9 @@ export default function AuthLayout({
 
     return (
         <>
+            <Head>
+                <meta name="robots" content="noindex,nofollow" />
+            </Head>
             <ConsentAwareTrackingScripts />
             <CookieConsentManager />
 

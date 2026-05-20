@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { FilterX, GraduationCap, MapPin, Search, Sparkles } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useState } from 'react';
@@ -10,6 +10,8 @@ import type {
     PublicLanguage,
     PublicTeacher,
 } from '@/components/public/public-identity';
+import { SeoHead } from '@/components/seo-head';
+import type { SeoHeadProps } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -53,6 +55,7 @@ type Props = {
     subjects: Subject[];
     languages: PublicLanguage[];
     countries: string[];
+    seo: SeoHeadProps;
 };
 
 export default function TeachersIndex({
@@ -62,6 +65,7 @@ export default function TeachersIndex({
     subjects,
     languages,
     countries,
+    seo,
 }: Props) {
     const { t } = useTranslation();
     const [data, setData] = useState<Filters>(filters);
@@ -85,7 +89,7 @@ export default function TeachersIndex({
 
     return (
         <>
-            <Head title={t('teachers.meta_title')} />
+            <SeoHead {...seo} />
             <div className="bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.16),transparent_30rem),linear-gradient(180deg,#fffaf3_0%,#ffffff_42%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.18),transparent_28rem),linear-gradient(180deg,#07140f_0%,#020617_55%)]">
                 <div className="mx-auto max-w-7xl space-y-8 px-4 py-10 sm:px-6 lg:px-8">
                     <section className="rounded-lg border border-white/80 bg-white/75 p-6 shadow-xl shadow-emerald-950/5 backdrop-blur dark:border-white/10 dark:bg-white/10">

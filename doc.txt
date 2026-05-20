@@ -4390,6 +4390,113 @@ Teachers can choose whether to show these optional public sections/signals:
 
 Active public teaching offers remain visible through offer publication status. Platform safety and no-money information remains visible where required.
 
+Teacher public profile customization completion - 2026-05-15
+------------------------------------------------------------
+
+This focused continuation completed the teacher public profile customization area without adding any payment, subscription, credit, wallet, commission, paid plan, premium badge, sponsored visibility or monetization logic.
+
+The existing teacher profile fields were reused:
+
+- banner_path.
+- public_intro.
+- profile_accent_color.
+- show_badges.
+- show_reviews.
+- show_reputation_summary.
+- show_completed_sessions_count.
+- show_students_helped_count.
+- show_teaching_hours.
+- show_location.
+- show_availability_summary.
+
+The customization area lives on:
+
+- GET /profile/teacher
+- PUT /profile/teacher
+- POST /profile/teacher/banner
+- DELETE /profile/teacher/banner
+
+Teacher banner / hero image:
+
+- Teachers can upload, preview, replace and remove their public teacher banner.
+- Accepted formats are JPG, JPEG, PNG and WebP.
+- Maximum upload size is 4 MB.
+- Files are stored on the public disk under banners/teachers.
+- The database stores only the relative path, for example banners/teachers/example.webp.
+- Public URLs are generated through the public storage disk, for example /storage/banners/teachers/example.webp.
+- Local environments still need php artisan storage:link for uploaded files to be served.
+- Removing a banner deletes the local public-disk file when present and clears banner_path.
+- Public profiles fall back to a professional CSS gradient when no banner is set.
+
+Public intro:
+
+- Teachers can edit public_intro from /profile/teacher.
+- The field is validated as nullable text with a 700 character limit.
+- It appears near the top of the public teacher profile.
+- If it is empty, the public profile falls back gracefully to the headline or teaching bio excerpt.
+
+Profile accent color:
+
+- Teachers can choose a nullable #RRGGBB accent color.
+- The settings page provides a color picker, manual hex input, preset swatches and a live preview.
+- The public profile uses the accent subtly for the fallback banner and a small profile highlight line.
+- If no accent is stored, Teach4Free uses the default profile accent.
+- Accent color remains free and does not affect ranking or visibility.
+
+Public section visibility:
+
+- Teachers can toggle badges, reviews, reputation summary, completed sessions count, students helped count, teaching hours, location and availability summary.
+- Hidden sections are not rendered on the public teacher profile.
+- Compact public teacher cards and public offer teacher boxes also respect hidden badge, review, reputation and metric settings.
+- Public teacher directory reputation sorts and public offer teacher-rating sorting treat hidden rating/reputation signals as unavailable.
+- Active public teaching offers remain visible even when optional profile sections are hidden.
+- Platform free/no-money and safety notices remain visible and cannot be hidden.
+
+Badge management and featured badges:
+
+- The teacher profile page links clearly to /profile/teacher/badges.
+- Teachers manage visible and featured earned badges there.
+- If show_badges is false, public badges and compact featured badge pills are not shown.
+- Badge management remains free and earned badges are not purchasable.
+
+Public profile preview:
+
+- Active teachers see a public profile preview button from /profile/teacher.
+- The preview opens /teachers/{user}.
+- Inactive teachers see guidance to activate their teaching profile before a public teacher page is available.
+- No broken public profile preview link is shown for inactive teacher profiles.
+
+Public rendering rules:
+
+- Uploaded banners are rendered only when banner_path exists.
+- Missing banners use the accent-aware CSS fallback banner.
+- public_intro is shown near the top when available.
+- Reviews are hidden when show_reviews is false.
+- Rating and reputation summaries are hidden when show_reputation_summary is false.
+- Individual reputation metrics respect their own visibility toggles.
+- Location and availability blocks respect their visibility toggles.
+- Optional hidden sections do not leave empty layout gaps.
+
+Admin visibility:
+
+- The admin teacher overview now shows whether a teacher has a custom banner.
+- It also shows when badges, reviews or reputation are hidden.
+- Active teachers have a public profile link from the admin teacher overview.
+
+Demo data:
+
+- Demo reputation teachers now include public_intro and profile_accent_color values.
+- Demo teachers use varied section visibility settings.
+- Demo data does not reference missing banner image files; public profiles use CSS fallback banners unless a real uploaded banner exists.
+
+Remaining customization work:
+
+- Advanced teacher profile customization.
+- Public open sessions calendar.
+- Mobile readiness/PWA foundation.
+- Teacher verification workflow.
+- Advanced recommendations.
+
 Admin badge management
 ----------------------
 
@@ -4454,6 +4561,87 @@ What remains pending for badges and customization
 - Teacher verification workflow.
 - Advanced recommendation/ranking engine.
 
+Public SEO foundation
+---------------------
+
+The public SEO foundation is implemented for the Laravel/Inertia public pages.
+
+Metadata architecture:
+
+- Added config/seo.php for default SEO values.
+- Added App\Services\SeoService as the reusable metadata builder.
+- Added resources/js/components/seo-head.tsx for Inertia page head rendering.
+- SeoHead supports title, description, canonicalUrl, robots, OpenGraph, Twitter/X card metadata and JSON-LD structuredData.
+- Public controllers now send page-specific seo props to React pages.
+- The Inertia title callback now preserves page-provided titles directly.
+
+Dynamic public page SEO:
+
+- Home has a translated SEO title, meta description, canonical URL, OpenGraph/Twitter metadata and Organization/WebSite JSON-LD.
+- About has translated SEO metadata, canonical URL and AboutPage JSON-LD.
+- Public offers search has translated SEO metadata, canonical URL /offers and CollectionPage JSON-LD.
+- Public offer detail pages use the offer title, summary/description excerpt, teacher name, languages and category for metadata.
+- Public offer detail pages expose Course JSON-LD only for published public teaching offers.
+- Public teacher directory has translated SEO metadata, canonical URL /teachers and CollectionPage JSON-LD.
+- Public teacher profile pages use the teacher name, public intro/headline/bio excerpt, teaching languages and subjects for metadata.
+- Public teacher profile pages expose Person JSON-LD with safe public data only and do not include email.
+- Legal/content pages use their translated page title and intro as SEO title/description and expose WebPage JSON-LD.
+
+Canonical URLs:
+
+- Home canonical: /
+- About canonical: /about
+- Offers canonical: /offers
+- Offer detail canonical: /offers/{slug}
+- Teachers canonical: /teachers
+- Teacher profile canonical: /teachers/{user}
+- Legal/content pages canonical: their own public route.
+- Filtered offer and teacher directory URLs canonicalize back to the base list route to avoid many duplicate indexable combinations.
+
+OpenGraph and Twitter/X:
+
+- Public pages render og:title, og:description, og:type, og:url, og:site_name and image tags when a real image exists.
+- Twitter/X cards render twitter:card, twitter:title, twitter:description and twitter:image when a real image exists.
+- Teacher profile OG images prefer the teacher banner when the public file exists, then avatar, then configured default OG image.
+- Offer detail OG images prefer the teacher banner/avatar/default OG image when available.
+- Missing image files are not referenced.
+- Custom branded OG artwork remains pending.
+
+Sitemap.xml:
+
+- GET /sitemap.xml generates a valid XML sitemap.
+- Included URLs: home, about, offers index, teachers index, public legal/content pages, published public offers and active public teacher profiles.
+- Excluded URLs: admin, private/authenticated pages, profile/settings, messages, notifications, applications, private sessions, unpublished/inactive offers and inactive teacher profiles.
+- Sitemap entries include loc, lastmod when available, changefreq and priority.
+- Sitemap availability can be disabled from SEO settings.
+
+Robots.txt:
+
+- GET /robots.txt is generated dynamically.
+- It disallows admin/private areas and authentication/password routes.
+- It allows public pages and references the configured sitemap URL.
+- If public search indexing is disabled in SEO settings, robots.txt disallows all crawling.
+- robots.txt is not used as the only privacy mechanism.
+
+Private/admin noindex:
+
+- Authenticated app layouts, admin layout and auth layout render noindex,nofollow robots meta tags.
+- AddNoIndexForPrivateRoutes also adds an X-Robots-Tag: noindex, nofollow header for private/admin/auth routes.
+- Covered private areas include dashboard, admin, profile, settings, teacher tools, messages, notifications, applications, sessions and reports.
+
+Admin SEO settings:
+
+- SEO settings are integrated into /admin/platform-settings.
+- Admins can edit site name, default meta title, default meta description, default robots value and default OG image path.
+- Admins can enable/disable sitemap generation, structured data and public search indexing.
+- There is no paid SEO boost, sponsored teacher, sponsored offer or premium visibility logic.
+
+Multilingual SEO:
+
+- Metadata text uses the current app locale through the existing translation files.
+- hreflang was not added because current public locale handling is session/preference based, not locale-specific URLs.
+- Locale-specific public URLs and hreflang remain pending.
+
 What remains pending
 --------------------
 
@@ -4472,7 +4660,12 @@ What remains pending
 - Advanced review abuse detection.
 - External review emails if ever needed.
 - Teacher verification workflow.
-- Public SEO.
+- Locale-specific public URLs and hreflang.
+- Custom OG artwork.
+- Advanced sitemap splitting if the site grows.
+- Search Console submission.
+- Rich Results validation.
+- SEO analytics review after cookie consent and analytics activation.
 - Public open sessions calendar.
 - Favorites and alerts.
 - Real-time chat.

@@ -1,4 +1,4 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Link, useForm } from '@inertiajs/react';
 import {
     ArrowLeft,
     CalendarClock,
@@ -31,6 +31,8 @@ import type {
     PublicReputationSummary,
     PublicTeacher,
 } from '@/components/public/public-identity';
+import { SeoHead } from '@/components/seo-head';
+import type { SeoHeadProps } from '@/components/seo-head';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -108,22 +110,26 @@ type Review = {
 
 type Props = {
     teacher: Teacher;
-    reputationSummary: PublicReputationSummary;
+    reputationSummary: PublicReputationSummary | null;
     reviewSummary: ReviewSummary;
     reviews: Review[];
     reviewReportTypes: string[];
     offers: PublicOffer[];
     openOffers: PublicOffer[];
+    seo: SeoHeadProps;
 };
 
-export default function TeacherShow({ teacher, reputationSummary, reviewSummary, reviews, reviewReportTypes, offers, openOffers }: Props) {
+export default function TeacherShow({ teacher, reputationSummary, reviewSummary, reviews, reviewReportTypes, offers, openOffers, seo }: Props) {
     const { t } = useTranslation();
     const location = [teacher.city, teacher.country_code].filter(Boolean).join(', ');
     const accentColor = /^#[0-9a-fA-F]{6}$/.test(teacher.profile_accent_color ?? '')
-        ? teacher.profile_accent_color
+        ? (teacher.profile_accent_color ?? '#0f766e')
         : '#0f766e';
+    const publicIntro =
+        teacher.public_intro ||
+        (!teacher.headline ? teacher.teaching_bio_excerpt : null);
     const infoCards = [
-        teacher.visibility.show_reviews
+        teacher.visibility.show_reviews && teacher.visibility.show_reputation_summary
             ? {
                   icon: Star,
                   label: t('reviews.average_rating'),
@@ -170,7 +176,7 @@ export default function TeacherShow({ teacher, reputationSummary, reviewSummary,
 
     return (
         <>
-            <Head title={t('teachers.profile_meta_title', { teacher: teacher.name })} />
+            <SeoHead {...seo} />
             <div className="bg-white dark:bg-slate-950">
                 <div className="mx-auto max-w-7xl space-y-8 px-4 py-10 sm:px-6 lg:px-8">
                     <Button variant="outline" asChild>
@@ -224,14 +230,18 @@ export default function TeacherShow({ teacher, reputationSummary, reviewSummary,
                                             </Badge>
                                         )}
                                     </div>
+                                    <div
+                                        className="mt-4 h-1 w-24 rounded-full"
+                                        style={{ backgroundColor: accentColor }}
+                                    />
                                     {teacher.headline && (
                                         <p className="mt-3 max-w-3xl text-lg leading-7 text-slate-700 dark:text-slate-300">
                                             {teacher.headline}
                                         </p>
                                     )}
-                                    {teacher.public_intro && (
+                                    {publicIntro && (
                                         <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-300">
-                                            {teacher.public_intro}
+                                            {publicIntro}
                                         </p>
                                     )}
                                     {location && (
@@ -271,7 +281,7 @@ export default function TeacherShow({ teacher, reputationSummary, reviewSummary,
                         <TeacherBadgesSection badges={teacher.badges} />
                     )}
 
-                    {teacher.visibility.show_reputation_summary && (
+                    {teacher.visibility.show_reputation_summary && reputationSummary && (
                         <ReputationSummaryPanel summary={reputationSummary} visibility={teacher.visibility} />
                     )}
 
@@ -406,7 +416,9 @@ export default function TeacherShow({ teacher, reputationSummary, reviewSummary,
                                         {t('reviews.public_intro')}
                                     </p>
                                 </div>
-                                <RatingSummary summary={reviewSummary} />
+                                {teacher.visibility.show_reputation_summary && (
+                                    <RatingSummary summary={reviewSummary} />
+                                )}
                             </div>
                             {reviews.length === 0 ? (
                                 <EmptyState title={t('reviews.no_reviews_title')}>

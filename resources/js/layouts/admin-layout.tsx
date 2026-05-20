@@ -1,4 +1,4 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import {
     BadgeCheck,
     BookOpenCheck,
@@ -142,6 +142,9 @@ export default function AdminLayout({ children, breadcrumbs = [] }: Props) {
 
     return (
         <div className="min-h-screen bg-slate-50 text-slate-950 dark:bg-slate-950 dark:text-slate-50">
+            <Head>
+                <meta name="robots" content="noindex,nofollow" />
+            </Head>
             <ConsentAwareTrackingScripts />
             <CookieConsentManager />
             <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">

@@ -1,4 +1,4 @@
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, CalendarClock, Clock, ExternalLink, GraduationCap, Languages, Star, Users } from 'lucide-react';
 import type { FormEvent } from 'react';
 import type { ComponentType } from 'react';
@@ -6,6 +6,8 @@ import { EarnedBadgePill } from '@/components/badges/badge-display';
 import type { PublicBadge } from '@/components/badges/badge-display';
 import InputError from '@/components/input-error';
 import type { PublicReputationSummary } from '@/components/public/public-identity';
+import { SeoHead } from '@/components/seo-head';
+import type { SeoHeadProps } from '@/components/seo-head';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -42,8 +44,8 @@ type Offer = {
         country_code?: string | null;
         profile_url?: string | null;
         headline?: string | null;
-        rating_summary?: { average: number | null; count: number };
-        reputation_summary?: PublicReputationSummary;
+        rating_summary?: { average: number | null; count: number } | null;
+        reputation_summary?: PublicReputationSummary | null;
         featured_badges?: PublicBadge[];
         visible_badges_count?: number;
         languages?: { id: number; code: string; name: string }[];
@@ -88,9 +90,10 @@ type Props = {
         weekly: { day_of_week: number; starts_at: string; ends_at: string; timezone: string }[];
     };
     upcomingSessions: { id: number; title: string; starts_at: string | null; ends_at: string | null; timezone: string; capacity: number; enrolled_attendees_count: number; status: string }[];
+    seo: SeoHeadProps;
 };
 
-export default function PublicOfferShow({ offer, seatSummary, currentApplication, isOwnOffer, visibleMeetingUrl, teacherAvailability, upcomingSessions }: Props) {
+export default function PublicOfferShow({ offer, seatSummary, currentApplication, isOwnOffer, visibleMeetingUrl, teacherAvailability, upcomingSessions, seo }: Props) {
     const { t } = useTranslation();
     const getInitials = useInitials();
     const { auth } = usePage().props;
@@ -113,7 +116,7 @@ export default function PublicOfferShow({ offer, seatSummary, currentApplication
 
     return (
         <>
-            <Head title={offer.title} />
+            <SeoHead {...seo} />
             <div className="mx-auto max-w-6xl space-y-8 px-4 py-10 sm:px-6 lg:px-8">
                 <Button variant="outline" asChild>
                     <Link href="/offers">

@@ -8,6 +8,7 @@ use App\Models\StudentProfile;
 use App\Models\TeacherProfile;
 use App\Models\TeachingOffer;
 use App\Models\User;
+use App\Services\SeoService;
 use App\Services\TeacherReputationService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
@@ -17,7 +18,10 @@ use Laravel\Fortify\Features;
 
 class HomeController extends Controller
 {
-    public function __construct(private readonly TeacherReputationService $reputations) {}
+    public function __construct(
+        private readonly TeacherReputationService $reputations,
+        private readonly SeoService $seo,
+    ) {}
 
     public function __invoke(Request $request): Response
     {
@@ -55,6 +59,16 @@ class HomeController extends Controller
             'startTeachingUrl' => $request->user()
                 ? route('profile.teacher.edit')
                 : route('register'),
+            'seo' => $this->seo->metadata([
+                'title' => __('ui.seo.home.title'),
+                'description' => __('ui.seo.home.description'),
+                'canonicalUrl' => route('home'),
+                'ogType' => 'website',
+                'structuredData' => [
+                    $this->seo->organizationSchema(),
+                    $this->seo->websiteSchema(),
+                ],
+            ]),
         ]);
     }
 
@@ -67,7 +81,7 @@ class HomeController extends Controller
             ->publiclyVisible()
             ->with([
                 'user:id,name,avatar_path,avatar_url,city,country_code',
-                'user.teacherProfile:id,user_id,is_active,show_badges,show_location',
+                'user.teacherProfile:id,user_id,is_active,show_badges,show_reviews,show_reputation_summary,show_completed_sessions_count,show_students_helped_count,show_teaching_hours,show_location',
                 'user.userBadges' => fn ($query) => $query
                     ->publiclyVisible()
                     ->with('badge')
@@ -87,7 +101,7 @@ class HomeController extends Controller
                 ->publiclyVisible()
                 ->with([
                     'user:id,name,avatar_path,avatar_url,city,country_code',
-                    'user.teacherProfile:id,user_id,is_active,show_badges,show_location',
+                    'user.teacherProfile:id,user_id,is_active,show_badges,show_reviews,show_reputation_summary,show_completed_sessions_count,show_students_helped_count,show_teaching_hours,show_location',
                     'user.userBadges' => fn ($query) => $query
                         ->publiclyVisible()
                         ->with('badge')
@@ -124,7 +138,7 @@ class HomeController extends Controller
             ->publiclyVisible()
             ->with([
                 'user:id,name,avatar_path,avatar_url,city,country_code',
-                'user.teacherProfile:id,user_id,is_active,show_badges,show_location',
+                'user.teacherProfile:id,user_id,is_active,show_badges,show_reviews,show_reputation_summary,show_completed_sessions_count,show_students_helped_count,show_teaching_hours,show_location',
                 'user.userBadges' => fn ($query) => $query
                     ->publiclyVisible()
                     ->with('badge')
@@ -145,7 +159,7 @@ class HomeController extends Controller
                 ->publiclyVisible()
                 ->with([
                     'user:id,name,avatar_path,avatar_url,city,country_code',
-                    'user.teacherProfile:id,user_id,is_active,show_badges,show_location',
+                    'user.teacherProfile:id,user_id,is_active,show_badges,show_reviews,show_reputation_summary,show_completed_sessions_count,show_students_helped_count,show_teaching_hours,show_location',
                     'user.userBadges' => fn ($query) => $query
                         ->publiclyVisible()
                         ->with('badge')
@@ -182,7 +196,7 @@ class HomeController extends Controller
         $teachers = User::query()
             ->whereHas('teacherProfile', fn ($query) => $query->where('is_active', true))
             ->with([
-                'teacherProfile:id,user_id,headline,teaching_bio,is_verified,is_accepting_requests,show_badges,show_location',
+                'teacherProfile:id,user_id,headline,teaching_bio,is_verified,is_accepting_requests,show_badges,show_reviews,show_reputation_summary,show_completed_sessions_count,show_students_helped_count,show_teaching_hours,show_location',
                 'userBadges' => fn ($query) => $query
                     ->publiclyVisible()
                     ->with('badge')
@@ -217,11 +231,8 @@ class HomeController extends Controller
                 'country_code' => $teacher->teacherProfile?->show_location ? $teacher->country_code : null,
                 'is_verified' => (bool) $teacher->teacherProfile?->is_verified,
                 'active_offers_count' => (int) $teacher->active_offers_count,
-                'rating_summary' => [
-                    'average' => $reputation['average_rating'],
-                    'count' => $reputation['published_review_count'],
-                ],
-                'reputation_summary' => $reputation,
+                'rating_summary' => $this->publicRatingSummary($teacher->teacherProfile, $reputation),
+                'reputation_summary' => $this->publicReputationSummary($teacher->teacherProfile, $reputation),
                 'featured_badges' => $this->badgePayloads($teacher, 3),
                 'visible_badges_count' => $teacher->teacherProfile?->show_badges ? $teacher->userBadges->count() : 0,
                 'teaching_bio_excerpt' => str($teacher->teacherProfile?->teaching_bio ?? '')->limit(180)->toString(),
@@ -284,11 +295,8 @@ class HomeController extends Controller
                 'city' => $offer->user->teacherProfile?->show_location ? $offer->user->city : null,
                 'country_code' => $offer->user->teacherProfile?->show_location ? $offer->user->country_code : null,
                 'profile_url' => $offer->user->teacherProfile?->is_active ? route('teachers.show', $offer->user) : null,
-                'rating_summary' => [
-                    'average' => $reputation['average_rating'],
-                    'count' => $reputation['published_review_count'],
-                ],
-                'reputation_summary' => $reputation,
+                'rating_summary' => $this->publicRatingSummary($offer->user->teacherProfile, $reputation),
+                'reputation_summary' => $this->publicReputationSummary($offer->user->teacherProfile, $reputation),
                 'featured_badges' => $this->badgePayloads($offer->user, 2),
                 'visible_badges_count' => $offer->user->teacherProfile?->show_badges ? $offer->user->userBadges->count() : 0,
             ],
@@ -323,5 +331,53 @@ class HomeController extends Controller
             ->take($limit)
             ->map(fn ($badge): array => $badge->publicPayload())
             ->values();
+    }
+
+    /**
+     * @param  array<string, mixed>  $reputation
+     * @return array<string, mixed>|null
+     */
+    private function publicRatingSummary(?TeacherProfile $profile, array $reputation): ?array
+    {
+        if (! $profile?->show_reviews || ! $profile?->show_reputation_summary) {
+            return null;
+        }
+
+        return [
+            'average' => $reputation['average_rating'] ?? null,
+            'count' => $reputation['published_review_count'] ?? 0,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $reputation
+     * @return array<string, mixed>|null
+     */
+    private function publicReputationSummary(?TeacherProfile $profile, array $reputation): ?array
+    {
+        if (! $profile?->show_reputation_summary) {
+            return null;
+        }
+
+        $summary = $reputation;
+
+        if (! $profile->show_reviews) {
+            $summary['average_rating'] = null;
+            $summary['published_review_count'] = 0;
+        }
+
+        if (! $profile->show_completed_sessions_count) {
+            $summary['completed_sessions_count'] = 0;
+        }
+
+        if (! $profile->show_students_helped_count) {
+            $summary['students_helped_count'] = 0;
+        }
+
+        if (! $profile->show_teaching_hours) {
+            $summary['teaching_hours'] = 0;
+        }
+
+        return $summary;
     }
 }

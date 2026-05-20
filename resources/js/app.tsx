@@ -11,7 +11,7 @@ import SettingsLayout from '@/layouts/settings/layout';
 const appName = import.meta.env.VITE_APP_NAME || 'Teach4Free';
 
 createInertiaApp({
-    title: (title) => (title ? `${title} - ${appName}` : appName),
+    title: (title) => title || appName,
     layout: (name) => {
         switch (true) {
             case name === 'welcome' || name === 'about' || name.startsWith('offers/') || name.startsWith('teachers/') || name.startsWith('content/'):

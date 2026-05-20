@@ -47,14 +47,15 @@ Current priority order
 
 1. Session reminders
 2. Advanced badge/reputation rule configuration
-3. Teacher verification workflow
-4. Public SEO
-5. Public open sessions calendar
-6. Favorites and alerts
-7. Mobile readiness/PWA foundation
-8. Push notifications
-9. Real-time chat
-10. Advanced recommendation/ranking engine
+3. Advanced teacher profile customization
+4. Teacher verification workflow
+5. SEO metadata for teacher profiles
+6. Public open sessions calendar
+7. Favorites and alerts
+8. Mobile readiness/PWA foundation
+9. Push notifications
+10. Real-time chat
+11. Advanced recommendation/ranking engine
 
 Implemented - Internal messaging / chat first version
 -----------------------------------------------------
@@ -252,13 +253,49 @@ Pending:
 - Advanced badge/reputation rule configuration.
 - Manual badge awarding with admin reason and audit log if ever needed.
 - Teacher verification workflow.
-- Public SEO.
+- Locale-specific public URLs and hreflang.
+- Custom OG artwork.
+- Advanced sitemap splitting if the site grows.
+- Search Console submission.
+- Rich Results validation.
+- SEO analytics review after cookie consent and analytics activation.
 - Public open sessions calendar.
 - Favorites and alerts.
 - Mobile readiness/PWA foundation.
 - Push notifications.
 - Real-time chat.
 - Advanced recommendation/ranking engine.
+
+Implemented - Teacher public profile customization
+--------------------------------------------------
+
+The focused teacher public profile customization task is completed.
+
+Implemented:
+
+- Teacher banner upload, preview, replace and removal from /profile/teacher.
+- Public disk banner storage under banners/teachers.
+- Relative banner_path storage in teacher_profiles.
+- Public banner URLs served through /storage after php artisan storage:link.
+- public_intro editing with a short character-limited public intro.
+- profile_accent_color editing with color picker, manual hex input, presets and live preview.
+- Public section visibility controls for badges, reviews, reputation summary, completed sessions, students helped, teaching hours, location and availability.
+- Badge management link from the teacher profile page to /profile/teacher/badges.
+- Public profile preview link for active teacher profiles.
+- Inactive teacher guidance instead of a broken public preview link.
+- Public teacher profile rendering for uploaded banners, fallback accent gradient, intro fallback and optional sections.
+- Compact public teacher cards and offer teacher boxes respect hidden badge, review, reputation and metric settings.
+- Admin teacher overview shows custom banner and hidden badge/review/reputation flags.
+- Demo teachers include varied public intro, accent color and section visibility settings.
+- No paid customization, paid badges, premium visibility or monetization.
+
+Pending:
+
+- Advanced teacher profile customization.
+- Public open sessions calendar.
+- Mobile readiness/PWA foundation.
+- Teacher verification workflow.
+- Advanced recommendations.
 
 Teacher verification workflow
 -----------------------------
@@ -269,18 +306,39 @@ Teacher verification workflow
 - Public verified teacher badge.
 - Admin verification queue.
 
-Public SEO
-----------
+Implemented - Public SEO foundation
+-----------------------------------
 
+The public SEO foundation is completed.
+
+Implemented:
+
+- Reusable SEO metadata service.
+- Reusable Inertia SeoHead component.
+- Dynamic page titles.
+- Meta descriptions.
+- Canonical URLs.
+- OpenGraph metadata.
+- Twitter/X card metadata.
+- JSON-LD for home, about, public content pages, offer detail pages and teacher profiles.
 - SEO metadata for public home.
 - SEO metadata for public offers.
-- SEO metadata for public teacher profiles.
+- SEO metadata for public teacher directory and teacher profiles.
 - SEO metadata for legal/content pages.
-- OpenGraph metadata.
-- Twitter card metadata.
-- Sitemap.
-- robots.txt.
-- Structured data where appropriate.
+- Dynamic /sitemap.xml.
+- Dynamic /robots.txt.
+- Private/admin/auth noindex meta and X-Robots-Tag headers.
+- Minimal admin SEO settings inside /admin/platform-settings.
+- No paid SEO boosts, sponsored offers, sponsored teachers or premium visibility.
+
+Pending SEO follow-up:
+
+- Locale-specific public URLs and hreflang.
+- Custom OG artwork.
+- Advanced sitemap splitting if the site grows.
+- Search Console submission.
+- Rich Results validation.
+- SEO analytics review after cookie consent and analytics activation.
 
 Public open sessions calendar
 -----------------------------

@@ -1,9 +1,11 @@
-import { Head, router } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import { FilterX, Search, Sparkles } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useState } from 'react';
 import { EmptyState, OfferCard } from '@/components/public/public-identity';
 import type { PublicOffer, PublicReputationSummary } from '@/components/public/public-identity';
+import { SeoHead } from '@/components/seo-head';
+import type { SeoHeadProps } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -50,8 +52,8 @@ type Offer = {
         city?: string | null;
         country_code?: string | null;
         profile_url?: string | null;
-        rating_summary?: { average: number | null; count: number };
-        reputation_summary?: PublicReputationSummary;
+        rating_summary?: { average: number | null; count: number } | null;
+        reputation_summary?: PublicReputationSummary | null;
     };
     category: Category;
     subject: { name: string; slug: string } | null;
@@ -82,6 +84,7 @@ type Props = {
     teachingModes: string[];
     sessionTypes: string[];
     filteredTeacher: { id: number; name: string } | null;
+    seo: SeoHeadProps;
 };
 
 export default function PublicOffers({
@@ -94,6 +97,7 @@ export default function PublicOffers({
     teachingModes,
     sessionTypes,
     filteredTeacher,
+    seo,
 }: Props) {
     const { t } = useTranslation();
     const [data, setData] = useState<Filters>(filters);
@@ -112,7 +116,7 @@ export default function PublicOffers({
 
     return (
         <>
-            <Head title={t('offers.meta_title')} />
+            <SeoHead {...seo} />
             <div className="bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.16),transparent_30rem),linear-gradient(180deg,#fffaf3_0%,#ffffff_42%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.18),transparent_28rem),linear-gradient(180deg,#07140f_0%,#020617_55%)]">
                 <div className="mx-auto max-w-7xl space-y-8 px-4 py-10 sm:px-6 lg:px-8">
                     <section className="rounded-lg border border-white/80 bg-white/75 p-6 shadow-xl shadow-emerald-950/5 backdrop-blur dark:border-white/10 dark:bg-white/10">

@@ -59,8 +59,8 @@ export type PublicTeacher = {
     rating_summary?: {
         average: number | null;
         count: number;
-    };
-    reputation_summary?: PublicReputationSummary;
+    } | null;
+    reputation_summary?: PublicReputationSummary | null;
     featured_badges?: PublicBadge[];
     visible_badges_count?: number;
 };
@@ -85,8 +85,8 @@ export type PublicOffer = {
         rating_summary?: {
             average: number | null;
             count: number;
-        };
-        reputation_summary?: PublicReputationSummary;
+        } | null;
+        reputation_summary?: PublicReputationSummary | null;
         featured_badges?: PublicBadge[];
         visible_badges_count?: number;
     };

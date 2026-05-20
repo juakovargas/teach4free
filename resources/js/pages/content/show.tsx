@@ -1,5 +1,7 @@
-import { Head, Link } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import { FileText, ShieldCheck } from 'lucide-react';
+import { SeoHead } from '@/components/seo-head';
+import type { SeoHeadProps } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
 
@@ -21,14 +23,15 @@ type Content = {
 type Props = {
     pageKey: string;
     content: Content;
+    seo: SeoHeadProps;
 };
 
-export default function ContentPage({ pageKey, content }: Props) {
+export default function ContentPage({ pageKey, content, seo }: Props) {
     const { t } = useTranslation();
 
     return (
         <>
-            <Head title={content.meta_title} />
+            <SeoHead {...seo} />
             <div className="bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.14),transparent_30rem),linear-gradient(180deg,#fffaf3_0%,#ffffff_44%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.18),transparent_28rem),linear-gradient(180deg,#07140f_0%,#020617_55%)]">
                 <main className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
                     <section className="rounded-lg border border-white/80 bg-white/75 p-6 shadow-xl shadow-emerald-950/5 backdrop-blur dark:border-white/10 dark:bg-white/10 sm:p-8">

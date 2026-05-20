@@ -26,6 +26,10 @@ type Teacher = {
         is_verified: boolean;
         is_accepting_requests: boolean;
         activated_at?: string | null;
+        banner_path?: string | null;
+        show_badges: boolean;
+        show_reviews: boolean;
+        show_reputation_summary: boolean;
     };
 };
 
@@ -147,12 +151,31 @@ export default function AdminTeachers({ teachers, filters, summary }: Props) {
                                                         {t('admin_teachers.verified_badge')}
                                                     </Badge>
                                                 )}
+                                                {teacher.teacher_profile.banner_path && (
+                                                    <Badge variant="outline">{t('admin_teachers.custom_banner')}</Badge>
+                                                )}
+                                                {!teacher.teacher_profile.show_badges && (
+                                                    <Badge variant="outline">{t('admin_teachers.badges_hidden')}</Badge>
+                                                )}
+                                                {!teacher.teacher_profile.show_reviews && (
+                                                    <Badge variant="outline">{t('admin_teachers.reviews_hidden')}</Badge>
+                                                )}
+                                                {!teacher.teacher_profile.show_reputation_summary && (
+                                                    <Badge variant="outline">{t('admin_teachers.reputation_hidden')}</Badge>
+                                                )}
                                             </div>
                                         </td>
                                         <td className="px-4 py-4 text-right">
-                                            <Button variant="outline" size="sm" asChild>
-                                                <Link href={`/admin/users/${teacher.id}`}>{t('actions.view')}</Link>
-                                            </Button>
+                                            <div className="flex justify-end gap-2">
+                                                {teacher.teacher_profile.is_active && (
+                                                    <Button variant="outline" size="sm" asChild>
+                                                        <Link href={`/teachers/${teacher.id}`}>{t('admin_teachers.public_profile')}</Link>
+                                                    </Button>
+                                                )}
+                                                <Button variant="outline" size="sm" asChild>
+                                                    <Link href={`/admin/users/${teacher.id}`}>{t('actions.view')}</Link>
+                                                </Button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

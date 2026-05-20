@@ -62,6 +62,17 @@ type VisibilityField =
     | 'show_location'
     | 'show_availability_summary';
 
+const DEFAULT_ACCENT_COLOR = '#0F766E';
+const ACCENT_PRESETS = [
+    '#0F766E',
+    '#2563EB',
+    '#7C3AED',
+    '#D97706',
+    '#BE123C',
+    '#475569',
+];
+const PUBLIC_INTRO_MAX_LENGTH = 700;
+
 export default function TeacherProfilePage({
     profile,
     modes,
@@ -77,9 +88,15 @@ export default function TeacherProfilePage({
             teaching_bio: profile.teaching_bio ?? '',
             experience_summary: profile.experience_summary ?? '',
             meeting_url: profile.meeting_url ?? '',
-            profile_accent_color: profile.profile_accent_color ?? '#0F766E',
+            profile_accent_color: profile.profile_accent_color ?? '',
         });
     const bannerForm = useForm<{ banner: File | null }>({ banner: null });
+    const profileAccentColor = data.profile_accent_color ?? '';
+    const hasValidAccent = /^#[0-9a-fA-F]{6}$/.test(profileAccentColor);
+    const previewAccentColor = hasValidAccent
+        ? profileAccentColor
+        : DEFAULT_ACCENT_COLOR;
+    const publicIntroLength = (data.public_intro ?? '').length;
 
     const submit = (event: FormEvent) => {
         event.preventDefault();
@@ -169,6 +186,11 @@ export default function TeacherProfilePage({
                             )}
                         </div>
                     </div>
+                    {!profile.is_active && (
+                        <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950 dark:border-amber-900/70 dark:bg-amber-950/30 dark:text-amber-100">
+                            {t('teacher_profile.preview_inactive_message')}
+                        </div>
+                    )}
                 </section>
 
                 {flash.status && (
@@ -262,7 +284,12 @@ export default function TeacherProfilePage({
                                 className="h-40 w-full object-cover"
                             />
                         ) : (
-                            <div className="h-40 bg-[radial-gradient(circle_at_18%_20%,rgba(16,185,129,0.35),transparent_10rem),radial-gradient(circle_at_85%_10%,rgba(245,158,11,0.30),transparent_10rem),linear-gradient(135deg,#064e3b_0%,#0f766e_48%,#78350f_100%)]" />
+                            <div
+                                className="h-40"
+                                style={{
+                                    background: `radial-gradient(circle at 18% 20%, ${previewAccentColor}55, transparent 10rem), radial-gradient(circle at 85% 10%, rgba(245,158,11,0.30), transparent 10rem), linear-gradient(135deg, #064e3b 0%, ${previewAccentColor} 48%, #78350f 100%)`,
+                                }}
+                            />
                         )}
                     </div>
                 </section>
@@ -286,12 +313,17 @@ export default function TeacherProfilePage({
                         <Textarea
                             id="public_intro"
                             value={data.public_intro ?? ''}
+                            maxLength={PUBLIC_INTRO_MAX_LENGTH}
                             onChange={(event) =>
                                 setData('public_intro', event.target.value)
                             }
                         />
                         <p className="text-xs leading-5 text-muted-foreground">
-                            {t('teacher_profile.public_intro_hint')}
+                            {t('teacher_profile.public_intro_hint')}{' '}
+                            {t('teacher_profile.public_intro_character_count', {
+                                count: publicIntroLength,
+                                max: PUBLIC_INTRO_MAX_LENGTH,
+                            })}
                         </p>
                         <InputError message={errors.public_intro} />
                     </div>
@@ -303,7 +335,7 @@ export default function TeacherProfilePage({
                             <Input
                                 id="profile_accent_color_picker"
                                 type="color"
-                                value={data.profile_accent_color ?? '#0F766E'}
+                                value={previewAccentColor}
                                 onChange={(event) =>
                                     setData(
                                         'profile_accent_color',
@@ -314,7 +346,7 @@ export default function TeacherProfilePage({
                             />
                             <Input
                                 id="profile_accent_color"
-                                value={data.profile_accent_color ?? ''}
+                                value={profileAccentColor}
                                 onChange={(event) =>
                                     setData(
                                         'profile_accent_color',
@@ -324,7 +356,66 @@ export default function TeacherProfilePage({
                                 placeholder="#0F766E"
                             />
                         </div>
+                        <div
+                            className="flex flex-wrap gap-2"
+                            aria-label={t('teacher_profile.accent_presets')}
+                        >
+                            {ACCENT_PRESETS.map((color) => (
+                                <button
+                                    key={color}
+                                    type="button"
+                                    className="size-8 rounded-full border border-slate-300 ring-offset-background transition hover:scale-105 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring dark:border-slate-700"
+                                    style={{ backgroundColor: color }}
+                                    onClick={() =>
+                                        setData('profile_accent_color', color)
+                                    }
+                                    aria-label={t(
+                                        'teacher_profile.accent_preset_label',
+                                        { color },
+                                    )}
+                                    title={t(
+                                        'teacher_profile.accent_preset_label',
+                                        { color },
+                                    )}
+                                />
+                            ))}
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                    setData('profile_accent_color', '')
+                                }
+                            >
+                                {t('teacher_profile.use_default_accent')}
+                            </Button>
+                        </div>
+                        <p className="text-xs leading-5 text-muted-foreground">
+                            {t('teacher_profile.profile_accent_color_hint')}
+                        </p>
                         <InputError message={errors.profile_accent_color} />
+                    </div>
+                    <div className="overflow-hidden rounded-lg border border-slate-200 md:col-span-2 dark:border-slate-800">
+                        <div
+                            className="h-20"
+                            style={{
+                                background: `linear-gradient(135deg, #064e3b 0%, ${previewAccentColor} 58%, #78350f 100%)`,
+                            }}
+                        />
+                        <div className="space-y-3 p-4">
+                            <div
+                                className="h-1 w-24 rounded-full"
+                                style={{ backgroundColor: previewAccentColor }}
+                            />
+                            <p className="font-semibold">
+                                {data.headline ||
+                                    t('teacher_profile.preview_headline')}
+                            </p>
+                            <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+                                {data.public_intro ||
+                                    t('teacher_profile.preview_intro')}
+                            </p>
+                        </div>
                     </div>
                 </section>
 

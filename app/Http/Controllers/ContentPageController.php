@@ -2,11 +2,32 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\SeoService;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ContentPageController extends Controller
 {
+    public function __construct(private readonly SeoService $seo) {}
+
+    public function about(): Response
+    {
+        $title = __('ui.seo.about.title');
+        $description = __('ui.seo.about.description');
+
+        return Inertia::render('about', [
+            'seo' => $this->seo->metadata([
+                'title' => $title,
+                'description' => $description,
+                'canonicalUrl' => route('about'),
+                'ogType' => 'website',
+                'structuredData' => [
+                    $this->seo->webPageSchema('AboutPage', $title, $description, route('about')),
+                ],
+            ]),
+        ]);
+    }
+
     public function terms(): Response
     {
         return $this->render('terms');
@@ -46,6 +67,20 @@ class ContentPageController extends Controller
         return Inertia::render('content/show', [
             'pageKey' => $page,
             'content' => $content,
+            'seo' => $this->seo->metadata([
+                'title' => $content['meta_title'] ?? $this->seo->defaultTitle(),
+                'description' => $content['meta_description'] ?? ($content['intro'] ?? $this->seo->defaultDescription()),
+                'canonicalUrl' => route(str_replace('_', '-', $page)),
+                'ogType' => 'website',
+                'structuredData' => [
+                    $this->seo->webPageSchema(
+                        'WebPage',
+                        $content['title'] ?? ($content['meta_title'] ?? $this->seo->defaultTitle()),
+                        $content['meta_description'] ?? ($content['intro'] ?? $this->seo->defaultDescription()),
+                        route(str_replace('_', '-', $page)),
+                    ),
+                ],
+            ]),
         ]);
     }
 }

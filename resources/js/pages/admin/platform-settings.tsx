@@ -21,6 +21,14 @@ type SettingsData = {
     allow_public_teacher_profiles: boolean;
     allow_open_public_sessions: boolean;
     maintenance_notice: string | null;
+    seo_site_name: string | null;
+    seo_default_meta_title: string | null;
+    seo_default_meta_description: string | null;
+    seo_default_robots: string | null;
+    seo_default_og_image_path: string | null;
+    seo_enable_sitemap: boolean;
+    seo_enable_structured_data: boolean;
+    seo_search_indexing_enabled: boolean;
 };
 
 type Props = {
@@ -41,6 +49,14 @@ export default function AdminPlatformSettings({ settings, supportedLocales }: Pr
         allow_public_teacher_profiles: settings.allow_public_teacher_profiles,
         allow_open_public_sessions: settings.allow_open_public_sessions,
         maintenance_notice: settings.maintenance_notice ?? '',
+        seo_site_name: settings.seo_site_name ?? '',
+        seo_default_meta_title: settings.seo_default_meta_title ?? '',
+        seo_default_meta_description: settings.seo_default_meta_description ?? '',
+        seo_default_robots: settings.seo_default_robots ?? 'index,follow',
+        seo_default_og_image_path: settings.seo_default_og_image_path ?? '',
+        seo_enable_sitemap: settings.seo_enable_sitemap ?? true,
+        seo_enable_structured_data: settings.seo_enable_structured_data ?? true,
+        seo_search_indexing_enabled: settings.seo_search_indexing_enabled ?? true,
     });
 
     const submit = (event: FormEvent) => {
@@ -100,6 +116,30 @@ export default function AdminPlatformSettings({ settings, supportedLocales }: Pr
                         <Textarea value={form.data.maintenance_notice} onChange={(event) => form.setData('maintenance_notice', event.target.value)} />
                         <InputError message={form.errors.maintenance_notice} />
                     </div>
+                </section>
+
+                <section className="grid gap-5 rounded-lg border border-slate-200 bg-white p-6 shadow-xs md:grid-cols-2 dark:border-slate-800 dark:bg-slate-900">
+                    <div className="md:col-span-2">
+                        <h2 className="text-lg font-semibold">{t('admin_platform_settings.seo_title')}</h2>
+                        <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">{t('admin_platform_settings.seo_intro')}</p>
+                    </div>
+                    <Field label={t('admin_platform_settings.seo_site_name')} value={form.data.seo_site_name} onChange={(value) => form.setData('seo_site_name', value)} error={form.errors.seo_site_name} />
+                    <Field label={t('admin_platform_settings.seo_default_meta_title')} value={form.data.seo_default_meta_title} onChange={(value) => form.setData('seo_default_meta_title', value)} error={form.errors.seo_default_meta_title} />
+                    <div className="space-y-2 md:col-span-2">
+                        <Label>{t('admin_platform_settings.seo_default_meta_description')}</Label>
+                        <Textarea value={form.data.seo_default_meta_description} onChange={(event) => form.setData('seo_default_meta_description', event.target.value)} />
+                        <InputError message={form.errors.seo_default_meta_description} />
+                    </div>
+                    <Field label={t('admin_platform_settings.seo_default_robots')} value={form.data.seo_default_robots} onChange={(value) => form.setData('seo_default_robots', value)} error={form.errors.seo_default_robots} />
+                    <Field label={t('admin_platform_settings.seo_default_og_image_path')} value={form.data.seo_default_og_image_path} onChange={(value) => form.setData('seo_default_og_image_path', value)} error={form.errors.seo_default_og_image_path} />
+                    <div className="grid gap-3 rounded-lg border border-slate-200 p-4 dark:border-slate-800 md:col-span-2">
+                        <Toggle label={t('admin_platform_settings.seo_enable_sitemap')} checked={form.data.seo_enable_sitemap} onChange={(value) => form.setData('seo_enable_sitemap', value)} />
+                        <Toggle label={t('admin_platform_settings.seo_enable_structured_data')} checked={form.data.seo_enable_structured_data} onChange={(value) => form.setData('seo_enable_structured_data', value)} />
+                        <Toggle label={t('admin_platform_settings.seo_search_indexing_enabled')} checked={form.data.seo_search_indexing_enabled} onChange={(value) => form.setData('seo_search_indexing_enabled', value)} />
+                    </div>
+                    <p className="text-sm leading-6 text-muted-foreground md:col-span-2">
+                        {t('admin_platform_settings.seo_help_body')}
+                    </p>
                 </section>
 
                 <ContextualHelp title={t('admin_platform_settings.help_title')}>

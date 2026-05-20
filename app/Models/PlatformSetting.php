@@ -16,6 +16,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'allow_public_teacher_profiles',
     'allow_open_public_sessions',
     'maintenance_notice',
+    'seo_site_name',
+    'seo_default_meta_title',
+    'seo_default_meta_description',
+    'seo_default_robots',
+    'seo_default_og_image_path',
+    'seo_enable_sitemap',
+    'seo_enable_structured_data',
+    'seo_search_indexing_enabled',
     'updated_by',
 ])]
 class PlatformSetting extends Model
@@ -53,6 +61,9 @@ class PlatformSetting extends Model
             'require_email_verification' => 'boolean',
             'allow_public_teacher_profiles' => 'boolean',
             'allow_open_public_sessions' => 'boolean',
+            'seo_enable_sitemap' => 'boolean',
+            'seo_enable_structured_data' => 'boolean',
+            'seo_search_indexing_enabled' => 'boolean',
         ];
     }
 }

@@ -1,4 +1,4 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import {
     ArrowRight,
     CalendarClock,
@@ -29,6 +29,8 @@ import type {
     PublicOffer,
     PublicTeacher,
 } from '@/components/public/public-identity';
+import { SeoHead } from '@/components/seo-head';
+import type { SeoHeadProps } from '@/components/seo-head';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/use-translation';
 
@@ -50,6 +52,7 @@ type PageProps = {
     languageOfferUrl: string;
     allOffersUrl: string;
     startTeachingUrl: string;
+    seo: SeoHeadProps;
 };
 
 export default function Welcome() {
@@ -63,6 +66,7 @@ export default function Welcome() {
         languageOfferUrl,
         allOffersUrl,
         startTeachingUrl,
+        seo,
     } = usePage().props as unknown as PageProps;
 
     const trustItems = [
@@ -104,7 +108,7 @@ export default function Welcome() {
 
     return (
         <>
-            <Head title={t('home.meta_title')} />
+            <SeoHead {...seo} />
 
             <div className="overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.16),transparent_34rem),radial-gradient(circle_at_70%_10%,rgba(249,115,22,0.14),transparent_28rem),linear-gradient(180deg,#fffaf3_0%,#f8fbf8_42%,#ffffff_100%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.20),transparent_32rem),radial-gradient(circle_at_75%_0%,rgba(217,119,6,0.18),transparent_28rem),linear-gradient(180deg,#07140f_0%,#0f172a_54%,#020617_100%)]">
                 <section className="relative mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1fr_0.9fr] lg:px-8 lg:py-20">

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\AddNoIndexForPrivateRoutes;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\EnsureUserIsNotRestricted;
 use App\Http\Middleware\HandleAppearance;
@@ -29,6 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
             EnsureUserIsNotRestricted::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
+            AddNoIndexForPrivateRoutes::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

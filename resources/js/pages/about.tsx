@@ -1,8 +1,13 @@
-import { Head } from '@inertiajs/react';
 import { Globe2, HandHeart, ShieldCheck } from 'lucide-react';
+import { SeoHead } from '@/components/seo-head';
+import type { SeoHeadProps } from '@/components/seo-head';
 import { useTranslation } from '@/hooks/use-translation';
 
-export default function About() {
+type Props = {
+    seo: SeoHeadProps;
+};
+
+export default function About({ seo }: Props) {
     const { t } = useTranslation();
 
     const sections = [
@@ -25,7 +30,7 @@ export default function About() {
 
     return (
         <>
-            <Head title={t('about.meta_title')} />
+            <SeoHead {...seo} />
             <section className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
                 <div className="max-w-3xl">
                     <h1 className="text-4xl font-semibold tracking-normal text-slate-950 sm:text-5xl dark:text-white">

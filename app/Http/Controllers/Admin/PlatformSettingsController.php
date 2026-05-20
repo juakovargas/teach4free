@@ -33,6 +33,14 @@ class PlatformSettingsController extends Controller
             'allow_public_teacher_profiles' => ['required', 'boolean'],
             'allow_open_public_sessions' => ['required', 'boolean'],
             'maintenance_notice' => ['nullable', 'string', 'max:2000'],
+            'seo_site_name' => ['nullable', 'string', 'max:120'],
+            'seo_default_meta_title' => ['nullable', 'string', 'max:180'],
+            'seo_default_meta_description' => ['nullable', 'string', 'max:500'],
+            'seo_default_robots' => ['required', 'string', 'max:80'],
+            'seo_default_og_image_path' => ['nullable', 'string', 'max:255'],
+            'seo_enable_sitemap' => ['required', 'boolean'],
+            'seo_enable_structured_data' => ['required', 'boolean'],
+            'seo_search_indexing_enabled' => ['required', 'boolean'],
         ]);
 
         PlatformSetting::current()->forceFill([

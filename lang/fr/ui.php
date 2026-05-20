@@ -189,6 +189,36 @@ return [
         'language_title' => 'Concu pour l apprentissage multilingue',
         'language_body' => 'L interface est disponible en anglais, espagnol et francais, et les cours peuvent etre decouverts par langue d enseignement pour aider apprenants et enseignants a communiquer clairement.',
     ],
+    'seo' => [
+        'default' => [
+            'title' => 'Teach4Free - Apprendre et enseigner gratuitement',
+            'description' => 'Une communaute mondiale ou les personnes enseignent et apprennent en ligne gratuitement, sans paiements, credits ni commissions.',
+        ],
+        'home' => [
+            'title' => 'Teach4Free - Apprendre et enseigner en ligne gratuitement',
+            'description' => 'Trouvez des cours en ligne gratuits et des enseignants volontaires dans une communaute multilingue sans paiements, credits ni commissions.',
+        ],
+        'about' => [
+            'title' => 'A propos de Teach4Free',
+            'description' => 'Decouvrez Teach4Free, une communaute d apprentissage sans argent ou les personnes enseignent et apprennent en ligne gratuitement.',
+        ],
+        'offers' => [
+            'title' => 'Trouver des cours en ligne gratuits',
+            'description' => 'Cherchez des cours gratuits par sujet, langue, niveau et disponibilite sur Teach4Free.',
+        ],
+        'offer' => [
+            'title' => ':offer - Cours gratuit sur Teach4Free',
+            'description' => ':summary Cours gratuit avec :teacher en :languages. Categorie : :category.',
+        ],
+        'teachers' => [
+            'title' => 'Trouver des enseignants volontaires',
+            'description' => 'Decouvrez des personnes qui proposent des cours en ligne gratuits par sujet, langue et disponibilite.',
+        ],
+        'teacher' => [
+            'title' => ':teacher - Enseignant gratuit sur Teach4Free',
+            'description' => ':summary Enseigne en :languages. Sujets : :subjects.',
+        ],
+    ],
     'footer' => [
         'mission' => 'Teach4Free relie les personnes qui apprennent gratuitement avec celles qui enseignent gratuitement. Aucun paiement, credit ou commission.',
         'learn' => 'Apprendre',
@@ -839,12 +869,14 @@ return [
         'activate' => 'Activer le profil enseignant',
         'pause' => 'Mettre le profil en pause',
         'preview_public_profile' => 'Voir le profil public',
+        'preview_inactive_message' => 'Activez votre profil enseignant pour rendre votre page publique disponible.',
         'badges_title' => 'Badges et realisations publiques',
         'badges_intro' => 'Consultez vos badges gagnes et choisissez lesquels apparaissent sur votre profil enseignant public.',
-        'manage_badges' => 'Gerer les badges',
+        'manage_badges' => 'Gerer les badges affiches',
         'headline' => 'Titre',
         'public_intro' => 'Introduction publique',
         'public_intro_hint' => 'Une breve presentation affichee pres du haut de votre profil public.',
+        'public_intro_character_count' => ':count/:max caracteres.',
         'teaching_bio' => 'Bio d enseignement',
         'experience_summary' => 'Résumé d expérience',
         'teaching_mode' => 'Mode d enseignement préféré',
@@ -857,6 +889,12 @@ return [
         'customization_title' => 'Personnalisation du profil public',
         'customization_intro' => 'Ajustez les details publics que les apprenants voient avant de demander un cours gratuit.',
         'profile_accent_color' => 'Couleur d accent du profil',
+        'profile_accent_color_hint' => 'Utilisez une couleur subtile. Teach4Free garde le contraste lisible sur le profil public.',
+        'accent_presets' => 'Couleurs d accent predefinies',
+        'accent_preset_label' => 'Utiliser :color comme couleur d accent',
+        'use_default_accent' => 'Utiliser la couleur par defaut',
+        'preview_headline' => 'Apercu du profil public',
+        'preview_intro' => 'Votre introduction publique et votre couleur d accent apparaitront ici.',
         'section_visibility_title' => 'Visibilite des sections publiques',
         'section_visibility_intro' => 'Choisissez les sections optionnelles affichees. Les offres actives et les informations de securite de la plateforme restent visibles.',
         'show_badges' => 'Afficher les badges gagnes',
@@ -869,17 +907,17 @@ return [
         'show_availability_summary' => 'Afficher le resume des disponibilites',
         'banner_title' => 'Banniere publique enseignant',
         'banner_intro' => 'Ajoutez une image horizontale pour donner une presence professionnelle a votre profil public.',
-        'banner_requirements' => 'JPG, PNG ou WEBP. Maximum 4 Mo. Format large recommande.',
+        'banner_requirements' => 'Importez une image JPG, PNG ou WebP large pour le haut de votre profil enseignant public. Ratio recommande : 16:5 ou similaire. Taille maximale : 4 Mo.',
         'upload_banner' => 'Importer la banniere',
         'remove_banner' => 'Retirer la banniere',
         'banner_preview_alt' => 'Apercu de la banniere publique',
         'banner_updated' => 'Banniere enseignant mise a jour.',
         'banner_removed' => 'Banniere enseignant retiree.',
         'help_title' => 'Aide du profil enseignant',
-        'help_body' => 'Ce profil prépare votre identité d enseignant et vos préférences de réunion. Les offres, calendriers et demandes viendront ensuite.',
         'saved' => 'Profil enseignant enregistré.',
         'activated' => 'Profil enseignant activé.',
         'paused' => 'Profil enseignant en pause.',
+        'help_body' => 'Utilisez cette page pour gerer votre profil enseignant gratuit, banniere, introduction publique, couleur d accent, sections optionnelles et lien de badges.',
     ],
     'teacher_badges' => [
         'meta_title' => 'Badges enseignants',
@@ -1051,7 +1089,7 @@ return [
     'admin_teachers' => [
         'meta_title' => 'Enseignants admin', 'title' => 'Vue enseignants', 'intro' => 'Examinez la sante des profils, les offres publiques actives et la couverture de disponibilite.',
         'search' => 'Rechercher', 'status' => 'Statut', 'total' => 'Profils enseignants', 'active' => 'Enseignants actifs', 'verified' => 'Enseignants verifies', 'public_offers' => 'Offres publiques',
-        'teacher' => 'Enseignant', 'headline' => 'Titre', 'location' => 'Lieu', 'offers' => 'Offres', 'availability' => 'Blocs de disponibilite', 'actions' => 'Actions', 'empty' => 'Aucun enseignant ne correspond.', 'verified_badge' => 'Verifie',
+        'teacher' => 'Enseignant', 'headline' => 'Titre', 'location' => 'Lieu', 'offers' => 'Offres', 'availability' => 'Blocs de disponibilite', 'actions' => 'Actions', 'empty' => 'Aucun enseignant ne correspond.', 'verified_badge' => 'Verifie', 'custom_banner' => 'Banniere personnalisee', 'badges_hidden' => 'Badges masques', 'reviews_hidden' => 'Avis masques', 'reputation_hidden' => 'Reputation masquee', 'public_profile' => 'Profil public',
         'help_title' => 'Aide enseignants', 'help_body' => 'Utilisez cette vue pour reperer les profils inactifs, non verifies ou peu disponibles avant d ouvrir le detail utilisateur.',
     ],
     'admin_reputation' => [
@@ -1228,6 +1266,7 @@ return [
     'admin_platform_settings' => [
         'meta_title' => 'Parametres plateforme', 'title' => 'Parametres plateforme', 'intro' => 'Modifiez des interrupteurs globaux surs pour decouverte publique, propositions et comportement de base.',
         'platform_name' => 'Nom de plateforme', 'support_email' => 'E-mail support', 'default_locale' => 'Langue par defaut', 'allow_teacher_category_proposals' => 'Autoriser les propositions de categories', 'allow_teacher_subject_proposals' => 'Autoriser les propositions de sujets', 'require_email_verification' => 'Exiger verification e-mail', 'allow_public_teacher_profiles' => 'Autoriser profils enseignants publics', 'allow_open_public_sessions' => 'Autoriser sessions publiques ouvertes', 'maintenance_notice' => 'Avis de maintenance', 'cookie_settings_link' => 'Gerer les cookies',
+        'seo_title' => 'Parametres SEO', 'seo_intro' => 'Controlez les metadonnees publiques, le sitemap et les donnees structurees sans creer de visibilite payante.', 'seo_site_name' => 'Nom SEO du site', 'seo_default_meta_title' => 'Titre meta par defaut', 'seo_default_meta_description' => 'Description meta par defaut', 'seo_default_robots' => 'Valeur robots par defaut', 'seo_default_og_image_path' => 'Chemin image OpenGraph', 'seo_enable_sitemap' => 'Activer sitemap.xml', 'seo_enable_structured_data' => 'Activer donnees structurees', 'seo_search_indexing_enabled' => 'Autoriser indexation publique', 'seo_help_body' => 'Laissez le chemin image vide sauf si une vraie image publique existe. L indexation affecte seulement le SEO public; les pages admin et privees restent en noindex.',
         'help_title' => 'Aide parametres', 'help_body' => 'Ces parametres sont conservateurs et n ajoutent ni paiements, ni offres payantes, ni visibilite premium.', 'saved' => 'Parametres plateforme enregistres.',
     ],
     'admin_cookie_settings' => [

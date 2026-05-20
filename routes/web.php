@@ -42,6 +42,8 @@ use App\Http\Controllers\PublicOfferController;
 use App\Http\Controllers\PublicTeacherController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ReviewReportController;
+use App\Http\Controllers\RobotsController;
+use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\StudentApplicationController;
 use App\Http\Controllers\StudentProfileController;
 use App\Http\Controllers\SupportReportController;
@@ -57,8 +59,10 @@ use App\Http\Controllers\TeacherSessionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
+Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
+Route::get('/robots.txt', RobotsController::class)->name('robots');
 
-Route::inertia('/about', 'about')->name('about');
+Route::get('/about', [ContentPageController::class, 'about'])->name('about');
 Route::get('/terms', [ContentPageController::class, 'terms'])->name('terms');
 Route::get('/privacy', [ContentPageController::class, 'privacy'])->name('privacy');
 Route::get('/cookie-policy', [ContentPageController::class, 'cookiePolicy'])->name('cookie-policy');

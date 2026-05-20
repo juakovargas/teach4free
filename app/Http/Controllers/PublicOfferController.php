@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\ClassSessionAttendee;
 use App\Models\Language;
+use App\Models\TeacherProfile;
 use App\Models\TeachingCategory;
 use App\Models\TeachingOffer;
 use App\Models\TeachingOfferApplication;
 use App\Models\TeachingSubject;
 use App\Models\User;
+use App\Services\SeoService;
 use App\Services\TeacherReputationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -17,7 +19,10 @@ use Inertia\Response;
 
 class PublicOfferController extends Controller
 {
-    public function __construct(private readonly TeacherReputationService $reputations) {}
+    public function __construct(
+        private readonly TeacherReputationService $reputations,
+        private readonly SeoService $seo,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -39,7 +44,7 @@ class PublicOfferController extends Controller
             ->publiclyVisible()
             ->with([
                 'user:id,name,avatar_path,avatar_url,city,country_code',
-                'user.teacherProfile:id,user_id,is_active,show_badges,show_location',
+                'user.teacherProfile:id,user_id,is_active,show_badges,show_reviews,show_reputation_summary,show_completed_sessions_count,show_students_helped_count,show_teaching_hours,show_location',
                 'user.userBadges' => fn ($query) => $query
                     ->publiclyVisible()
                     ->with('badge')
@@ -101,6 +106,21 @@ class PublicOfferController extends Controller
             'levels' => TeachingOffer::LEVELS,
             'teachingModes' => TeachingOffer::MODES,
             'sessionTypes' => TeachingOffer::SESSION_TYPES,
+            'seo' => $this->seo->metadata([
+                'title' => __('ui.seo.offers.title'),
+                'description' => __('ui.seo.offers.description'),
+                'canonicalUrl' => route('offers.index'),
+                'robots' => 'index,follow',
+                'ogType' => 'website',
+                'structuredData' => [
+                    $this->seo->webPageSchema(
+                        'CollectionPage',
+                        __('ui.seo.offers.title'),
+                        __('ui.seo.offers.description'),
+                        route('offers.index'),
+                    ),
+                ],
+            ]),
         ]);
     }
 
@@ -110,7 +130,7 @@ class PublicOfferController extends Controller
 
         $offer->load([
             'user:id,name,avatar_path,avatar_url,bio,city,country_code',
-            'user.teacherProfile:id,user_id,headline,teaching_bio,is_active,is_verified,show_badges,show_location',
+            'user.teacherProfile:id,user_id,headline,teaching_bio,is_active,is_verified,banner_path,show_badges,show_reviews,show_reputation_summary,show_completed_sessions_count,show_students_helped_count,show_teaching_hours,show_location',
             'user.userLanguages' => fn ($query) => $query
                 ->where('teaches', true)
                 ->with('language:id,code,name,native_name'),
@@ -179,6 +199,45 @@ class PublicOfferController extends Controller
                 'enrolled_attendees_count' => $session->enrolled_attendees_count,
                 'status' => $session->status,
             ]),
+            'seo' => $this->offerSeo($offer),
+        ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function offerSeo(TeachingOffer $offer): array
+    {
+        $description = $this->offerSeoDescription($offer);
+        $teacherImage = $this->seo->teacherProfileImageUrl($offer->user);
+
+        return $this->seo->metadata([
+            'title' => __('ui.seo.offer.title', ['offer' => $offer->title]),
+            'description' => $description,
+            'canonicalUrl' => route('offers.show', $offer),
+            'ogType' => 'article',
+            'ogImage' => $teacherImage,
+            'structuredData' => [
+                $this->seo->courseSchema($offer, $description),
+            ],
+        ]);
+    }
+
+    private function offerSeoDescription(TeachingOffer $offer): string
+    {
+        $base = $this->seo->excerpt($offer->summary ?: $offer->description, 130);
+        $languages = $offer->languages
+            ->pluck('name')
+            ->filter()
+            ->take(3)
+            ->implode(', ');
+        $category = $offer->category?->name;
+
+        return __('ui.seo.offer.description', [
+            'summary' => $base,
+            'teacher' => $offer->user->name,
+            'languages' => $languages !== '' ? $languages : __('ui.common.not_applicable'),
+            'category' => $category ?: __('ui.common.not_applicable'),
         ]);
     }
 
@@ -205,6 +264,7 @@ class PublicOfferController extends Controller
     private function offerIndexPayload(TeachingOffer $offer, ?array $reputation = null): array
     {
         $reputation ??= $this->reputations->forTeacher($offer->user);
+        $profile = $offer->user->teacherProfile;
 
         return [
             'id' => $offer->id,
@@ -221,14 +281,11 @@ class PublicOfferController extends Controller
                 'id' => $offer->user->id,
                 'name' => $offer->user->name,
                 'avatar' => $offer->user->avatar,
-                'city' => $offer->user->teacherProfile?->show_location ? $offer->user->city : null,
-                'country_code' => $offer->user->teacherProfile?->show_location ? $offer->user->country_code : null,
-                'profile_url' => $offer->user->teacherProfile?->is_active ? route('teachers.show', $offer->user) : null,
-                'rating_summary' => [
-                    'average' => $reputation['average_rating'],
-                    'count' => $reputation['published_review_count'],
-                ],
-                'reputation_summary' => $reputation,
+                'city' => $profile?->show_location ? $offer->user->city : null,
+                'country_code' => $profile?->show_location ? $offer->user->country_code : null,
+                'profile_url' => $profile?->is_active ? route('teachers.show', $offer->user) : null,
+                'rating_summary' => $this->publicRatingSummary($profile, $reputation),
+                'reputation_summary' => $this->publicReputationSummary($profile, $reputation),
                 'featured_badges' => $this->badgePayloads($offer->user, 2),
                 'visible_badges_count' => $offer->user->teacherProfile?->show_badges ? $offer->user->userBadges->count() : 0,
             ],
@@ -244,6 +301,7 @@ class PublicOfferController extends Controller
     private function offerShowPayload(TeachingOffer $offer): array
     {
         $reputation = $this->reputations->forTeacher($offer->user);
+        $profile = $offer->user->teacherProfile;
 
         return [
             ...$offer->only([
@@ -269,15 +327,12 @@ class PublicOfferController extends Controller
                 'name' => $offer->user->name,
                 'bio' => $offer->user->bio,
                 'avatar' => $offer->user->avatar,
-                'city' => $offer->user->teacherProfile?->show_location ? $offer->user->city : null,
-                'country_code' => $offer->user->teacherProfile?->show_location ? $offer->user->country_code : null,
-                'profile_url' => $offer->user->teacherProfile?->is_active ? route('teachers.show', $offer->user) : null,
+                'city' => $profile?->show_location ? $offer->user->city : null,
+                'country_code' => $profile?->show_location ? $offer->user->country_code : null,
+                'profile_url' => $profile?->is_active ? route('teachers.show', $offer->user) : null,
                 'headline' => $offer->user->teacherProfile?->headline,
-                'rating_summary' => [
-                    'average' => $reputation['average_rating'],
-                    'count' => $reputation['published_review_count'],
-                ],
-                'reputation_summary' => $reputation,
+                'rating_summary' => $this->publicRatingSummary($profile, $reputation),
+                'reputation_summary' => $this->publicReputationSummary($profile, $reputation),
                 'featured_badges' => $this->badgePayloads($offer->user, 3),
                 'visible_badges_count' => $offer->user->teacherProfile?->show_badges ? $offer->user->userBadges->count() : 0,
                 'languages' => $offer->user->userLanguages->map(fn ($userLanguage): array => [
@@ -302,9 +357,11 @@ class PublicOfferController extends Controller
         return $offers->sort(function (TeachingOffer $first, TeachingOffer $second) use ($reputationSummaries): int {
             $firstSummary = $reputationSummaries[$first->user_id] ?? [];
             $secondSummary = $reputationSummaries[$second->user_id] ?? [];
+            $firstRating = $this->publicRatingSummary($first->user->teacherProfile, $firstSummary);
+            $secondRating = $this->publicRatingSummary($second->user->teacherProfile, $secondSummary);
 
-            return (($secondSummary['average_rating'] ?? -1) <=> ($firstSummary['average_rating'] ?? -1))
-                ?: (($secondSummary['published_review_count'] ?? 0) <=> ($firstSummary['published_review_count'] ?? 0))
+            return (($secondRating['average'] ?? -1) <=> ($firstRating['average'] ?? -1))
+                ?: (($secondRating['count'] ?? 0) <=> ($firstRating['count'] ?? 0))
                 ?: (($second->published_at?->timestamp ?? 0) <=> ($first->published_at?->timestamp ?? 0));
         });
     }
@@ -333,5 +390,53 @@ class PublicOfferController extends Controller
             ->take($limit)
             ->map(fn ($badge): array => $badge->publicPayload())
             ->values();
+    }
+
+    /**
+     * @param  array<string, mixed>  $reputation
+     * @return array<string, mixed>|null
+     */
+    private function publicRatingSummary(?TeacherProfile $profile, array $reputation): ?array
+    {
+        if (! $profile?->show_reviews || ! $profile?->show_reputation_summary) {
+            return null;
+        }
+
+        return [
+            'average' => $reputation['average_rating'] ?? null,
+            'count' => $reputation['published_review_count'] ?? 0,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $reputation
+     * @return array<string, mixed>|null
+     */
+    private function publicReputationSummary(?TeacherProfile $profile, array $reputation): ?array
+    {
+        if (! $profile?->show_reputation_summary) {
+            return null;
+        }
+
+        $summary = $reputation;
+
+        if (! $profile->show_reviews) {
+            $summary['average_rating'] = null;
+            $summary['published_review_count'] = 0;
+        }
+
+        if (! $profile->show_completed_sessions_count) {
+            $summary['completed_sessions_count'] = 0;
+        }
+
+        if (! $profile->show_students_helped_count) {
+            $summary['students_helped_count'] = 0;
+        }
+
+        if (! $profile->show_teaching_hours) {
+            $summary['teaching_hours'] = 0;
+        }
+
+        return $summary;
     }
 }

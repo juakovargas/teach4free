@@ -55,10 +55,10 @@ class TeacherProfileController extends Controller
     {
         $validated = $request->validate([
             'headline' => ['nullable', 'string', 'max:255'],
-            'public_intro' => ['nullable', 'string', 'max:800'],
+            'public_intro' => ['nullable', 'string', 'max:700'],
             'teaching_bio' => ['nullable', 'string', 'max:4000'],
             'experience_summary' => ['nullable', 'string', 'max:4000'],
-            'profile_accent_color' => ['nullable', 'string', 'max:20', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'profile_accent_color' => ['nullable', 'string', 'size:7', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'preferred_teaching_mode' => ['required', 'string', Rule::in(TeacherProfile::MODES)],
             'max_students_per_session' => ['required', 'integer', 'min:1', 'max:100'],
             'default_session_duration_minutes' => ['required', 'integer', 'min:15', 'max:240'],
